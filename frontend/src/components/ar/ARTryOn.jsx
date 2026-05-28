@@ -419,6 +419,13 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     )
     const smoothRoll = kfRef.current.x.filter(rawRoll)
 
+    // Angle 3: pitch (forearm leaning toward/away from camera) from depth
+    // difference MIDDLE_MCP.z − WRIST.z. Clamped ±0.6 rad so unusual
+    // landmark depth noise can't flip the watch.
+    const rawPitch = ((kp2d[MIDDLE_MCP].z ?? 0) - (kp2d[WRIST].z ?? 0)) * 1.5
+    const pitchClamped = Math.max(-0.6, Math.min(0.6, rawPitch))
+    const smoothPitch = kfRef.current.tilt.filter(pitchClamped)
+
     const cfg = configRef.current
     const screenWristW = _I2.distanceTo(_P2)
     const rawScale = screenWristW * (cfg.arScale || 1.5)
@@ -428,12 +435,12 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     )
 
     obj.position.copy(_midMcp)
-    obj.rotation.set(0, 0, smoothAngle)
+    // XYZ Euler: X applied first (pitch toward/away camera), then Z (forearm angle).
+    obj.rotation.set(smoothPitch, 0, smoothAngle)
     obj.scale.setScalar(smoothScale)
     const model = obj.children[0]
     if (model) {
-      model.rotation.set(0, 0, 0)
-      model.rotation.z = smoothRoll
+      model.rotation.set(0, 0, smoothRoll)
     }
     obj.visible = true
   }
