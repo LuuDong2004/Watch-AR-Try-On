@@ -3,7 +3,7 @@ import * as deepar from 'deepar'
 
 const LICENSE_KEY = import.meta.env.VITE_DEEPAR_LICENSE_KEY
 const DEFAULT_EFFECT_URL =
-  import.meta.env.VITE_DEEPAR_EFFECT_URL || 'https://cdn.jsdelivr.net/npm/deepar/effects/wrist_watch'
+  import.meta.env.VITE_DEEPAR_EFFECT_URL || '/effects/chronograph-white.deepar'
 
 export default function ARTryOn({
   effectUrl = DEFAULT_EFFECT_URL,
@@ -33,7 +33,7 @@ export default function ARTryOn({
         const deepAR = await deepar.initialize({
           licenseKey: LICENSE_KEY,
           previewElement: containerRef.current,
-          effect: 'https://cdn.jsdelivr.net/npm/deepar/effects/wrist_watch',
+          effect: effectUrl,
           additionalOptions: {
             cameraConfig: { facingMode: 'environment' }
           }
@@ -178,7 +178,7 @@ function formatError(err, effectUrl) {
     return 'License DeepAR không hợp lệ hoặc không khớp domain.\n' + raw
   }
   if (/effect|404|fetch/i.test(raw)) {
-    return `Không tải được file effect:\n${effectUrl}\n\nHãy tạo file .deepar theo SETUP_DEEPAR.md rồi đặt vào public/effects/.`
+    return `Không tải được file effect:\n${effectUrl}\n\nĐảm bảo file .deepar đã được upload (xem SETUP_DEEPAR.md).`
   }
   if (/camera|permission/i.test(raw)) {
     return 'Bạn cần cấp quyền truy cập camera trong cài đặt trình duyệt.'
