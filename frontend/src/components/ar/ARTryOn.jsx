@@ -34,7 +34,10 @@ function detectMobile() {
 
 const WRIST = 0
 const INDEX_MCP = 5
+const MIDDLE_MCP = 9
 const PINKY_MCP = 17
+
+const SMOOTH = 0.35
 
 const FOV_DEG = 45
 const CAMERA_Z = 5
@@ -144,6 +147,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
 
             model.rotation.x = cfg.arRotationX || 0
             model.rotation.y = cfg.arRotationY || 0
+            model.rotation.z = cfg.arRotationOffset || 0
 
             const wrapper = new THREE.Group()
             wrapper.add(model)
@@ -189,48 +193,67 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
     ctx.restore()
 
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+    const obj = watchModelRef.current
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0 && obj) {
       setHandDetected(true)
       const landmarks = results.multiHandLandmarks[0]
 
-      const wrist = landmarks[WRIST]
-      const indexMCP = landmarks[INDEX_MCP]
-      const pinkyMCP = landmarks[PINKY_MCP]
+      const aspect = canvas.width / canvas.height || 1
+      const halfW = FRUST_HALF_H * aspect
+      const halfH = FRUST_HALF_H
 
-      const wristWidth = Math.sqrt(
-        Math.pow(indexMCP.x - pinkyMCP.x, 2) +
-        Math.pow(indexMCP.y - pinkyMCP.y, 2)
+      const toWorld = (lm) => new THREE.Vector3(
+        ((mirrored ? 1 - lm.x : lm.x) * 2 - 1) * halfW,
+        -(lm.y * 2 - 1) * halfH,
+        -lm.z * halfW
       )
 
-      const aspect = canvas.width / canvas.height || 1
-      const nx = mirrored ? 1 - wrist.x : wrist.x
-      const x = (nx * 2 - 1) * FRUST_HALF_H * aspect
-      const y = -(wrist.y * 2 - 1) * FRUST_HALF_H
-      const z = -wrist.z * 3
+      const W = toWorld(landmarks[WRIST])
+      const M = toWorld(landmarks[MIDDLE_MCP])
+      const I = toWorld(landmarks[INDEX_MCP])
+      const P = toWorld(landmarks[PINKY_MCP])
+
+      // Wrist coordinate frame from 4 landmarks:
+      //   yAxis = along hand (wrist → middle MCP)
+      //   xAxis = across palm (pinky → index, made orthogonal)
+      //   zAxis = palm normal
+      const yAxis = new THREE.Vector3().subVectors(M, W).normalize()
+      let xAxis = new THREE.Vector3().subVectors(I, P).normalize()
+      const dotXY = xAxis.dot(yAxis)
+      xAxis.addScaledVector(yAxis, -dotXY).normalize()
+      let zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize()
+
+      // Always orient watch face toward camera (flip frame if palm normal points away)
+      if (zAxis.z < 0) {
+        zAxis.negate()
+        xAxis.negate()
+      }
+
+      const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis)
+      const targetQuat = new THREE.Quaternion().setFromRotationMatrix(matrix)
 
       const cfg = configRef.current
 
-      if (watchModelRef.current) {
-        watchModelRef.current.position.set(
-          x + (cfg.arPositionX || 0),
-          y + (cfg.arPositionY || 0),
-          z
-        )
+      // Position: at wrist landmark, then nudge along forearm so watch sits on wrist
+      // (the MediaPipe wrist landmark is at the base of the palm, slightly off-wrist)
+      const wristToMiddleDist = W.distanceTo(M)
+      const targetPos = W.clone()
+        .addScaledVector(yAxis, wristToMiddleDist * 0.15 + (cfg.arPositionY || 0))
+        .addScaledVector(xAxis, cfg.arPositionX || 0)
 
-        const angle = Math.atan2(
-          indexMCP.y - pinkyMCP.y,
-          mirrored ? pinkyMCP.x - indexMCP.x : indexMCP.x - pinkyMCP.x
-        )
-        watchModelRef.current.rotation.z = angle + (cfg.arRotationOffset || 0)
-        watchModelRef.current.rotation.x = -wrist.z * 0.6
+      // Scale from 3D wrist width (index↔pinky distance in world units)
+      const wristWidth3D = I.distanceTo(P)
+      const targetScale = Math.max(0.02, wristWidth3D * (cfg.arScale || 1.5))
 
-        const dynamicScale = Math.max(0.05, wristWidth * (cfg.arScale || 2.5))
-        watchModelRef.current.scale.setScalar(dynamicScale)
-        watchModelRef.current.visible = true
-      }
+      // Temporal smoothing — lerp position, slerp rotation, lerp scale
+      obj.position.lerp(targetPos, SMOOTH)
+      obj.quaternion.slerp(targetQuat, SMOOTH)
+      const currentScale = obj.scale.x
+      obj.scale.setScalar(currentScale + (targetScale - currentScale) * SMOOTH)
+      obj.visible = true
     } else {
       setHandDetected(false)
-      if (watchModelRef.current) watchModelRef.current.visible = false
+      if (obj) obj.visible = false
     }
 
     if (rendererRef.current && sceneRef.current && cameraThreeRef.current) {

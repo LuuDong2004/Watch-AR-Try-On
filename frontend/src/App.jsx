@@ -25,10 +25,11 @@ const SAMPLE_WATCHES = [
     modelUrl: '/models/watch.glb',
     variant: 'Surgical White',
     arConfig: {
-      arScale: 2.5,
-      arPositionY: -0.05,
+      arScale: 1.5,
+      arPositionX: 0,
+      arPositionY: 0,
       arRotationOffset: 0,
-      arRotationX: -Math.PI / 2,
+      arRotationX: 0,
       arRotationY: 0,
       variant: 'Surgical White'
     }
