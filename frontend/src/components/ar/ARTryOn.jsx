@@ -99,15 +99,27 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.15
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55))
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5))
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.4)
-    dirLight1.position.set(5, 10, 5)
-    scene.add(dirLight1)
+    // Key light (warm, from upper-left — main illumination)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0)
+    keyLight.position.set(3, 8, 5)
+    scene.add(keyLight)
 
-    const dirLight2 = new THREE.DirectionalLight(0xffd9a0, 0.45)
-    dirLight2.position.set(-5, -3, -5)
-    scene.add(dirLight2)
+    // Fill light (warm tint, softer, from the right)
+    const fillLight = new THREE.DirectionalLight(0xffe8c0, 0.6)
+    fillLight.position.set(-4, 2, 3)
+    scene.add(fillLight)
+
+    // Rim light (cool, from behind — accents metal edges)
+    const rimLight = new THREE.DirectionalLight(0xadd8e6, 0.4)
+    rimLight.position.set(0, -3, -5)
+    scene.add(rimLight)
+
+    // Close point light (skin warmth reflection)
+    const pointLight = new THREE.PointLight(0xfff5e0, 1.0, 12)
+    pointLight.position.set(0, 2, 3)
+    scene.add(pointLight)
 
     const pmrem = new THREE.PMREMGenerator(renderer)
     scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
@@ -234,16 +246,19 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
 
       const cfg = configRef.current
 
-      // Position: at wrist landmark, then nudge along forearm so watch sits on wrist
-      // (the MediaPipe wrist landmark is at the base of the palm, slightly off-wrist)
-      const wristToMiddleDist = W.distanceTo(M)
-      const targetPos = W.clone()
-        .addScaledVector(yAxis, wristToMiddleDist * 0.15 + (cfg.arPositionY || 0))
+      // Position anchor: midpoint of INDEX_MCP and PINKY_MCP (stable, low jitter),
+      // then nudge BACK toward wrist landmark so watch sits on the wrist itself
+      const wristToMidMcpVec = new THREE.Vector3().subVectors(I, P).multiplyScalar(0.5).add(P)
+      const midMcp = wristToMidMcpVec
+      const wristToMcpDist = W.distanceTo(midMcp)
+      const targetPos = midMcp.clone()
+        .addScaledVector(yAxis, -wristToMcpDist * 0.7 + (cfg.arPositionY || 0))
         .addScaledVector(xAxis, cfg.arPositionX || 0)
 
-      // Scale from 3D wrist width (index↔pinky distance in world units)
+      // Scale from 3D wrist width — clamped to sensible range
       const wristWidth3D = I.distanceTo(P)
-      const targetScale = Math.max(0.02, wristWidth3D * (cfg.arScale || 1.5))
+      const rawScale = wristWidth3D * (cfg.arScale || 1.5)
+      const targetScale = Math.max(0.05, Math.min(1.5, rawScale))
 
       // Temporal smoothing — lerp position, slerp rotation, lerp scale
       obj.position.lerp(targetPos, SMOOTH)
