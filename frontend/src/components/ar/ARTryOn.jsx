@@ -89,7 +89,9 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     x: new KalmanFilter(KF_PRESETS.position.R, KF_PRESETS.position.Q),
     y: new KalmanFilter(KF_PRESETS.position.R, KF_PRESETS.position.Q),
     z: new KalmanFilter(KF_PRESETS.position.R, KF_PRESETS.position.Q),
-    scale: new KalmanFilter(KF_PRESETS.scale.R, KF_PRESETS.scale.Q)
+    scale: new KalmanFilter(KF_PRESETS.scale.R, KF_PRESETS.scale.Q),
+    angle: new KalmanFilter(KF_PRESETS.angle.R, KF_PRESETS.angle.Q),
+    tilt: new KalmanFilter(KF_PRESETS.angle.R, KF_PRESETS.angle.Q)
   })
 
   const [facingMode, setFacingMode] = useState(isMobile.current ? 'environment' : 'user')
@@ -390,24 +392,25 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     toWorld2D(kp2d[PINKY_MCP].x, kp2d[PINKY_MCP].y, _P2)
     toWorld2D(kp2d[MIDDLE_MCP].x, kp2d[MIDDLE_MCP].y, _M2)
 
-    // Wrist coordinate frame:
-    //   axisX = across wrist (PINKY_MCP → INDEX_MCP) — strap runs along this
-    //   axisZ = along forearm (WRIST → midpoint(INDEX_MCP, PINKY_MCP))
-    //   axisY = palm normal (cross product, points outward from wrist)
-    // Model face (= +Z) maps to axisZ which is along the forearm — but the
-    // outward face we want is axisY, so the model still needs no
-    // pre-rotation: the cross-product order axisX × axisZ produces the
-    // correct outward normal for the dial.
     _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
-    _xAxis.subVectors(_I2, _P2).normalize()
-    _zAxis.subVectors(_midMcp, _W2).normalize()
-    _yAxis.crossVectors(_xAxis, _zAxis).normalize()
-    _basis.makeBasis(_xAxis, _yAxis, _zAxis)
-    _targetQuat.setFromRotationMatrix(_basis)
 
-    // 2D forearm axes for position offsets
-    _yAxis2D.copy(_zAxis)
-    _xAxis2D.copy(_xAxis)
+    // Stable 2D angle from INDEX_MCP → PINKY_MCP direction.
+    // makeBasis with cross product gimbal-locks when the wrist tilts;
+    // a simple atan2 stays consistent and pairs with a clamped depth
+    // tilt for the forward/back lean.
+    const dx = kp2d[INDEX_MCP].x - kp2d[PINKY_MCP].x
+    const dy = kp2d[INDEX_MCP].y - kp2d[PINKY_MCP].y
+    const angle2D = Math.atan2(dy, dx)
+    const smoothAngle = kfRef.current.angle.filter(angle2D)
+
+    // 3D tilt from MIDDLE_MCP.z − WRIST.z (clamped ±0.5 rad)
+    const tiltRaw = ((kp2d[MIDDLE_MCP].z ?? 0) - (kp2d[WRIST].z ?? 0)) * 1.2
+    const tiltClamped = Math.max(-0.5, Math.min(0.5, tiltRaw))
+    const smoothTilt = kfRef.current.tilt.filter(tiltClamped)
+
+    // 2D axes for position offsets (forearm = wrist→mid, across = pinky→index)
+    _yAxis2D.subVectors(_midMcp, _W2).normalize()
+    _xAxis2D.subVectors(_I2, _P2).normalize()
 
     const cfg = configRef.current
     _targetPos.copy(_W2)
@@ -426,8 +429,14 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     )
 
     obj.position.set(sx, sy, sz)
-    obj.quaternion.slerp(_targetQuat, 0.25)
+    obj.rotation.set(0, 0, smoothAngle)
     obj.scale.setScalar(smoothScale)
+    const model = obj.children[0]
+    if (model) {
+      model.rotation.x = -Math.PI / 2
+      model.rotation.y = 0
+      model.rotation.z = smoothTilt
+    }
     obj.visible = true
   }
 
