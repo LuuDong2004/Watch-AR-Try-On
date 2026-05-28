@@ -23,6 +23,7 @@ function loadMediaPipeHands() {
 }
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { applyGltfVariant } from '../../utils/gltfVariants.js'
 
 const WRIST = 0
 const INDEX_MCP = 5
@@ -32,7 +33,9 @@ const DEFAULT_CONFIG = {
   arScale: 2.5,
   arPositionX: 0,
   arPositionY: 0,
-  arRotationOffset: 0
+  arRotationOffset: 0,
+  arRotationX: 0,
+  arRotationY: 0
 }
 
 export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose }) {
@@ -108,26 +111,43 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     return new Promise((resolve, reject) => {
       loader.load(
         watchModelUrl,
-        (gltf) => {
-          const model = gltf.scene
-
-          const box = new THREE.Box3().setFromObject(model)
-          const center = box.getCenter(new THREE.Vector3())
-          model.position.sub(center)
-
-          const wrapper = new THREE.Group()
-          wrapper.add(model)
-
-          wrapper.traverse((child) => {
-            if (child.isMesh && child.material) {
-              child.material.envMapIntensity = 1.4
+        async (gltf) => {
+          try {
+            const cfg = configRef.current
+            if (cfg.variant) {
+              setLoadingStep('Đang áp phối màu...')
+              await applyGltfVariant(gltf, cfg.variant)
             }
-          })
 
-          scene.add(wrapper)
-          watchModelRef.current = wrapper
-          watchModelRef.current.visible = false
-          resolve(wrapper)
+            const model = gltf.scene
+
+            const box = new THREE.Box3().setFromObject(model)
+            const center = box.getCenter(new THREE.Vector3())
+            const size = box.getSize(new THREE.Vector3())
+            const maxDim = Math.max(size.x, size.y, size.z) || 1
+
+            model.position.sub(center)
+            model.scale.multiplyScalar(1 / maxDim)
+
+            model.rotation.x = cfg.arRotationX || 0
+            model.rotation.y = cfg.arRotationY || 0
+
+            const wrapper = new THREE.Group()
+            wrapper.add(model)
+
+            wrapper.traverse((child) => {
+              if (child.isMesh && child.material) {
+                child.material.envMapIntensity = 1.4
+              }
+            })
+
+            scene.add(wrapper)
+            watchModelRef.current = wrapper
+            watchModelRef.current.visible = false
+            resolve(wrapper)
+          } catch (e) {
+            reject(e)
+          }
         },
         (progress) => {
           if (progress.total > 0) {

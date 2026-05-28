@@ -1,10 +1,14 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei'
+import { applyGltfVariant } from '../../utils/gltfVariants.js'
 
-function WatchModel({ url }) {
-  const { scene } = useGLTF(url)
-  return <primitive object={scene} />
+function WatchModel({ url, variant }) {
+  const gltf = useGLTF(url)
+  useEffect(() => {
+    if (variant) applyGltfVariant(gltf, variant).catch(() => {})
+  }, [gltf, variant])
+  return <primitive object={gltf.scene} />
 }
 
 function Loader() {
@@ -17,7 +21,7 @@ function Loader() {
   )
 }
 
-export default function Watch3DViewer({ modelUrl, height = 320 }) {
+export default function Watch3DViewer({ modelUrl, variant, height = 320 }) {
   const [hovered, setHovered] = useState(false)
   const [autoRotate, setAutoRotate] = useState(false)
 
@@ -31,7 +35,7 @@ export default function Watch3DViewer({ modelUrl, height = 320 }) {
       <Canvas camera={{ position: [0, 0, 3], fov: 45 }} dpr={[1, 2]}>
         <Suspense fallback={<Loader />}>
           <Stage environment="city" intensity={0.5}>
-            <WatchModel url={modelUrl} />
+            <WatchModel url={modelUrl} variant={variant} />
           </Stage>
         </Suspense>
         <OrbitControls

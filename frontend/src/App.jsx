@@ -5,22 +5,33 @@ const ARTryOn = lazy(() => import('./components/ar/ARTryOn.jsx'))
 
 const SAMPLE_WATCHES = [
   {
-    id: 'classic',
-    name: 'Classic Leather 40mm',
-    brand: 'Heritage',
-    price: 12_900_000,
-    originalPrice: 15_500_000,
+    id: 'chronograph-mudmaster',
+    name: 'Chronograph Surgical White 42mm',
+    brand: 'Aventus',
+    price: 48_900_000,
+    originalPrice: 56_000_000,
     description:
-      'Đồng hồ cổ điển vỏ thép không gỉ, dây da bò Italy, máy automatic Swiss. Mặt số sapphire chống xước.',
+      'Phiên bản giới hạn Surgical White — vỏ và dây ceramic trắng tinh khôi, mặt số ba kim đếm giờ phụ, sapphire phủ AR coating. Máy chronograph Thụy Sĩ Sellita SW500, hoàn thiện tay thủ công đẳng cấp haute horlogerie.',
     specs: {
-      'Đường kính mặt': '40 mm',
-      'Độ dày vỏ': '11.5 mm',
-      'Chất liệu vỏ': 'Thép không gỉ 316L',
-      'Chất liệu dây': 'Da bò Italy',
-      'Chống nước': '50 m'
+      'Đường kính mặt': '42 mm',
+      'Độ dày vỏ': '13.2 mm',
+      'Chất liệu vỏ': 'Ceramic trắng',
+      'Chất liệu dây': 'Ceramic + thép 316L',
+      'Chất liệu kính': 'Sapphire phủ AR',
+      'Bộ máy': 'Sellita SW500 Automatic',
+      'Chống nước': '200 m',
+      'Bảo hành': '5 năm chính hãng'
     },
     modelUrl: '/models/watch.glb',
-    arConfig: { arScale: 2.6, arPositionY: -0.05, arRotationOffset: 0 }
+    variant: 'Surgical White',
+    arConfig: {
+      arScale: 2.5,
+      arPositionY: -0.05,
+      arRotationOffset: 0,
+      arRotationX: -Math.PI / 2,
+      arRotationY: 0,
+      variant: 'Surgical White'
+    }
   }
 ]
 
@@ -64,7 +75,11 @@ export default function App() {
                 }
               >
                 <ErrorBoundary onError={() => setModelOk(false)}>
-                  <Watch3DViewer modelUrl={watch.modelUrl} height={380} />
+                  <Watch3DViewer
+                    modelUrl={watch.modelUrl}
+                    variant={watch.variant}
+                    height={380}
+                  />
                 </ErrorBoundary>
               </Suspense>
             ) : (

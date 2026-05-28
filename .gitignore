@@ -44,3 +44,6 @@ Thumbs.db
 
 # Archives in root
 /*.zip
+
+# Local backups
+*.bak
