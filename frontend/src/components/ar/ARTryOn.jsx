@@ -394,28 +394,32 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
 
     _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
 
-    // Forearm-direction angle from WRIST → MIDDLE_MCP — steadier than the
-    // INDEX↔PINKY axis. Model face (+Z) already points at the camera by
-    // default; only the strap needs to align with the arm, so Z is the
-    // only rotation we apply.
+    // Offset 18% from MCP midpoint back toward WRIST so the watch sits
+    // closer to the wrist crease instead of on the knuckles.
+    const offsetVec = new THREE.Vector3()
+      .subVectors(_W2, _midMcp)
+      .multiplyScalar(0.18)
+    _midMcp.add(offsetVec)
+
+    // Angle 1: in-plane rotation from forearm direction (WRIST → MIDDLE_MCP).
     const armDx = kp2d[WRIST].x - kp2d[MIDDLE_MCP].x
     const armDy = kp2d[WRIST].y - kp2d[MIDDLE_MCP].y
     const rawAngle = Math.atan2(armDy, armDx)
     const smoothAngle = kfRef.current.angle.filter(rawAngle)
 
-    // 2D axes for position offsets (forearm = wrist→mid, across = pinky→index)
-    _yAxis2D.subVectors(_midMcp, _W2).normalize()
-    _xAxis2D.subVectors(_I2, _P2).normalize()
+    // Angle 2: wrist roll (twist around forearm axis) from depth difference
+    // between INDEX_MCP and PINKY_MCP. Scaled by the 2D distance between
+    // those landmarks so the roll feels right at any hand size on screen.
+    const dxIP = kp2d[INDEX_MCP].x - kp2d[PINKY_MCP].x
+    const dyIP = kp2d[INDEX_MCP].y - kp2d[PINKY_MCP].y
+    const distXY = Math.sqrt(dxIP * dxIP + dyIP * dyIP)
+    const rawRoll = Math.atan2(
+      (kp2d[INDEX_MCP].z ?? 0) - (kp2d[PINKY_MCP].z ?? 0),
+      distXY * 0.5
+    )
+    const smoothRoll = kfRef.current.x.filter(rawRoll)
 
     const cfg = configRef.current
-    _targetPos.copy(_W2)
-      .addScaledVector(_yAxis2D, cfg.arPositionY || 0)
-      .addScaledVector(_xAxis2D, cfg.arPositionX || 0)
-
-    const sx = kfRef.current.x.filter(_targetPos.x)
-    const sy = kfRef.current.y.filter(_targetPos.y)
-    const sz = kfRef.current.z.filter(_targetPos.z)
-
     const screenWristW = _I2.distanceTo(_P2)
     const rawScale = screenWristW * (cfg.arScale || 1.5)
     const smoothScale = Math.max(
@@ -423,11 +427,14 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       Math.min(1.5, kfRef.current.scale.filter(rawScale))
     )
 
-    obj.position.set(sx, sy, sz)
+    obj.position.copy(_midMcp)
     obj.rotation.set(0, 0, smoothAngle)
     obj.scale.setScalar(smoothScale)
     const model = obj.children[0]
-    if (model) model.rotation.set(0, 0, 0)
+    if (model) {
+      model.rotation.set(0, 0, 0)
+      model.rotation.z = smoothRoll
+    }
     obj.visible = true
   }
 
