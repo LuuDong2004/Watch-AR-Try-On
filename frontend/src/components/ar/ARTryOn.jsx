@@ -3,7 +3,7 @@ import * as deepar from 'deepar'
 
 const LICENSE_KEY = import.meta.env.VITE_DEEPAR_LICENSE_KEY
 const DEFAULT_EFFECT_URL =
-  import.meta.env.VITE_DEEPAR_EFFECT_URL || '/effects/chronograph-white.deepar'
+  import.meta.env.VITE_DEEPAR_EFFECT_URL || 'https://cdn.jsdelivr.net/npm/deepar/effects/wrist_watch'
 
 export default function ARTryOn({
   effectUrl = DEFAULT_EFFECT_URL,
