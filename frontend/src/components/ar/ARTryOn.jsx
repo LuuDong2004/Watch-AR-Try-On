@@ -78,6 +78,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
   const inferenceRunningRef = useRef(false)
   const latestHandRef = useRef(null)        // last detection result
   const inputCanvasRef = useRef(null)        // small canvas for inference
+  const handDetectedRef = useRef(false)      // synced with state; used inside loop closures
   const mirroredRef = useRef(true)
   const configRef = useRef({ ...DEFAULT_CONFIG, ...(watchConfig || {}) })
 
@@ -268,10 +269,16 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         const hand = latestHandRef.current
         if (hand && obj && canvas) {
           applyHandToModel(hand, canvas, obj)
-          if (!handDetected) setHandDetected(true)
+          if (!handDetectedRef.current) {
+            handDetectedRef.current = true
+            setHandDetected(true)
+          }
         } else if (obj && obj.visible) {
           obj.visible = false
-          if (handDetected) setHandDetected(false)
+          if (handDetectedRef.current) {
+            handDetectedRef.current = false
+            setHandDetected(false)
+          }
         }
       }
 
@@ -290,7 +297,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       rafRef.current = requestAnimationFrame(render)
     }
     render()
-  }, [handDetected])
+  }, [])
 
   // Apply the latest detected hand to the 3D model — pure math, no React state
   const applyHandToModel = (hand, canvas, obj) => {
@@ -475,6 +482,8 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
 
         Object.values(kfRef.current).forEach((f) => f.reset(0))
         latestHandRef.current = null
+        handDetectedRef.current = false
+        setHandDetected(false)
 
         setIsMirrored(facingMode === 'user')
         setIsLoading(false)
