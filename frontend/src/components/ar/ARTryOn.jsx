@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
+import { applyGltfVariant } from '../../utils/gltfVariants.js'
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
 
@@ -21,13 +24,21 @@ function loadMediaPipeHands() {
 
   return window.__mediapipeHandsPromise
 }
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-import { applyGltfVariant } from '../../utils/gltfVariants.js'
+
+function detectMobile() {
+  if (typeof navigator === 'undefined') return false
+  if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return true
+  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) return true
+  return false
+}
 
 const WRIST = 0
 const INDEX_MCP = 5
 const PINKY_MCP = 17
+
+const FOV_DEG = 45
+const CAMERA_Z = 5
+const FRUST_HALF_H = CAMERA_Z * Math.tan((FOV_DEG * Math.PI) / 180 / 2)
 
 const DEFAULT_CONFIG = {
   arScale: 2.5,
@@ -39,6 +50,8 @@ const DEFAULT_CONFIG = {
 }
 
 export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose }) {
+  const isMobile = useRef(detectMobile())
+
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const glCanvasRef = useRef(null)
@@ -53,28 +66,32 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
   const mirroredRef = useRef(true)
   const configRef = useRef({ ...DEFAULT_CONFIG, ...(watchConfig || {}) })
 
+  const [facingMode, setFacingMode] = useState(isMobile.current ? 'environment' : 'user')
   const [isLoading, setIsLoading] = useState(true)
-  const [loadingStep, setLoadingStep] = useState('Khởi động camera...')
+  const [loadingStep, setLoadingStep] = useState('Khởi động AR...')
   const [errorMsg, setErrorMsg] = useState('')
   const [handDetected, setHandDetected] = useState(false)
-  const [isMirrored, setIsMirrored] = useState(true)
+  const [isMirrored, setIsMirrored] = useState(!isMobile.current)
+  const [isReady, setIsReady] = useState(false)
+  const [isSwitchingCam, setIsSwitchingCam] = useState(false)
 
   useEffect(() => { mirroredRef.current = isMirrored }, [isMirrored])
   useEffect(() => { configRef.current = { ...DEFAULT_CONFIG, ...(watchConfig || {}) } }, [watchConfig])
 
   const initThreeJS = useCallback((canvas) => {
     const scene = new THREE.Scene()
-    const camera = new THREE.PerspectiveCamera(45, canvas.width / canvas.height, 0.1, 1000)
-    camera.position.z = 5
+    const camera = new THREE.PerspectiveCamera(FOV_DEG, canvas.width / canvas.height || 1, 0.1, 1000)
+    camera.position.z = CAMERA_Z
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: true,
-      premultipliedAlpha: false
+      antialias: !isMobile.current,
+      premultipliedAlpha: false,
+      powerPreference: isMobile.current ? 'low-power' : 'high-performance'
     })
     renderer.setSize(canvas.width, canvas.height, false)
-    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile.current ? 1.5 : 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.15
@@ -88,10 +105,6 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     const dirLight2 = new THREE.DirectionalLight(0xffd9a0, 0.45)
     dirLight2.position.set(-5, -3, -5)
     scene.add(dirLight2)
-
-    const pointLight = new THREE.PointLight(0xffffff, 0.8, 12)
-    pointLight.position.set(0, 3, 3)
-    scene.add(pointLight)
 
     const pmrem = new THREE.PMREMGenerator(renderer)
     scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
@@ -189,9 +202,10 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         Math.pow(indexMCP.y - pinkyMCP.y, 2)
       )
 
+      const aspect = canvas.width / canvas.height || 1
       const nx = mirrored ? 1 - wrist.x : wrist.x
-      const x = (nx * 2 - 1) * 3.5
-      const y = -(wrist.y * 2 - 1) * 2.2
+      const x = (nx * 2 - 1) * FRUST_HALF_H * aspect
+      const y = -(wrist.y * 2 - 1) * FRUST_HALF_H
       const z = -wrist.z * 3
 
       const cfg = configRef.current
@@ -224,85 +238,58 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     }
   }, [])
 
-  const initMediaPipe = useCallback(async () => {
-    setLoadingStep('Đang xin quyền camera...')
-
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        facingMode: 'user'
-      },
-      audio: false
-    })
-    streamRef.current = stream
-
-    const video = videoRef.current
-    video.srcObject = stream
-    video.playsInline = true
-    video.muted = true
-    await video.play()
-
-    setLoadingStep('Đang tải MediaPipe Hands...')
-    const Hands = await loadMediaPipeHands()
-
-    setLoadingStep('Đang khởi động nhận diện tay...')
-
-    const hands = new Hands({
-      locateFile: (file) => `${MEDIAPIPE_CDN}/${file}`
-    })
-
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.7,
-      minTrackingConfidence: 0.6
-    })
-
-    hands.onResults(onHandResults)
-    handsRef.current = hands
-
-    runningRef.current = true
-    const loop = async () => {
-      if (!runningRef.current) return
-      if (handsRef.current && video.readyState >= 2) {
-        try {
-          await handsRef.current.send({ image: video })
-        } catch (e) {
-          // MediaPipe may throw briefly while still warming up; ignore transient errors
-        }
-      }
-      rafRef.current = requestAnimationFrame(loop)
-    }
-    loop()
-
-    setIsLoading(false)
-  }, [onHandResults])
-
   useEffect(() => {
     let mounted = true
+
     const setup = async () => {
       try {
         const canvas = canvasRef.current
         const glCanvas = glCanvasRef.current
         if (!canvas || !glCanvas) return
 
-        canvas.width = 1280
-        canvas.height = 720
-        glCanvas.width = 1280
-        glCanvas.height = 720
+        canvas.width = 640
+        canvas.height = 480
+        glCanvas.width = 640
+        glCanvas.height = 480
 
         initThreeJS(glCanvas)
         await loadWatchModel(sceneRef.current)
         if (!mounted) return
-        await initMediaPipe()
+
+        setLoadingStep('Đang tải MediaPipe Hands...')
+        const Hands = await loadMediaPipeHands()
+
+        const hands = new Hands({
+          locateFile: (file) => `${MEDIAPIPE_CDN}/${file}`
+        })
+        hands.setOptions({
+          maxNumHands: 1,
+          modelComplexity: isMobile.current ? 0 : 1,
+          minDetectionConfidence: 0.6,
+          minTrackingConfidence: 0.5
+        })
+        hands.onResults(onHandResults)
+        handsRef.current = hands
+
+        runningRef.current = true
+        const loop = async () => {
+          if (!runningRef.current) return
+          const video = videoRef.current
+          if (handsRef.current && video && video.readyState >= 2 && !video.paused) {
+            try {
+              await handsRef.current.send({ image: video })
+            } catch (e) {
+              // transient warmup errors — ignore
+            }
+          }
+          rafRef.current = requestAnimationFrame(loop)
+        }
+        loop()
+
+        if (mounted) setIsReady(true)
       } catch (err) {
         console.error('AR setup error:', err)
-        setErrorMsg(
-          err?.message?.includes('Permission')
-            ? 'Bạn cần cấp quyền truy cập camera để dùng tính năng AR.'
-            : 'Không khởi động được AR. Vui lòng kiểm tra camera và thử lại.'
-        )
+        setErrorMsg('Không khởi động được AR. Vui lòng tải lại trang và thử lại.')
         setIsLoading(false)
       }
     }
@@ -319,7 +306,90 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       try { handsRef.current?.close?.() } catch {}
       try { rendererRef.current?.dispose?.() } catch {}
     }
-  }, [initThreeJS, loadWatchModel, initMediaPipe])
+  }, [initThreeJS, loadWatchModel, onHandResults])
+
+  useEffect(() => {
+    if (!isReady) return
+    let cancelled = false
+
+    const startCamera = async () => {
+      try {
+        setIsSwitchingCam(true)
+        setLoadingStep(facingMode === 'user' ? 'Mở camera trước...' : 'Mở camera sau...')
+
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((t) => t.stop())
+          streamRef.current = null
+        }
+
+        const constraints = {
+          video: isMobile.current
+            ? {
+                facingMode: { ideal: facingMode },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            : {
+                facingMode: { ideal: facingMode },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              },
+          audio: false
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints)
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop())
+          return
+        }
+        streamRef.current = stream
+
+        const video = videoRef.current
+        video.srcObject = stream
+        video.playsInline = true
+        video.muted = true
+        await video.play()
+
+        const w = video.videoWidth || 640
+        const h = video.videoHeight || 480
+
+        if (canvasRef.current) {
+          canvasRef.current.width = w
+          canvasRef.current.height = h
+        }
+        if (glCanvasRef.current) {
+          glCanvasRef.current.width = w
+          glCanvasRef.current.height = h
+        }
+        if (cameraThreeRef.current && rendererRef.current) {
+          cameraThreeRef.current.aspect = w / h
+          cameraThreeRef.current.updateProjectionMatrix()
+          rendererRef.current.setSize(w, h, false)
+        }
+
+        setIsMirrored(facingMode === 'user')
+        setIsLoading(false)
+        setIsSwitchingCam(false)
+      } catch (err) {
+        console.error('Camera error:', err)
+        const isPerm = err?.name === 'NotAllowedError' || err?.message?.toLowerCase().includes('permission')
+        const isNoCam = err?.name === 'NotFoundError' || err?.name === 'OverconstrainedError'
+        setErrorMsg(
+          isPerm
+            ? 'Bạn cần cấp quyền truy cập camera trong cài đặt trình duyệt.'
+            : isNoCam
+              ? `Không tìm thấy camera ${facingMode === 'user' ? 'trước' : 'sau'}. Hãy thử đổi camera.`
+              : 'Không mở được camera. Vui lòng thử lại.'
+        )
+        setIsLoading(false)
+        setIsSwitchingCam(false)
+      }
+    }
+
+    startCamera()
+
+    return () => { cancelled = true }
+  }, [isReady, facingMode])
 
   const handleScreenshot = () => {
     const canvas = canvasRef.current
@@ -339,16 +409,24 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     link.click()
   }
 
+  const handleSwitchCamera = () => {
+    if (isSwitchingCam) return
+    setErrorMsg('')
+    setFacingMode((m) => (m === 'user' ? 'environment' : 'user'))
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/70 to-transparent">
-        <div>
-          <p className="text-white/70 text-xs">Đang thử AR</p>
-          <h2 className="text-white font-semibold text-lg font-display">{watchName || 'Thử Đồng Hồ AR'}</h2>
+        <div className="min-w-0 pr-3">
+          <p className="text-white/70 text-xs">Đang thử AR · {facingMode === 'user' ? 'Cam trước' : 'Cam sau'}</p>
+          <h2 className="text-white font-semibold text-base sm:text-lg font-display truncate">
+            {watchName || 'Thử Đồng Hồ AR'}
+          </h2>
         </div>
         <button
           onClick={onClose}
-          className="text-white bg-white/15 hover:bg-white/25 rounded-full w-10 h-10 flex items-center justify-center text-xl"
+          className="text-white bg-white/15 hover:bg-white/25 rounded-full w-10 h-10 flex-shrink-0 flex items-center justify-center text-xl"
           aria-label="Đóng"
         >
           ✕
@@ -368,7 +446,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         />
       </div>
 
-      {isLoading && (
+      {(isLoading || isSwitchingCam) && (
         <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/85">
           <div className="animate-spin w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full mb-4" />
           <p className="text-white text-center px-6">{loadingStep}</p>
@@ -376,22 +454,30 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       )}
 
       {!isLoading && errorMsg && (
-        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/85 px-6">
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/85 px-6 text-center">
           <p className="text-red-400 text-2xl mb-3">⚠️</p>
-          <p className="text-white text-center max-w-sm">{errorMsg}</p>
-          <button
-            onClick={onClose}
-            className="mt-6 bg-white text-black px-5 py-2 rounded-full font-semibold"
-          >
-            Quay lại
-          </button>
+          <p className="text-white max-w-sm mb-5">{errorMsg}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleSwitchCamera}
+              className="bg-white/15 text-white px-5 py-2 rounded-full font-semibold"
+            >
+              🔄 Đổi camera
+            </button>
+            <button
+              onClick={onClose}
+              className="bg-white text-black px-5 py-2 rounded-full font-semibold"
+            >
+              Quay lại
+            </button>
+          </div>
         </div>
       )}
 
-      {!isLoading && !errorMsg && (
-        <div className="absolute inset-x-0 bottom-28 flex justify-center pointer-events-none">
+      {!isLoading && !errorMsg && !isSwitchingCam && (
+        <div className="absolute inset-x-0 bottom-28 flex justify-center pointer-events-none px-4">
           <div
-            className={`px-5 py-2.5 rounded-full text-sm backdrop-blur transition-all ${
+            className={`px-4 py-2 rounded-full text-sm backdrop-blur transition-all text-center ${
               handDetected
                 ? 'bg-green-500/85 text-white'
                 : 'bg-black/60 text-white'
@@ -403,18 +489,25 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       )}
 
       {!isLoading && !errorMsg && (
-        <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-center gap-3 bg-gradient-to-t from-black/70 to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-t from-black/70 to-transparent">
+          <button
+            onClick={handleSwitchCamera}
+            disabled={isSwitchingCam}
+            className="bg-white/15 text-white px-3 sm:px-4 py-2.5 rounded-full backdrop-blur hover:bg-white/25 text-xs sm:text-sm disabled:opacity-50"
+          >
+            🔄 Đổi cam
+          </button>
           <button
             onClick={() => setIsMirrored((m) => !m)}
-            className="bg-white/15 text-white px-4 py-2.5 rounded-full backdrop-blur hover:bg-white/25 text-sm"
+            className="bg-white/15 text-white px-3 sm:px-4 py-2.5 rounded-full backdrop-blur hover:bg-white/25 text-xs sm:text-sm"
           >
-            🔄 Lật gương
+            🪞 Lật gương
           </button>
           <button
             onClick={handleScreenshot}
-            className="bg-yellow-400 text-black px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 flex items-center gap-2 shadow-lg"
+            className="bg-yellow-400 text-black px-5 sm:px-6 py-3 rounded-full font-semibold hover:bg-yellow-300 text-sm shadow-lg"
           >
-            📸 Chụp ảnh
+            📸 Chụp
           </button>
         </div>
       )}
