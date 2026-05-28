@@ -34,10 +34,15 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Env
+# Env (template .env.example is committed)
 .env
 .env.local
+.env.production
 .env.*.local
+!.env.example
+
+# Local-only prompt / scratch docs (may contain secrets)
+PROMPT_DEEPAR_INTEGRATION.md
 
 # Nested duplicate (legacy copy)
 /10Exe/
