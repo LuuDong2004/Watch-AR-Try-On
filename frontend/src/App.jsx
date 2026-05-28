@@ -26,9 +26,16 @@ const SAMPLE_WATCHES = [
     },
     modelUrl: '/models/watch.glb',
     variant: 'Surgical White',
-    // DeepAR effect file authored from watch.glb (see SETUP_DEEPAR.md).
-    // Falls back to VITE_DEEPAR_EFFECT_URL env var if undefined.
-    effectUrl: undefined
+    arConfig: {
+      arScale: 1.5,
+      arPositionX: 0,
+      arPositionY: 0,
+      // No pre-rotation — wrist-frame quaternion handles orientation entirely.
+      arRotationX: 0,
+      arRotationY: 0,
+      arRotationOffset: 0,
+      variant: 'Surgical White'
+    }
   }
 ]
 
@@ -198,7 +205,8 @@ export default function App() {
       {mode === 'ar' && (
         <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
           <ARTryOn
-            effectUrl={watch.effectUrl}
+            watchModelUrl={watch.modelUrl}
+            watchConfig={watch.arConfig}
             watchName={watch.name}
             onClose={() => setMode('none')}
           />
