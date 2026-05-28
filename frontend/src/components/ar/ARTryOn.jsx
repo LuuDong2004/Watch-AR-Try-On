@@ -390,21 +390,24 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     toWorld2D(kp2d[PINKY_MCP].x, kp2d[PINKY_MCP].y, _P2)
     toWorld2D(kp2d[MIDDLE_MCP].x, kp2d[MIDDLE_MCP].y, _M2)
 
-    // Wrist coordinate frame (user-specified):
-    //   axisX = along forearm (WRIST → midpoint(INDEX_MCP, PINKY_MCP))
-    //   axisZ = across wrist (PINKY_MCP → INDEX_MCP)
-    //   axisY = palm normal (cross product)
-    // Model face (= +Z) maps to axisZ → dial faces across the wrist.
+    // Wrist coordinate frame:
+    //   axisX = across wrist (PINKY_MCP → INDEX_MCP) — strap runs along this
+    //   axisZ = along forearm (WRIST → midpoint(INDEX_MCP, PINKY_MCP))
+    //   axisY = palm normal (cross product, points outward from wrist)
+    // Model face (= +Z) maps to axisZ which is along the forearm — but the
+    // outward face we want is axisY, so the model still needs no
+    // pre-rotation: the cross-product order axisX × axisZ produces the
+    // correct outward normal for the dial.
     _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
-    _xAxis.subVectors(_midMcp, _W2).normalize()
-    _zAxis.subVectors(_I2, _P2).normalize()
-    _yAxis.crossVectors(_zAxis, _xAxis).normalize()
+    _xAxis.subVectors(_I2, _P2).normalize()
+    _zAxis.subVectors(_midMcp, _W2).normalize()
+    _yAxis.crossVectors(_xAxis, _zAxis).normalize()
     _basis.makeBasis(_xAxis, _yAxis, _zAxis)
     _targetQuat.setFromRotationMatrix(_basis)
 
     // 2D forearm axes for position offsets
-    _yAxis2D.copy(_xAxis)
-    _xAxis2D.copy(_zAxis)
+    _yAxis2D.copy(_zAxis)
+    _xAxis2D.copy(_xAxis)
 
     const cfg = configRef.current
     _targetPos.copy(_W2)
