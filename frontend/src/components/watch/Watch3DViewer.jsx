@@ -23,7 +23,7 @@ function Loader() {
 
 export default function Watch3DViewer({ modelUrl, variant, height = 320 }) {
   const [hovered, setHovered] = useState(false)
-  const [autoRotate, setAutoRotate] = useState(false)
+  const [autoRotate, setAutoRotate] = useState(true)
 
   return (
     <div
@@ -34,7 +34,7 @@ export default function Watch3DViewer({ modelUrl, variant, height = 320 }) {
     >
       <Canvas camera={{ position: [0, 0, 3], fov: 45 }} dpr={[1, 2]}>
         <Suspense fallback={<Loader />}>
-          <Stage environment="city" intensity={0.5}>
+          <Stage environment="city" intensity={0.5} adjustCamera={1.35}>
             <WatchModel url={modelUrl} variant={variant} />
           </Stage>
         </Suspense>
