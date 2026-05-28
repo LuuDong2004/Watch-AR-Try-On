@@ -394,19 +394,14 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
 
     _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
 
-    // Stable 2D angle from INDEX_MCP → PINKY_MCP direction.
-    // makeBasis with cross product gimbal-locks when the wrist tilts;
-    // a simple atan2 stays consistent and pairs with a clamped depth
-    // tilt for the forward/back lean.
-    const dx = kp2d[INDEX_MCP].x - kp2d[PINKY_MCP].x
-    const dy = kp2d[INDEX_MCP].y - kp2d[PINKY_MCP].y
-    const angle2D = Math.atan2(dy, dx)
-    const smoothAngle = kfRef.current.angle.filter(angle2D)
-
-    // 3D tilt from MIDDLE_MCP.z − WRIST.z (clamped ±0.5 rad)
-    const tiltRaw = ((kp2d[MIDDLE_MCP].z ?? 0) - (kp2d[WRIST].z ?? 0)) * 1.2
-    const tiltClamped = Math.max(-0.5, Math.min(0.5, tiltRaw))
-    const smoothTilt = kfRef.current.tilt.filter(tiltClamped)
+    // Forearm-direction angle from WRIST → MIDDLE_MCP — steadier than the
+    // INDEX↔PINKY axis. Model face (+Z) already points at the camera by
+    // default; only the strap needs to align with the arm, so Z is the
+    // only rotation we apply.
+    const armDx = kp2d[WRIST].x - kp2d[MIDDLE_MCP].x
+    const armDy = kp2d[WRIST].y - kp2d[MIDDLE_MCP].y
+    const rawAngle = Math.atan2(armDy, armDx)
+    const smoothAngle = kfRef.current.angle.filter(rawAngle)
 
     // 2D axes for position offsets (forearm = wrist→mid, across = pinky→index)
     _yAxis2D.subVectors(_midMcp, _W2).normalize()
@@ -432,11 +427,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     obj.rotation.set(0, 0, smoothAngle)
     obj.scale.setScalar(smoothScale)
     const model = obj.children[0]
-    if (model) {
-      model.rotation.x = -Math.PI / 2
-      model.rotation.y = 0
-      model.rotation.z = smoothTilt
-    }
+    if (model) model.rotation.set(0, 0, 0)
     obj.visible = true
   }
 
