@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { applyGltfVariant } from '../../utils/gltfVariants.js'
+import { detectMobile } from '../../utils/device.js'
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240'
 
@@ -23,13 +24,6 @@ function loadMediaPipeHands() {
   })
 
   return window.__mediapipeHandsPromise
-}
-
-function detectMobile() {
-  if (typeof navigator === 'undefined') return false
-  if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return true
-  if (typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches) return true
-  return false
 }
 
 const WRIST = 0

@@ -1,5 +1,7 @@
-import { Component, lazy, Suspense, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useState } from 'react'
 import Watch3DViewer from './components/watch/Watch3DViewer.jsx'
+import QRTryOnModal from './components/ar/QRTryOnModal.jsx'
+import { detectMobile } from './utils/device.js'
 
 const ARTryOn = lazy(() => import('./components/ar/ARTryOn.jsx'))
 
@@ -45,9 +47,30 @@ function formatVND(n) {
 }
 
 export default function App() {
-  const [arOpen, setArOpen] = useState(false)
   const watch = SAMPLE_WATCHES[0]
   const [modelOk, setModelOk] = useState(true)
+  const [mode, setMode] = useState('none') // 'none' | 'qr' | 'ar'
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('ar') === '1') {
+      setMode('ar')
+      const url = new URL(window.location.href)
+      url.searchParams.delete('ar')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
+
+  const handleTryOn = () => {
+    setMode(detectMobile() ? 'ar' : 'qr')
+  }
+
+  const tryOnUrl = (() => {
+    if (typeof window === 'undefined') return ''
+    const url = new URL(window.location.href)
+    url.searchParams.set('ar', '1')
+    return url.toString()
+  })()
 
   return (
     <div className="min-h-full bg-[#FAFAFA] text-[#0D0D0D]">
@@ -113,11 +136,14 @@ export default function App() {
             </p>
 
             <button
-              onClick={() => setArOpen(true)}
+              onClick={handleTryOn}
               className="w-full md:w-auto bg-[#1A1A2E] text-white px-6 py-3.5 rounded-full font-semibold hover:bg-black transition flex items-center justify-center gap-2 shadow-sm"
             >
               ✨ Thử đồng hồ AR
             </button>
+            <p className="text-xs text-gray-400 mt-2">
+              💡 Trên máy tính sẽ hiển thị QR để mở trên điện thoại — cam sau cho kết quả tốt hơn webcam.
+            </p>
 
             <div className="mt-8 border-t border-gray-100 pt-6">
               <h3 className="font-semibold mb-3 text-sm">Thông số kỹ thuật</h3>
@@ -166,13 +192,22 @@ export default function App() {
         © 2026 Watch AR Studio · Demo MVP
       </footer>
 
-      {arOpen && (
+      {mode === 'qr' && (
+        <QRTryOnModal
+          tryOnUrl={tryOnUrl}
+          watchName={watch.name}
+          onClose={() => setMode('none')}
+          onTryHere={() => setMode('ar')}
+        />
+      )}
+
+      {mode === 'ar' && (
         <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
           <ARTryOn
             watchModelUrl={watch.modelUrl}
             watchConfig={watch.arConfig}
             watchName={watch.name}
-            onClose={() => setArOpen(false)}
+            onClose={() => setMode('none')}
           />
         </Suspense>
       )}
