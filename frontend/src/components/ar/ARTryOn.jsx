@@ -13,7 +13,6 @@ const WRIST = 0
 const INDEX_MCP = 5
 const MIDDLE_MCP = 9
 const PINKY_MCP = 17
-const INDEX_TIP = 8
 
 const FOV_DEG = 45
 const CAMERA_Z = 5
@@ -28,23 +27,35 @@ const DEFAULT_CONFIG = {
   arRotationY: 0
 }
 
+// Scratch THREE objects — reused every frame to avoid GC pressure
+const _W2 = new THREE.Vector3()
+const _I2 = new THREE.Vector3()
+const _P2 = new THREE.Vector3()
+const _M2 = new THREE.Vector3()
+const _W3 = new THREE.Vector3()
+const _I3 = new THREE.Vector3()
+const _P3 = new THREE.Vector3()
+const _M3 = new THREE.Vector3()
+const _yAxis = new THREE.Vector3()
+const _xAxis = new THREE.Vector3()
+const _zAxis = new THREE.Vector3()
+const _yAxis2D = new THREE.Vector3()
+const _xAxis2D = new THREE.Vector3()
+const _midMcp = new THREE.Vector3()
+const _targetPos = new THREE.Vector3()
+const _basis = new THREE.Matrix4()
+const _targetQuat = new THREE.Quaternion()
+const _Z_UP = new THREE.Vector3(0, 0, 1)
+
 let detectorPromise = null
 function loadDetector(modelType) {
   if (detectorPromise) return detectorPromise
   detectorPromise = (async () => {
-    try {
-      await tf.setBackend('webgl')
-    } catch {
-      // fall through — TF will pick a backend
-    }
+    try { await tf.setBackend('webgl') } catch {}
     await tf.ready()
     return handPoseDetection.createDetector(
       handPoseDetection.SupportedModels.MediaPipeHands,
-      {
-        runtime: 'tfjs',
-        modelType,
-        maxHands: 1
-      }
+      { runtime: 'tfjs', modelType, maxHands: 1 }
     )
   })()
   return detectorPromise
@@ -64,6 +75,9 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
   const streamRef = useRef(null)
   const rafRef = useRef(null)
   const runningRef = useRef(false)
+  const inferenceRunningRef = useRef(false)
+  const latestHandRef = useRef(null)        // last detection result
+  const inputCanvasRef = useRef(null)        // small canvas for inference
   const mirroredRef = useRef(true)
   const configRef = useRef({ ...DEFAULT_CONFIG, ...(watchConfig || {}) })
 
@@ -83,6 +97,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
   const [isReady, setIsReady] = useState(false)
   const [isSwitchingCam, setIsSwitchingCam] = useState(false)
   const [fps, setFps] = useState(0)
+  const [inferFps, setInferFps] = useState(0)
 
   useEffect(() => { mirroredRef.current = isMirrored }, [isMirrored])
   useEffect(() => { configRef.current = { ...DEFAULT_CONFIG, ...(watchConfig || {}) } }, [watchConfig])
@@ -100,7 +115,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       powerPreference: isMobile.current ? 'low-power' : 'high-performance'
     })
     renderer.setSize(canvas.width, canvas.height, false)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile.current ? 1.5 : 2))
+    renderer.setPixelRatio(isMobile.current ? 1 : Math.min(window.devicePixelRatio, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 1.2
@@ -119,12 +134,10 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     rimLight.position.set(0, -3, -5)
     scene.add(rimLight)
 
-    const pointLight = new THREE.PointLight(0xfff5e0, 1.0, 12)
-    pointLight.position.set(0, 2, 3)
-    scene.add(pointLight)
-
-    const pmrem = new THREE.PMREMGenerator(renderer)
-    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
+    if (!isMobile.current) {
+      const pmrem = new THREE.PMREMGenerator(renderer)
+      scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture
+    }
 
     sceneRef.current = scene
     rendererRef.current = renderer
@@ -162,7 +175,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
             wrapper.add(model)
             wrapper.traverse((child) => {
               if (child.isMesh && child.material) {
-                child.material.envMapIntensity = 1.6
+                child.material.envMapIntensity = 1.4
               }
             })
 
@@ -185,111 +198,179 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     })
   }, [watchModelUrl])
 
-  // Main detect + render frame
-  const renderFrame = useCallback(async () => {
-    const canvas = canvasRef.current
-    const glCanvas = glCanvasRef.current
-    const video = videoRef.current
-    if (!canvas || !glCanvas || !video || video.readyState < 2) return
+  // Inference loop — runs as fast as the model allows, INDEPENDENT of RAF
+  const startInferenceLoop = useCallback(() => {
+    if (inferenceRunningRef.current) return
+    inferenceRunningRef.current = true
 
-    const ctx = canvas.getContext('2d')
-    const mirrored = mirroredRef.current
+    let lastFpsAt = performance.now()
+    let frames = 0
 
-    ctx.save()
-    if (mirrored) {
-      ctx.translate(canvas.width, 0)
-      ctx.scale(-1, 1)
-    }
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-    ctx.restore()
-
-    let hands = []
-    try {
-      hands = await detectorRef.current.estimateHands(video, {
-        flipHorizontal: mirrored
-      })
-    } catch {}
-
-    const obj = watchModelRef.current
-    if (hands.length > 0 && obj) {
-      setHandDetected(true)
-      const hand = hands[0]
-      const kp2d = hand.keypoints       // image pixel coords
-      const kp3d = hand.keypoints3D     // metric 3D, wrist-centered (or null on some runtimes)
-
-      const aspect = canvas.width / canvas.height || 1
-      const halfW = FRUST_HALF_H * aspect
-      const halfH = FRUST_HALF_H
-
-      // ---- Screen-space anchor (uses 2D keypoints projected to a z=0 world plane) ----
-      const screenToWorld = (px, py) => new THREE.Vector3(
-        (px / canvas.width * 2 - 1) * halfW,
-        -(py / canvas.height * 2 - 1) * halfH,
-        0
-      )
-      const W2 = screenToWorld(kp2d[WRIST].x, kp2d[WRIST].y)
-      const I2 = screenToWorld(kp2d[INDEX_MCP].x, kp2d[INDEX_MCP].y)
-      const P2 = screenToWorld(kp2d[PINKY_MCP].x, kp2d[PINKY_MCP].y)
-      const M2 = screenToWorld(kp2d[MIDDLE_MCP].x, kp2d[MIDDLE_MCP].y)
-
-      // ---- 3D wrist coordinate frame ----
-      // Prefer keypoints3D (metric) when available; fall back to 2D
-      const useMetric = !!kp3d
-      const W3 = useMetric ? new THREE.Vector3(kp3d[WRIST].x, -kp3d[WRIST].y, -kp3d[WRIST].z) : W2.clone()
-      const I3 = useMetric ? new THREE.Vector3(kp3d[INDEX_MCP].x, -kp3d[INDEX_MCP].y, -kp3d[INDEX_MCP].z) : I2.clone()
-      const P3 = useMetric ? new THREE.Vector3(kp3d[PINKY_MCP].x, -kp3d[PINKY_MCP].y, -kp3d[PINKY_MCP].z) : P2.clone()
-      const M3 = useMetric ? new THREE.Vector3(kp3d[MIDDLE_MCP].x, -kp3d[MIDDLE_MCP].y, -kp3d[MIDDLE_MCP].z) : M2.clone()
-
-      const yAxis = new THREE.Vector3().subVectors(M3, W3).normalize()
-      let xAxis = new THREE.Vector3().subVectors(I3, P3).normalize()
-      const dotXY = xAxis.dot(yAxis)
-      xAxis.addScaledVector(yAxis, -dotXY).normalize()
-      let zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize()
-      if (zAxis.z < 0) {
-        zAxis.negate()
-        xAxis.negate()
+    const tick = async () => {
+      if (!runningRef.current) {
+        inferenceRunningRef.current = false
+        return
       }
-      const basis = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis)
-      const targetQuat = new THREE.Quaternion().setFromRotationMatrix(basis)
+      const detector = detectorRef.current
+      const video = videoRef.current
+      const inputCanvas = inputCanvasRef.current
 
-      // ---- Position: 2D anchor between MCP midpoint and wrist ----
-      const midMcp = new THREE.Vector3().addVectors(I2, P2).multiplyScalar(0.5)
-      const wrToMcpDist = W2.distanceTo(midMcp)
-      const yAxis2D = new THREE.Vector3().subVectors(midMcp, W2).normalize()
-      const xAxis2D = new THREE.Vector3().crossVectors(yAxis2D, new THREE.Vector3(0, 0, 1)).normalize()
+      if (detector && video && video.readyState >= 2 && inputCanvas) {
+        try {
+          // Downscale video to small canvas for faster inference
+          const ictx = inputCanvas.getContext('2d')
+          ictx.drawImage(video, 0, 0, inputCanvas.width, inputCanvas.height)
 
-      const cfg = configRef.current
-      const targetPos = midMcp.clone()
-        .addScaledVector(yAxis2D, -wrToMcpDist * 0.55 + (cfg.arPositionY || 0))
-        .addScaledVector(xAxis2D, cfg.arPositionX || 0)
+          const hands = await detector.estimateHands(inputCanvas, {
+            flipHorizontal: mirroredRef.current
+          })
+          latestHandRef.current = hands.length > 0 ? hands[0] : null
 
-      // ---- Kalman-smoothed position ----
-      const sx = kfRef.current.x.filter(targetPos.x)
-      const sy = kfRef.current.y.filter(targetPos.y)
-      const sz = kfRef.current.z.filter(targetPos.z)
-
-      // ---- Scale: derive from 2D screen distance for consistent on-screen size ----
-      const screenWristW = I2.distanceTo(P2)
-      const rawScale = screenWristW * (cfg.arScale || 1.5)
-      const smoothScale = Math.max(0.05, Math.min(1.5,
-        kfRef.current.scale.filter(rawScale)
-      ))
-
-      obj.position.set(sx, sy, sz)
-      obj.quaternion.slerp(targetQuat, 0.4)
-      obj.scale.setScalar(smoothScale)
-      obj.visible = true
-    } else {
-      setHandDetected(false)
-      if (obj) obj.visible = false
+          frames++
+          const now = performance.now()
+          if (now - lastFpsAt >= 1000) {
+            setInferFps(frames)
+            frames = 0
+            lastFpsAt = now
+          }
+        } catch (e) {
+          // ignore transient frames
+        }
+      }
+      // Yield to UI thread
+      setTimeout(tick, 0)
     }
-
-    if (rendererRef.current && sceneRef.current && cameraThreeRef.current) {
-      rendererRef.current.render(sceneRef.current, cameraThreeRef.current)
-    }
+    tick()
   }, [])
 
-  // Mount-once: init Three, load model, init TF detector, start RAF loop
+  // Render loop — pure RAF, fast, never blocks on inference
+  const startRenderLoop = useCallback(() => {
+    let lastFpsAt = performance.now()
+    let frames = 0
+
+    const render = () => {
+      if (!runningRef.current) return
+      const canvas = canvasRef.current
+      const glCanvas = glCanvasRef.current
+      const video = videoRef.current
+      const obj = watchModelRef.current
+
+      if (canvas && video && video.readyState >= 2) {
+        const ctx = canvas.getContext('2d')
+        ctx.save()
+        if (mirroredRef.current) {
+          ctx.translate(canvas.width, 0)
+          ctx.scale(-1, 1)
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        ctx.restore()
+
+        const hand = latestHandRef.current
+        if (hand && obj && canvas) {
+          applyHandToModel(hand, canvas, obj)
+          if (!handDetected) setHandDetected(true)
+        } else if (obj && obj.visible) {
+          obj.visible = false
+          if (handDetected) setHandDetected(false)
+        }
+      }
+
+      if (rendererRef.current && sceneRef.current && cameraThreeRef.current) {
+        rendererRef.current.render(sceneRef.current, cameraThreeRef.current)
+      }
+
+      frames++
+      const now = performance.now()
+      if (now - lastFpsAt >= 1000) {
+        setFps(frames)
+        frames = 0
+        lastFpsAt = now
+      }
+
+      rafRef.current = requestAnimationFrame(render)
+    }
+    render()
+  }, [handDetected])
+
+  // Apply the latest detected hand to the 3D model — pure math, no React state
+  const applyHandToModel = (hand, canvas, obj) => {
+    const kp2d = hand.keypoints
+    const kp3d = hand.keypoints3D
+    const inputW = inputCanvasRef.current?.width || canvas.width
+    const inputH = inputCanvasRef.current?.height || canvas.height
+
+    const aspect = canvas.width / canvas.height || 1
+    const halfW = FRUST_HALF_H * aspect
+    const halfH = FRUST_HALF_H
+    const mirrored = mirroredRef.current
+
+    const toWorld2D = (px, py, target) => {
+      const nx = px / inputW
+      const ny = py / inputH
+      target.set(
+        ((mirrored ? 1 - nx : nx) * 2 - 1) * halfW,
+        -(ny * 2 - 1) * halfH,
+        0
+      )
+      return target
+    }
+
+    toWorld2D(kp2d[WRIST].x, kp2d[WRIST].y, _W2)
+    toWorld2D(kp2d[INDEX_MCP].x, kp2d[INDEX_MCP].y, _I2)
+    toWorld2D(kp2d[PINKY_MCP].x, kp2d[PINKY_MCP].y, _P2)
+    toWorld2D(kp2d[MIDDLE_MCP].x, kp2d[MIDDLE_MCP].y, _M2)
+
+    // 3D wrist frame: prefer keypoints3D (metric) if present, fall back to 2D
+    if (kp3d) {
+      _W3.set(kp3d[WRIST].x, -kp3d[WRIST].y, -kp3d[WRIST].z)
+      _I3.set(kp3d[INDEX_MCP].x, -kp3d[INDEX_MCP].y, -kp3d[INDEX_MCP].z)
+      _P3.set(kp3d[PINKY_MCP].x, -kp3d[PINKY_MCP].y, -kp3d[PINKY_MCP].z)
+      _M3.set(kp3d[MIDDLE_MCP].x, -kp3d[MIDDLE_MCP].y, -kp3d[MIDDLE_MCP].z)
+    } else {
+      _W3.copy(_W2); _I3.copy(_I2); _P3.copy(_P2); _M3.copy(_M2)
+    }
+
+    _yAxis.subVectors(_M3, _W3).normalize()
+    _xAxis.subVectors(_I3, _P3).normalize()
+    const dotXY = _xAxis.dot(_yAxis)
+    _xAxis.addScaledVector(_yAxis, -dotXY).normalize()
+    _zAxis.crossVectors(_xAxis, _yAxis).normalize()
+    if (_zAxis.z < 0) {
+      _zAxis.negate()
+      _xAxis.negate()
+    }
+    _basis.makeBasis(_xAxis, _yAxis, _zAxis)
+    _targetQuat.setFromRotationMatrix(_basis)
+
+    // Position anchor: midpoint of INDEX/PINKY MCP, then pull back toward wrist
+    _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
+    const wrToMcpDist = _W2.distanceTo(_midMcp)
+    _yAxis2D.subVectors(_midMcp, _W2).normalize()
+    _xAxis2D.crossVectors(_yAxis2D, _Z_UP).normalize()
+
+    const cfg = configRef.current
+    _targetPos.copy(_midMcp)
+      .addScaledVector(_yAxis2D, -wrToMcpDist * 0.55 + (cfg.arPositionY || 0))
+      .addScaledVector(_xAxis2D, cfg.arPositionX || 0)
+
+    const sx = kfRef.current.x.filter(_targetPos.x)
+    const sy = kfRef.current.y.filter(_targetPos.y)
+    const sz = kfRef.current.z.filter(_targetPos.z)
+
+    const screenWristW = _I2.distanceTo(_P2)
+    const rawScale = screenWristW * (cfg.arScale || 1.5)
+    const smoothScale = Math.max(
+      0.05,
+      Math.min(1.5, kfRef.current.scale.filter(rawScale))
+    )
+
+    obj.position.set(sx, sy, sz)
+    obj.quaternion.slerp(_targetQuat, 0.45)
+    obj.scale.setScalar(smoothScale)
+    obj.visible = true
+  }
+
+  // Mount-once: init Three + model + detector + small input canvas
   useEffect(() => {
     let mounted = true
 
@@ -304,32 +385,21 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         glCanvas.width = 640
         glCanvas.height = 480
 
+        // Small offscreen canvas for inference (much faster on mobile)
+        const input = document.createElement('canvas')
+        input.width = isMobile.current ? 256 : 320
+        input.height = isMobile.current ? 192 : 240
+        inputCanvasRef.current = input
+
         initThreeJS(glCanvas)
         await loadWatchModel(sceneRef.current)
         if (!mounted) return
 
-        setLoadingStep('Đang khởi động AI nhận diện (WebGL)...')
-        detectorRef.current = await loadDetector(isMobile.current ? 'lite' : 'full')
+        setLoadingStep('Đang khởi động AI nhận diện...')
+        detectorRef.current = await loadDetector('lite')
 
         runningRef.current = true
-        let lastFpsAt = performance.now()
-        let frameCount = 0
-
-        const loop = async () => {
-          if (!runningRef.current) return
-          await renderFrame()
-
-          frameCount++
-          const now = performance.now()
-          if (now - lastFpsAt >= 1000) {
-            setFps(frameCount)
-            frameCount = 0
-            lastFpsAt = now
-          }
-
-          rafRef.current = requestAnimationFrame(loop)
-        }
-        loop()
+        startRenderLoop()
 
         if (mounted) setIsReady(true)
       } catch (err) {
@@ -344,13 +414,14 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     return () => {
       mounted = false
       runningRef.current = false
+      inferenceRunningRef.current = false
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
       try { streamRef.current?.getTracks?.().forEach((t) => t.stop()) } catch {}
       try { rendererRef.current?.dispose?.() } catch {}
     }
-  }, [initThreeJS, loadWatchModel, renderFrame])
+  }, [initThreeJS, loadWatchModel, startRenderLoop])
 
-  // Camera effect — runs after ready + on facingMode change
+  // Camera effect — start/restart on facingMode change
   useEffect(() => {
     if (!isReady) return
     let cancelled = false
@@ -368,8 +439,8 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: facingMode },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: isMobile.current ? 960 : 1280 },
+            height: { ideal: isMobile.current ? 540 : 720 }
           },
           audio: false
         })
@@ -402,12 +473,15 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
           rendererRef.current.setSize(w, h, false)
         }
 
-        // reset Kalman so the new view doesn't smooth from stale state
         Object.values(kfRef.current).forEach((f) => f.reset(0))
+        latestHandRef.current = null
 
         setIsMirrored(facingMode === 'user')
         setIsLoading(false)
         setIsSwitchingCam(false)
+
+        // Start the inference loop once camera is live (idempotent)
+        startInferenceLoop()
       } catch (err) {
         console.error('Camera error:', err)
         const isPerm = err?.name === 'NotAllowedError' || err?.message?.toLowerCase().includes('permission')
@@ -427,7 +501,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     startCamera()
 
     return () => { cancelled = true }
-  }, [isReady, facingMode])
+  }, [isReady, facingMode, startInferenceLoop])
 
   const handleScreenshot = () => {
     const canvas = canvasRef.current
@@ -458,7 +532,9 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
       <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/70 to-transparent">
         <div className="min-w-0 pr-3">
           <p className="text-white/70 text-xs">
-            AR · {facingMode === 'user' ? 'Cam trước' : 'Cam sau'}{fps > 0 ? ` · ${fps} fps` : ''}
+            AR · {facingMode === 'user' ? 'Cam trước' : 'Cam sau'}
+            {fps > 0 ? ` · ${fps} fps` : ''}
+            {inferFps > 0 ? ` · AI ${inferFps}` : ''}
           </p>
           <h2 className="text-white font-semibold text-base sm:text-lg font-display truncate">
             {watchName || 'Thử Đồng Hồ AR'}
