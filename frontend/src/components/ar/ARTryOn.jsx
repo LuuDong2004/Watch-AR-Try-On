@@ -47,6 +47,9 @@ const _basis = new THREE.Matrix4()
 const _targetQuat = new THREE.Quaternion()
 const _Z_UP = new THREE.Vector3(0, 0, 1)
 
+const DEBUG = typeof window !== 'undefined' &&
+  new URLSearchParams(window.location.search).get('debug') === '1'
+
 let detectorPromise = null
 function loadDetector(modelType) {
   if (detectorPromise) return detectorPromise
@@ -269,6 +272,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
         const hand = latestHandRef.current
         if (hand && obj && canvas) {
           applyHandToModel(hand, canvas, obj)
+          if (DEBUG) drawDebugOverlay(hand, canvas)
           if (!handDetectedRef.current) {
             handDetectedRef.current = true
             setHandDetected(true)
@@ -299,6 +303,58 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     render()
   }, [])
 
+  // DEBUG: paint MediaPipe landmarks back onto the bg canvas to verify mapping.
+  // Toggle with ?debug=1 in the URL.
+  const drawDebugOverlay = (hand, canvas) => {
+    const kp2d = hand.keypoints
+    const inputW = inputCanvasRef.current?.width || canvas.width
+    const inputH = inputCanvasRef.current?.height || canvas.height
+    const sx = canvas.width / inputW
+    const sy = canvas.height / inputH
+    const ctx = canvas.getContext('2d')
+
+    ctx.save()
+    kp2d.forEach((kp, i) => {
+      const x = kp.x * sx
+      const y = kp.y * sy
+      const r = i === WRIST ? 10 : (i === INDEX_MCP || i === PINKY_MCP || i === MIDDLE_MCP ? 7 : 4)
+      ctx.beginPath()
+      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.fillStyle =
+        i === WRIST ? '#ff3b30' :
+        i === INDEX_MCP ? '#ffcc00' :
+        i === PINKY_MCP ? '#0a84ff' :
+        i === MIDDLE_MCP ? '#ff9500' :
+        'rgba(0,255,255,0.7)'
+      ctx.fill()
+    })
+
+    // Wrist-axis line (index→pinky)
+    const iX = kp2d[INDEX_MCP].x * sx
+    const iY = kp2d[INDEX_MCP].y * sy
+    const pX = kp2d[PINKY_MCP].x * sx
+    const pY = kp2d[PINKY_MCP].y * sy
+    ctx.beginPath()
+    ctx.moveTo(iX, iY)
+    ctx.lineTo(pX, pY)
+    ctx.strokeStyle = '#34c759'
+    ctx.lineWidth = 3
+    ctx.stroke()
+
+    // Wrist→middle line (forearm proxy)
+    const wX = kp2d[WRIST].x * sx
+    const wY = kp2d[WRIST].y * sy
+    const mX = kp2d[MIDDLE_MCP].x * sx
+    const mY = kp2d[MIDDLE_MCP].y * sy
+    ctx.beginPath()
+    ctx.moveTo(wX, wY)
+    ctx.lineTo(mX, mY)
+    ctx.strokeStyle = '#af52de'
+    ctx.lineWidth = 3
+    ctx.stroke()
+    ctx.restore()
+  }
+
   // Apply the latest detected hand to the 3D model — pure math, no React state
   const applyHandToModel = (hand, canvas, obj) => {
     const kp2d = hand.keypoints
@@ -309,13 +365,14 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     const aspect = canvas.width / canvas.height || 1
     const halfW = FRUST_HALF_H * aspect
     const halfH = FRUST_HALF_H
-    const mirrored = mirroredRef.current
 
+    // No extra horizontal flip here — TF.js already flipped landmarks
+    // via flipHorizontal=mirrored when running estimateHands.
     const toWorld2D = (px, py, target) => {
       const nx = px / inputW
       const ny = py / inputH
       target.set(
-        ((mirrored ? 1 - nx : nx) * 2 - 1) * halfW,
+        (nx * 2 - 1) * halfW,
         -(ny * 2 - 1) * halfH,
         0
       )
