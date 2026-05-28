@@ -33,6 +33,7 @@ export default function ARTryOn({
         const deepAR = await deepar.initialize({
           licenseKey: LICENSE_KEY,
           previewElement: containerRef.current,
+          effect: 'https://cdn.jsdelivr.net/npm/deepar/effects/wrist_watch',
           additionalOptions: {
             cameraConfig: { facingMode: 'environment' }
           }
@@ -43,10 +44,6 @@ export default function ARTryOn({
           return
         }
         deepARRef.current = deepAR
-
-        setStep('Đang tải effect đồng hồ...')
-        // switchEffect throws if the file is missing or invalid
-        await deepAR.switchEffect(effectUrl)
 
         if (!cancelled) {
           setLoading(false)
