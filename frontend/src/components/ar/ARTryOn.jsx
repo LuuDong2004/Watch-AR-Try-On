@@ -398,7 +398,7 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     // closer to the wrist crease instead of on the knuckles.
     const offsetVec = new THREE.Vector3()
       .subVectors(_W2, _midMcp)
-      .multiplyScalar(0.35)
+      .multiplyScalar(1.0)
     _midMcp.add(offsetVec)
 
     // Angle 1: in-plane rotation from forearm direction (WRIST → MIDDLE_MCP).
