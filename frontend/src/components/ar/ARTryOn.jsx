@@ -164,13 +164,19 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
             }
 
             const model = gltf.scene
-            const box = new THREE.Box3().setFromObject(model)
-            const center = box.getCenter(new THREE.Vector3())
-            const size = box.getSize(new THREE.Vector3())
-            const maxDim = Math.max(size.x, size.y, size.z) || 1
 
-            model.position.sub(center)
+            // Normalize size first, THEN center.
+            // (If you center first then scale, the offset gets scaled too and the
+            //  model ends up off-pivot — when the wrapper rotates, it swings.)
+            const initialBox = new THREE.Box3().setFromObject(model)
+            const size = initialBox.getSize(new THREE.Vector3())
+            const maxDim = Math.max(size.x, size.y, size.z) || 1
             model.scale.multiplyScalar(1 / maxDim)
+
+            const scaledBox = new THREE.Box3().setFromObject(model)
+            const scaledCenter = scaledBox.getCenter(new THREE.Vector3())
+            model.position.sub(scaledCenter)
+
             model.rotation.x = cfg.arRotationX || 0
             model.rotation.y = cfg.arRotationY || 0
             model.rotation.z = cfg.arRotationOffset || 0
@@ -406,15 +412,15 @@ export default function ARTryOn({ watchModelUrl, watchConfig, watchName, onClose
     _basis.makeBasis(_xAxis, _yAxis, _zAxis)
     _targetQuat.setFromRotationMatrix(_basis)
 
-    // Position anchor: midpoint of INDEX/PINKY MCP, then pull back toward wrist
+    // Position anchor: WRIST landmark itself.
+    // arPositionY shifts along the forearm axis: + toward fingers, - toward elbow.
     _midMcp.addVectors(_I2, _P2).multiplyScalar(0.5)
-    const wrToMcpDist = _W2.distanceTo(_midMcp)
     _yAxis2D.subVectors(_midMcp, _W2).normalize()
     _xAxis2D.crossVectors(_yAxis2D, _Z_UP).normalize()
 
     const cfg = configRef.current
-    _targetPos.copy(_midMcp)
-      .addScaledVector(_yAxis2D, -wrToMcpDist * 0.55 + (cfg.arPositionY || 0))
+    _targetPos.copy(_W2)
+      .addScaledVector(_yAxis2D, cfg.arPositionY || 0)
       .addScaledVector(_xAxis2D, cfg.arPositionX || 0)
 
     const sx = kfRef.current.x.filter(_targetPos.x)
