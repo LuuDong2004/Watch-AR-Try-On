@@ -30,9 +30,15 @@ const SAMPLE_WATCHES = [
       arScale: 1.5,
       arPositionX: 0,
       arPositionY: 0,
-      arRotationOffset: 0,
+      // Khronos ChronographWatch natural axes: strap=+Z, width=+Y, dial=+X.
+      // Apply Y(-π/2) then Z(-π/2) (XYZ Euler) so that, after the wrist-frame
+      // quaternion sends model +Y→along-forearm and +Z→palm-normal:
+      //   - strap ends up along forearm
+      //   - dial faces toward camera
+      //   - width spans across wrist
       arRotationX: 0,
-      arRotationY: 0,
+      arRotationY: -Math.PI / 2,
+      arRotationOffset: -Math.PI / 2,
       variant: 'Surgical White'
     }
   }
