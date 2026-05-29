@@ -3,8 +3,7 @@ import Watch3DViewer from './components/watch/Watch3DViewer.jsx'
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx'
 import { detectMobile } from './utils/device.js'
 
-const ARTryOn    = lazy(() => import('./components/ar/ARTryOn.jsx'))
-const ARTryOnPNG = lazy(() => import('./components/ar/ARTryOnPNG.jsx'))
+const ARTryOn = lazy(() => import('./components/ar/ARTryOn.jsx'))
 
 const SAMPLE_WATCHES = [
   {
@@ -26,12 +25,8 @@ const SAMPLE_WATCHES = [
       'Bảo hành': '5 năm chính hãng'
     },
     modelUrl: '/models/watch.glb',
-    // DeepAR wrist effect (Thử AR 3D / mode 'ar')
+    // DeepAR wrist effect (Thử AR / mode 'ar')
     effectUrl: '/effects/chronograph-white.deepar',
-    // PNG variant assets — drop transparent PNGs at these paths to enable the PNG try-on.
-    // See public/images/test/README.md for guidance.
-    faceImageUrl:  '/images/test/watch-face.png',
-    strapImageUrl: '/images/test/watch-strap.png',
     variant: 'Surgical White',
     arConfig: {
       arScale: 1.5,
@@ -62,8 +57,7 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const ar = params.get('ar')
-    if (ar === '1')   setMode('ar')
-    if (ar === 'png') setMode('ar-png')
+    if (ar === '1') setMode('ar')
     if (ar) {
       const url = new URL(window.location.href)
       url.searchParams.delete('ar')
@@ -72,19 +66,13 @@ export default function App() {
   }, [])
 
   const handleTryOn = () => {
-    // Primary try-on uses the license-free PNG/TF.js engine so it always works.
-    // DeepAR (mode 'ar') stays reachable via ?ar=1 once a valid license is set.
-    setMode(detectMobile() ? 'ar-png' : 'qr')
-  }
-
-  const handleTryOnPNG = () => {
-    setMode('ar-png')
+    setMode(detectMobile() ? 'ar' : 'qr')
   }
 
   const tryOnUrl = (() => {
     if (typeof window === 'undefined') return ''
     const url = new URL(window.location.href)
-    url.searchParams.set('ar', 'png')
+    url.searchParams.set('ar', '1')
     return url.toString()
   })()
 
@@ -151,25 +139,14 @@ export default function App() {
               {watch.description}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex">
               <button
                 onClick={handleTryOn}
                 className="flex-1 bg-[#1A1A2E] text-white px-6 py-3.5 rounded-full font-semibold hover:bg-black transition flex items-center justify-center gap-2 shadow-sm"
               >
-                ✨ Thử AR (3D)
+                ✨ Thử AR
               </button>
-              {watch.faceImageUrl && watch.strapImageUrl && (
-                <button
-                  onClick={handleTryOnPNG}
-                  className="flex-1 bg-[#C9A84C] text-black px-6 py-3.5 rounded-full font-semibold hover:bg-[#b69636] transition flex items-center justify-center gap-2 shadow-sm"
-                >
-                  🖼️ Thử AR (PNG)
-                </button>
-              )}
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              💡 Bản 3D dùng GLB + variant. Bản PNG dùng 2 ảnh trong suốt + occluder cổ tay — chủ shop chỉ cần upload ảnh.
-            </p>
 
             <div className="mt-8 border-t border-gray-100 pt-6">
               <h3 className="font-semibold mb-3 text-sm">Thông số kỹ thuật</h3>
@@ -223,7 +200,7 @@ export default function App() {
           tryOnUrl={tryOnUrl}
           watchName={watch.name}
           onClose={() => setMode('none')}
-          onTryHere={() => setMode('ar-png')}
+          onTryHere={() => setMode('ar')}
         />
       )}
 
@@ -232,17 +209,6 @@ export default function App() {
           <ARTryOn
             watchName={watch.name}
             effectUrl={watch.effectUrl}
-            onClose={() => setMode('none')}
-          />
-        </Suspense>
-      )}
-
-      {mode === 'ar-png' && watch.faceImageUrl && watch.strapImageUrl && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
-          <ARTryOnPNG
-            faceImageUrl={watch.faceImageUrl}
-            strapImageUrl={watch.strapImageUrl}
-            watchName={watch.name}
             onClose={() => setMode('none')}
           />
         </Suspense>
