@@ -5,18 +5,36 @@ const LICENSE_KEY = import.meta.env.VITE_DEEPAR_LICENSE_KEY
 const DEFAULT_EFFECT =
   import.meta.env.VITE_DEEPAR_EFFECT_URL || '/effects/chronograph-white.deepar'
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} quá lâu (timeout ${ms / 1000}s)`)), ms)
+    ),
+  ])
+}
+
 // A missing .deepar file is served as index.html by the SPA catch-all rewrite
 // (both on Vercel and in Vite dev). Feeding that HTML to DeepAR.switchEffect
 // crashes the WASM ("RuntimeError: unreachable"). So verify the URL points to a
 // real binary effect — not an HTML fallback — before loading it.
+// Use HEAD so we DON'T download the whole (10+ MB) effect just to validate it —
+// a full no-store arrayBuffer() on a slow/dropped connection is what made the
+// loader hang "đang khởi động mãi".
 async function effectFileExists(url) {
   try {
-    const res = await fetch(url, { cache: 'no-store' })
+    const res = await withTimeout(
+      fetch(url, { method: 'HEAD', cache: 'no-store' }),
+      8000,
+      'Kiểm tra hiệu ứng'
+    )
     if (!res.ok) return false
     const ct = res.headers.get('content-type') || ''
     if (ct.includes('text/html')) return false
-    const buf = await res.arrayBuffer()
-    return buf.byteLength > 256 // a real effect is far bigger than an HTML shell
+    const len = Number(res.headers.get('content-length') || '0')
+    // A real effect is far larger than the HTML shell; if the server hides
+    // content-length, fall back to trusting a non-HTML response.
+    return len === 0 || len > 1024
   } catch {
     return false
   }
@@ -35,6 +53,7 @@ export default function ARTryOn({
     step: 'Đang khởi động DeepAR...',
     error: null,
     effectMissing: false,
+    effectLoading: false,
   })
 
   // ── Khởi tạo DeepAR ──────────────────────────────────────
@@ -84,23 +103,37 @@ export default function ARTryOn({
           return
         }
         deepARRef.current = deepAR
+        console.info('[DeepAR] init OK — camera live, loading effect…')
+
+        // Camera is already live → drop the full-screen spinner immediately so
+        // it can never look "treo đang khởi động mãi". The wrist effect now
+        // loads in the background with its own indicator + timeout.
+        setStatus({ loading: false, step: '', error: null, effectMissing: false, effectLoading: true })
 
         const hasEffect = await effectFileExists(effectUrl)
         if (cancelled) return
 
-        if (hasEffect) {
-          await deepAR.switchEffect(effectUrl)
-          if (cancelled) return
-          setStatus({ loading: false, step: '', error: null, effectMissing: false })
-        } else {
-          // Camera is live, but there is no .deepar effect to render yet.
+        if (!hasEffect) {
           console.warn('[DeepAR] Effect file missing or not a valid .deepar:', effectUrl)
-          setStatus({ loading: false, step: '', error: null, effectMissing: true })
+          setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
+          return
+        }
+
+        try {
+          console.info('[DeepAR] effect file OK — switchEffect…')
+          await withTimeout(deepAR.switchEffect(effectUrl), 30000, 'Tải hiệu ứng đồng hồ')
+          if (cancelled) return
+          console.info('[DeepAR] effect loaded ✓')
+          setStatus((s) => ({ ...s, effectLoading: false, effectMissing: false }))
+        } catch (effErr) {
+          if (cancelled) return
+          console.error('[DeepAR] switchEffect failed:', effErr)
+          setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
         }
       } catch (err) {
         console.error('[DeepAR]', err)
         if (!cancelled) {
-          setStatus({ loading: false, step: '', error: err.message, effectMissing: false })
+          setStatus({ loading: false, step: '', error: err.message, effectMissing: false, effectLoading: false })
         }
       }
     }
@@ -118,17 +151,32 @@ export default function ARTryOn({
   }, [])
 
   // ── Đổi effect khi prop thay đổi ─────────────────────────
+  // The INITIAL effect is loaded by the init effect above. Skip the first run
+  // here so we don't fire switchEffect twice (which races + reloads 14.5MB).
+  const firstEffectRun = useRef(true)
   useEffect(() => {
     if (!deepARRef.current || status.loading) return
+    if (firstEffectRun.current) {
+      firstEffectRun.current = false
+      return
+    }
     let cancelled = false
     ;(async () => {
+      setStatus((s) => ({ ...s, effectLoading: true }))
       const ok = await effectFileExists(effectUrl)
       if (cancelled || !deepARRef.current) return
-      if (ok) {
-        deepARRef.current.switchEffect(effectUrl).catch(console.error)
-        setStatus((s) => ({ ...s, effectMissing: false }))
-      } else {
-        setStatus((s) => ({ ...s, effectMissing: true }))
+      if (!ok) {
+        setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
+        return
+      }
+      try {
+        await withTimeout(deepARRef.current.switchEffect(effectUrl), 30000, 'Tải hiệu ứng đồng hồ')
+        if (cancelled) return
+        setStatus((s) => ({ ...s, effectLoading: false, effectMissing: false }))
+      } catch (e) {
+        if (cancelled) return
+        console.error('[DeepAR] switchEffect failed:', e)
+        setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
       }
     })()
     return () => { cancelled = true }
@@ -221,6 +269,16 @@ export default function ARTryOn({
         </div>
       )}
 
+      {/* Đang tải hiệu ứng — camera đã hiện, đồng hồ đang được nạp ở nền */}
+      {!status.loading && !status.error && status.effectLoading && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="flex items-center gap-2 bg-black/60 text-white/90 px-4 py-2 rounded-full text-xs backdrop-blur">
+            <span className="w-3 h-3 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin" />
+            Đang tải hiệu ứng đồng hồ…
+          </div>
+        </div>
+      )}
+
       {/* Error */}
       {status.error && (
         <div className="absolute inset-0 z-20 bg-black/85 flex items-center justify-center p-6">
@@ -239,7 +297,7 @@ export default function ARTryOn({
       )}
 
       {/* Hướng dẫn */}
-      {!status.loading && !status.error && !status.effectMissing && (
+      {!status.loading && !status.error && !status.effectMissing && !status.effectLoading && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="bg-black/50 text-white/80 px-4 py-2 rounded-full text-xs backdrop-blur">
             ✋ Đưa cổ tay vào khung hình
