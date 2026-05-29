@@ -45,19 +45,39 @@ export default function ARTryOn({
       try {
         setStatus({ loading: true, step: 'Đang khởi động...', error: null, effectMissing: false })
 
+        if (!LICENSE_KEY) {
+          throw new Error(
+            'Thiếu VITE_DEEPAR_LICENSE_KEY. Hãy đặt license key (khóa theo domain) ' +
+            'trong biến môi trường khi build, hoặc dùng chế độ "Thử AR (PNG)" không cần license.'
+          )
+        }
+
         // Initialize WITHOUT an effect — the camera/tracking still start.
         // The wrist effect is loaded separately only if its file is real.
-        const deepAR = await deepar.initialize({
-          licenseKey: LICENSE_KEY,
-          previewElement: containerRef.current,
+        // Race against a timeout: a bad/domain-mismatched license or failed
+        // WASM load can leave initialize() pending forever → spinner kẹt mãi.
+        const deepAR = await Promise.race([
+          deepar.initialize({
+            licenseKey: LICENSE_KEY,
+            previewElement: containerRef.current,
 
-          // Cam sau mặc định (trên mobile)
-          additionalOptions: {
-            cameraConfig: {
-              facingMode: 'environment',
+            // Cam sau mặc định (trên mobile)
+            additionalOptions: {
+              cameraConfig: {
+                facingMode: 'environment',
+              },
             },
-          },
-        })
+          }),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error(
+                'DeepAR khởi động quá lâu (timeout 12s). Thường do license key sai/không khớp domain. ' +
+                'Hãy thử chế độ "Thử AR (PNG)".'
+              )),
+              12000
+            )
+          ),
+        ])
 
         if (cancelled) {
           deepAR.shutdown()

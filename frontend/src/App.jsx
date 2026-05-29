@@ -72,7 +72,9 @@ export default function App() {
   }, [])
 
   const handleTryOn = () => {
-    setMode(detectMobile() ? 'ar' : 'qr')
+    // Primary try-on uses the license-free PNG/TF.js engine so it always works.
+    // DeepAR (mode 'ar') stays reachable via ?ar=1 once a valid license is set.
+    setMode(detectMobile() ? 'ar-png' : 'qr')
   }
 
   const handleTryOnPNG = () => {
@@ -82,7 +84,7 @@ export default function App() {
   const tryOnUrl = (() => {
     if (typeof window === 'undefined') return ''
     const url = new URL(window.location.href)
-    url.searchParams.set('ar', '1')
+    url.searchParams.set('ar', 'png')
     return url.toString()
   })()
 
@@ -221,7 +223,7 @@ export default function App() {
           tryOnUrl={tryOnUrl}
           watchName={watch.name}
           onClose={() => setMode('none')}
-          onTryHere={() => setMode('ar')}
+          onTryHere={() => setMode('ar-png')}
         />
       )}
 
