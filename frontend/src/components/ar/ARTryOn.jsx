@@ -80,6 +80,12 @@ export default function ARTryOn({
             licenseKey: LICENSE_KEY,
             previewElement: containerRef.current,
 
+            // Self-host the SDK assets (ML models + WASM) from our own origin.
+            // The default rootPath is the JsDelivr CDN, which is slow/blocked in
+            // some regions and makes switchEffect() hang downloading the wrist
+            // model. public/deepar is populated by scripts/copy-deepar.mjs.
+            rootPath: '/deepar',
+
             // Cam sau mặc định (trên mobile)
             additionalOptions: {
               cameraConfig: {
@@ -121,7 +127,13 @@ export default function ARTryOn({
 
         try {
           console.info('[DeepAR] effect file OK — switchEffect…')
-          await withTimeout(deepAR.switchEffect(effectUrl), 30000, 'Tải hiệu ứng đồng hồ')
+          await withTimeout(
+            deepAR.switchEffect(effectUrl, {
+              onProgress: (p) => console.info('[DeepAR] effect download', Math.round((p?.loaded ?? 0) / (p?.total ?? 1) * 100) + '%'),
+            }),
+            45000,
+            'Tải hiệu ứng đồng hồ'
+          )
           if (cancelled) return
           console.info('[DeepAR] effect loaded ✓')
           setStatus((s) => ({ ...s, effectLoading: false, effectMissing: false }))
