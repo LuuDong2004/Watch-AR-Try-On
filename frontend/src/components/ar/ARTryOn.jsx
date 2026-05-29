@@ -5,6 +5,23 @@ const LICENSE_KEY = import.meta.env.VITE_DEEPAR_LICENSE_KEY
 const DEFAULT_EFFECT =
   import.meta.env.VITE_DEEPAR_EFFECT_URL || '/effects/chronograph-white.deepar'
 
+// A missing .deepar file is served as index.html by the SPA catch-all rewrite
+// (both on Vercel and in Vite dev). Feeding that HTML to DeepAR.switchEffect
+// crashes the WASM ("RuntimeError: unreachable"). So verify the URL points to a
+// real binary effect — not an HTML fallback — before loading it.
+async function effectFileExists(url) {
+  try {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) return false
+    const ct = res.headers.get('content-type') || ''
+    if (ct.includes('text/html')) return false
+    const buf = await res.arrayBuffer()
+    return buf.byteLength > 256 // a real effect is far bigger than an HTML shell
+  } catch {
+    return false
+  }
+}
+
 export default function ARTryOn({
   watchName = 'Đồng hồ',
   effectUrl = DEFAULT_EFFECT,
@@ -17,6 +34,7 @@ export default function ARTryOn({
     loading: true,
     step: 'Đang khởi động DeepAR...',
     error: null,
+    effectMissing: false,
   })
 
   // ── Khởi tạo DeepAR ──────────────────────────────────────
@@ -25,12 +43,13 @@ export default function ARTryOn({
 
     const init = async () => {
       try {
-        setStatus({ loading: true, step: 'Đang khởi động...', error: null })
+        setStatus({ loading: true, step: 'Đang khởi động...', error: null, effectMissing: false })
 
+        // Initialize WITHOUT an effect — the camera/tracking still start.
+        // The wrist effect is loaded separately only if its file is real.
         const deepAR = await deepar.initialize({
           licenseKey: LICENSE_KEY,
           previewElement: containerRef.current,
-          effect: effectUrl,
 
           // Cam sau mặc định (trên mobile)
           additionalOptions: {
@@ -45,11 +64,23 @@ export default function ARTryOn({
           return
         }
         deepARRef.current = deepAR
-        setStatus({ loading: false, step: '', error: null })
+
+        const hasEffect = await effectFileExists(effectUrl)
+        if (cancelled) return
+
+        if (hasEffect) {
+          await deepAR.switchEffect(effectUrl)
+          if (cancelled) return
+          setStatus({ loading: false, step: '', error: null, effectMissing: false })
+        } else {
+          // Camera is live, but there is no .deepar effect to render yet.
+          console.warn('[DeepAR] Effect file missing or not a valid .deepar:', effectUrl)
+          setStatus({ loading: false, step: '', error: null, effectMissing: true })
+        }
       } catch (err) {
         console.error('[DeepAR]', err)
         if (!cancelled) {
-          setStatus({ loading: false, step: '', error: err.message })
+          setStatus({ loading: false, step: '', error: err.message, effectMissing: false })
         }
       }
     }
@@ -69,7 +100,18 @@ export default function ARTryOn({
   // ── Đổi effect khi prop thay đổi ─────────────────────────
   useEffect(() => {
     if (!deepARRef.current || status.loading) return
-    deepARRef.current.switchEffect(effectUrl).catch(console.error)
+    let cancelled = false
+    ;(async () => {
+      const ok = await effectFileExists(effectUrl)
+      if (cancelled || !deepARRef.current) return
+      if (ok) {
+        deepARRef.current.switchEffect(effectUrl).catch(console.error)
+        setStatus((s) => ({ ...s, effectMissing: false }))
+      } else {
+        setStatus((s) => ({ ...s, effectMissing: true }))
+      }
+    })()
+    return () => { cancelled = true }
   }, [effectUrl, status.loading])
 
   // ── Chụp ảnh ─────────────────────────────────────────────
@@ -177,10 +219,25 @@ export default function ARTryOn({
       )}
 
       {/* Hướng dẫn */}
-      {!status.loading && !status.error && (
+      {!status.loading && !status.error && !status.effectMissing && (
         <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="bg-black/50 text-white/80 px-4 py-2 rounded-full text-xs backdrop-blur">
             ✋ Đưa cổ tay vào khung hình
+          </div>
+        </div>
+      )}
+
+      {/* Effect chưa được tạo — camera vẫn chạy, chỉ là chưa có đồng hồ để render */}
+      {!status.loading && !status.error && status.effectMissing && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-10 px-4 w-full max-w-sm">
+          <div className="bg-amber-500/90 text-black px-4 py-3 rounded-2xl text-xs text-center backdrop-blur">
+            <p className="font-semibold mb-1">⚠️ Chưa có hiệu ứng DeepAR</p>
+            <p className="leading-relaxed">
+              Camera đã chạy nhưng chưa có file{' '}
+              <code className="bg-black/15 px-1 rounded">chronograph-white.deepar</code>.
+              Tạo file trong DeepAR Studio (PHẦN 1) rồi đặt vào{' '}
+              <code className="bg-black/15 px-1 rounded">public/effects/</code>.
+            </p>
           </div>
         </div>
       )}
