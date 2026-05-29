@@ -3,7 +3,10 @@ import Watch3DViewer from './components/watch/Watch3DViewer.jsx'
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx'
 import { detectMobile } from './utils/device.js'
 
-const ARTryOn = lazy(() => import('./components/ar/ARTryOn.jsx'))
+// "Thử AR" now uses the MediaPipe Hand Landmarker wrist engine ported from
+// 11Exe (real-time wrist tracking + occlusion). The old DeepAR component
+// (./components/ar/ARTryOn.jsx) is kept on disk but no longer wired in.
+const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'))
 
 const SAMPLE_WATCHES = [
   {
@@ -206,9 +209,9 @@ export default function App() {
 
       {mode === 'ar' && (
         <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
-          <ARTryOn
+          <ARWristTryOn
             watchName={watch.name}
-            effectUrl={watch.effectUrl}
+            watchId="chrono"
             onClose={() => setMode('none')}
           />
         </Suspense>
