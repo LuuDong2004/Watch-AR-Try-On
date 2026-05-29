@@ -25,6 +25,7 @@ const SAMPLE_WATCHES = [
       'Bảo hành': '5 năm chính hãng'
     },
     modelUrl: '/models/watch.glb',
+    effectUrl: '/effects/chronograph-white.deepar',
     variant: 'Surgical White',
     arConfig: {
       arScale: 1.5,
@@ -205,9 +206,8 @@ export default function App() {
       {mode === 'ar' && (
         <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
           <ARTryOn
-            watchModelUrl={watch.modelUrl}
-            watchConfig={watch.arConfig}
             watchName={watch.name}
+            effectUrl={watch.effectUrl}
             onClose={() => setMode('none')}
           />
         </Suspense>
