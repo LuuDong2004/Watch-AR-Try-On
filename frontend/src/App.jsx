@@ -3,7 +3,8 @@ import Watch3DViewer from './components/watch/Watch3DViewer.jsx'
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx'
 import { detectMobile } from './utils/device.js'
 
-const ARTryOn = lazy(() => import('./components/ar/ARTryOn.jsx'))
+const ARTryOn    = lazy(() => import('./components/ar/ARTryOn.jsx'))
+const ARTryOnPNG = lazy(() => import('./components/ar/ARTryOnPNG.jsx'))
 
 const SAMPLE_WATCHES = [
   {
@@ -25,7 +26,12 @@ const SAMPLE_WATCHES = [
       'Bảo hành': '5 năm chính hãng'
     },
     modelUrl: '/models/watch.glb',
+    // DeepAR wrist effect (Thử AR 3D / mode 'ar')
     effectUrl: '/effects/chronograph-white.deepar',
+    // PNG variant assets — drop transparent PNGs at these paths to enable the PNG try-on.
+    // See public/images/test/README.md for guidance.
+    faceImageUrl:  '/images/test/watch-face.png',
+    strapImageUrl: '/images/test/watch-strap.png',
     variant: 'Surgical White',
     arConfig: {
       arScale: 1.5,
@@ -51,12 +57,14 @@ function formatVND(n) {
 export default function App() {
   const watch = SAMPLE_WATCHES[0]
   const [modelOk, setModelOk] = useState(true)
-  const [mode, setMode] = useState('none') // 'none' | 'qr' | 'ar'
+  const [mode, setMode] = useState('none') // 'none' | 'qr' | 'ar' | 'ar-png'
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('ar') === '1') {
-      setMode('ar')
+    const ar = params.get('ar')
+    if (ar === '1')   setMode('ar')
+    if (ar === 'png') setMode('ar-png')
+    if (ar) {
       const url = new URL(window.location.href)
       url.searchParams.delete('ar')
       window.history.replaceState({}, '', url.toString())
@@ -65,6 +73,10 @@ export default function App() {
 
   const handleTryOn = () => {
     setMode(detectMobile() ? 'ar' : 'qr')
+  }
+
+  const handleTryOnPNG = () => {
+    setMode('ar-png')
   }
 
   const tryOnUrl = (() => {
@@ -137,14 +149,24 @@ export default function App() {
               {watch.description}
             </p>
 
-            <button
-              onClick={handleTryOn}
-              className="w-full md:w-auto bg-[#1A1A2E] text-white px-6 py-3.5 rounded-full font-semibold hover:bg-black transition flex items-center justify-center gap-2 shadow-sm"
-            >
-              ✨ Thử đồng hồ AR
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={handleTryOn}
+                className="flex-1 bg-[#1A1A2E] text-white px-6 py-3.5 rounded-full font-semibold hover:bg-black transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                ✨ Thử AR (3D)
+              </button>
+              {watch.faceImageUrl && watch.strapImageUrl && (
+                <button
+                  onClick={handleTryOnPNG}
+                  className="flex-1 bg-[#C9A84C] text-black px-6 py-3.5 rounded-full font-semibold hover:bg-[#b69636] transition flex items-center justify-center gap-2 shadow-sm"
+                >
+                  🖼️ Thử AR (PNG)
+                </button>
+              )}
+            </div>
             <p className="text-xs text-gray-400 mt-2">
-              💡 Trên máy tính sẽ hiển thị QR để mở trên điện thoại — cam sau cho kết quả tốt hơn webcam.
+              💡 Bản 3D dùng GLB + variant. Bản PNG dùng 2 ảnh trong suốt + occluder cổ tay — chủ shop chỉ cần upload ảnh.
             </p>
 
             <div className="mt-8 border-t border-gray-100 pt-6">
@@ -208,6 +230,17 @@ export default function App() {
           <ARTryOn
             watchName={watch.name}
             effectUrl={watch.effectUrl}
+            onClose={() => setMode('none')}
+          />
+        </Suspense>
+      )}
+
+      {mode === 'ar-png' && watch.faceImageUrl && watch.strapImageUrl && (
+        <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
+          <ARTryOnPNG
+            faceImageUrl={watch.faceImageUrl}
+            strapImageUrl={watch.strapImageUrl}
+            watchName={watch.name}
             onClose={() => setMode('none')}
           />
         </Suspense>
