@@ -55,12 +55,17 @@ export default function ARTryOn({
   onClose,
   onScreenshot,
 }) {
-  // Optional ?effect= override for diagnostics.
+  // Optional ?effect= override for diagnostics. Accepts:
+  //   - a sample key: ?effect=blur
+  //   - an absolute path/URL: ?effect=/effects/test-wrist.deepar
   const effectOverride =
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search).get('effect')
       : null
-  const activeEffect = SAMPLE_EFFECTS[effectOverride] || effectUrl
+  const activeEffect =
+    (effectOverride && (effectOverride.startsWith('/') || effectOverride.startsWith('http'))
+      ? effectOverride
+      : SAMPLE_EFFECTS[effectOverride]) || effectUrl
 
   const containerRef = useRef(null)
   const deepARRef = useRef(null)
