@@ -40,14 +40,31 @@ async function effectFileExists(url) {
   }
 }
 
+// Built-in DeepAR sample effects (copied to /deepar/effects by copy-deepar.mjs).
+// Use ?effect=blur etc. to verify DeepAR renders at all on a device, isolating
+// whether a problem is the device/SDK vs. our chronograph wrist effect.
+const SAMPLE_EFFECTS = {
+  blur: '/deepar/effects/background_blur.deepar',
+  aviators: '/deepar/effects/aviators',
+  lion: '/deepar/effects/lion',
+}
+
 export default function ARTryOn({
   watchName = 'Đồng hồ',
   effectUrl = DEFAULT_EFFECT,
   onClose,
   onScreenshot,
 }) {
+  // Optional ?effect= override for diagnostics.
+  const effectOverride =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('effect')
+      : null
+  const activeEffect = SAMPLE_EFFECTS[effectOverride] || effectUrl
+
   const containerRef = useRef(null)
   const deepARRef = useRef(null)
+  const facingRef = useRef('environment')
   const [status, setStatus] = useState({
     loading: true,
     step: 'Đang khởi động DeepAR...',
@@ -116,19 +133,19 @@ export default function ARTryOn({
         // loads in the background with its own indicator + timeout.
         setStatus({ loading: false, step: '', error: null, effectMissing: false, effectLoading: true })
 
-        const hasEffect = await effectFileExists(effectUrl)
+        const hasEffect = await effectFileExists(activeEffect)
         if (cancelled) return
 
         if (!hasEffect) {
-          console.warn('[DeepAR] Effect file missing or not a valid .deepar:', effectUrl)
+          console.warn('[DeepAR] Effect file missing or not a valid .deepar:', activeEffect)
           setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
           return
         }
 
         try {
-          console.info('[DeepAR] effect file OK — switchEffect…')
+          console.info('[DeepAR] effect file OK — switchEffect…', activeEffect)
           await withTimeout(
-            deepAR.switchEffect(effectUrl, {
+            deepAR.switchEffect(activeEffect, {
               onProgress: (p) => console.info('[DeepAR] effect download', Math.round((p?.loaded ?? 0) / (p?.total ?? 1) * 100) + '%'),
             }),
             45000,
@@ -175,14 +192,14 @@ export default function ARTryOn({
     let cancelled = false
     ;(async () => {
       setStatus((s) => ({ ...s, effectLoading: true }))
-      const ok = await effectFileExists(effectUrl)
+      const ok = await effectFileExists(activeEffect)
       if (cancelled || !deepARRef.current) return
       if (!ok) {
         setStatus((s) => ({ ...s, effectLoading: false, effectMissing: true }))
         return
       }
       try {
-        await withTimeout(deepARRef.current.switchEffect(effectUrl), 30000, 'Tải hiệu ứng đồng hồ')
+        await withTimeout(deepARRef.current.switchEffect(activeEffect), 30000, 'Tải hiệu ứng đồng hồ')
         if (cancelled) return
         setStatus((s) => ({ ...s, effectLoading: false, effectMissing: false }))
       } catch (e) {
@@ -192,7 +209,7 @@ export default function ARTryOn({
       }
     })()
     return () => { cancelled = true }
-  }, [effectUrl, status.loading])
+  }, [activeEffect, status.loading])
 
   // ── Chụp ảnh ─────────────────────────────────────────────
   const handleCapture = async () => {
@@ -210,8 +227,23 @@ export default function ARTryOn({
   }
 
   // ── Đổi cam ──────────────────────────────────────────────
+  // DeepAR has no switchCamera(); restart the camera with the other facingMode.
   const handleSwitchCamera = async () => {
-    await deepARRef.current?.switchCamera().catch(console.error)
+    const dr = deepARRef.current
+    if (!dr) return
+    const next = facingRef.current === 'environment' ? 'user' : 'environment'
+    facingRef.current = next
+    try {
+      await dr.startCamera({
+        mirror: next === 'user',
+        mediaStreamConstraints: {
+          video: { facingMode: { ideal: next } },
+          audio: false,
+        },
+      })
+    } catch (e) {
+      console.error('[DeepAR] switch camera failed:', e)
+    }
   }
 
   // ── Quay video ───────────────────────────────────────────
