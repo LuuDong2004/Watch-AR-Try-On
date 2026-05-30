@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandLogo from '../ui/BrandLogo';
 
 interface UserFooterProps {
   onChangePage: (page: string) => void;
@@ -39,14 +40,8 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
       <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2.5 mb-4">
-            <span className="h-9 w-9 rounded-xl bg-white text-[#16162A] flex items-center justify-center font-display text-lg font-bold">
-              A
-            </span>
-            <span className="leading-none">
-              <span className="block font-display text-lg font-bold">Aventus</span>
-              <span className="block text-[9px] uppercase tracking-[0.25em] text-[#B8924A] font-bold">AR Watch Studio</span>
-            </span>
+          <div className="mb-4">
+            <BrandLogo surface="dark" size="md" />
           </div>
           <p className="text-gray-400 leading-relaxed mb-4">
             Sàn trưng bày đồng hồ cao cấp kết hợp công nghệ thử đeo AR thời gian thực — đeo thử trước, liên hệ shop sau.
@@ -103,7 +98,7 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
       {/* Bottom bar */}
       <div className="border-t border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <span>© 2026 Aventus AR Watch Studio · Sàn Trưng Bày & Đeo Thử Đồng Hồ Cao Cấp</span>
+          <span>© 2026 TrueWrist AR Watch Studio · Sàn Trưng Bày & Đeo Thử Đồng Hồ Cao Cấp</span>
           <div className="flex gap-5">
             <a href="#" className="hover:text-white transition">Điều khoản</a>
             <a href="#" className="hover:text-white transition">Bảo mật</a>

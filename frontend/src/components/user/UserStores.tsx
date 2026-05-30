@@ -141,7 +141,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate }: User
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Marketplace đồng hồ chính hãng</span>
-          <h1 className="font-display text-2xl md:text-4xl font-bold mb-3">Cửa hàng trên Aventus</h1>
+          <h1 className="font-display text-2xl md:text-4xl font-bold mb-3">Cửa hàng trên TrueWrist</h1>
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
             Chọn một shop để xem toàn bộ sản phẩm đang đăng bán, thử AR và chủ động liên hệ trực tiếp với shop.
           </p>

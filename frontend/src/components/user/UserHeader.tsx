@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BrandLogo from '../ui/BrandLogo';
 
 interface UserHeaderProps {
   currentPage: string;
@@ -26,14 +27,8 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
     <header className="border-b border-[#e5e0d8] bg-[#F6F4EF]/95 backdrop-blur sticky top-0 z-30 font-sans">
       <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center justify-between gap-4">
         {/* Brand Logo */}
-        <button onClick={() => go('home')} className="flex items-center gap-2.5 text-left group shrink-0">
-          <span className="h-9 w-9 rounded-xl bg-[#16162A] text-[#B8924A] flex items-center justify-center font-display text-lg font-bold shadow-sm group-hover:scale-105 transition">
-            A
-          </span>
-          <span className="leading-none">
-            <span className="block font-display text-lg font-bold tracking-tight text-[#16162A]">Aventus</span>
-            <span className="block text-[9px] uppercase tracking-[0.25em] text-[#B8924A] font-bold">AR Watch Studio</span>
-          </span>
+        <button onClick={() => go('home')} className="text-left group shrink-0">
+          <BrandLogo surface="light" size="md" className="group-hover:scale-[1.03] transition" />
         </button>
 
         {/* Desktop Navigation */}

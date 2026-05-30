@@ -1,4 +1,5 @@
 import React from 'react';
+import BrandLogo from '../ui/BrandLogo';
 
 interface AdminSidebarProps {
   currentPage: string;
@@ -20,13 +21,7 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
     <aside className="w-64 bg-[#0a0a14] text-[#F6F4EF] flex flex-col h-screen sticky top-0 font-sans flex-shrink-0">
       {/* Brand */}
       <div className="px-5 pt-6 pb-5">
-        <div className="flex items-center gap-2.5">
-          <span className="h-9 w-9 rounded-xl bg-[#B8924A] text-[#0a0a14] flex items-center justify-center font-display text-lg font-bold">A</span>
-          <div className="leading-none">
-            <p className="font-display font-bold text-sm">Aventus Admin</p>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[#B8924A] font-bold mt-0.5">Quản trị toàn sàn</p>
-          </div>
-        </div>
+        <BrandLogo surface="dark" size="sm" tagline="Admin · Quản trị toàn sàn" />
       </div>
 
       {/* Navigation */}

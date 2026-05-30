@@ -109,7 +109,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       {/* ===================== VALUE PROPS ===================== */}
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Vì sao chọn Aventus</span>
+          <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Vì sao chọn TrueWrist</span>
           <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Mua đồng hồ cao cấp, tự tin hơn bao giờ hết</h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">

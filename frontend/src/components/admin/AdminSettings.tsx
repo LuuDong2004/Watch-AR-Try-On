@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export default function AdminSettings() {
-  const [platformName, setPlatformName] = useState('Aventus AR Watch Studio');
+  const [platformName, setPlatformName] = useState('TrueWrist AR Watch Studio');
   const [currency, setCurrency] = useState('VND');
   const [maxUploadSize, setMaxUploadSize] = useState(50); // MB
 

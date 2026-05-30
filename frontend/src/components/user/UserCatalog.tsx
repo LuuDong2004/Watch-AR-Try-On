@@ -69,7 +69,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
       <section className="relative bg-[#16162A] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#B8924A]/20">
         <div className="max-w-3xl mx-auto">
           <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-3 block animate-fade-in">
-            Aventus Haute Horlogerie & AR Studio
+            TrueWrist Haute Horlogerie & AR Studio
           </span>
           <h1 className="font-display text-3xl md:text-5xl font-semibold leading-tight mb-4 animate-fade-in text-[#F6F4EF]">
             Đeo thử đồng hồ xa xỉ ngay trên cổ tay của bạn

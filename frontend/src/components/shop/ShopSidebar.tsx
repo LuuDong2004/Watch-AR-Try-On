@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getMyShops, OWNERS, CURRENT_OWNER_ID } from '../../utils/mockData';
+import BrandLogo from '../ui/BrandLogo';
 
 interface ShopSidebarProps {
   currentPage: string;
@@ -34,13 +35,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
     <aside className="w-64 bg-[#16162A] text-[#F6F4EF] flex flex-col h-screen sticky top-0 font-sans flex-shrink-0">
       {/* Brand */}
       <div className="px-5 pt-6 pb-4">
-        <div className="flex items-center gap-2.5">
-          <span className="h-9 w-9 rounded-xl bg-[#B8924A] text-[#16162A] flex items-center justify-center font-display text-lg font-bold">A</span>
-          <div className="leading-none">
-            <p className="font-display font-bold text-sm">Aventus Seller</p>
-            <p className="text-[9px] uppercase tracking-[0.2em] text-[#B8924A] font-bold mt-0.5">Kênh người bán</p>
-          </div>
-        </div>
+        <BrandLogo surface="dark" size="sm" tagline="Seller · Kênh người bán" />
       </div>
 
       {/* Store switcher */}
