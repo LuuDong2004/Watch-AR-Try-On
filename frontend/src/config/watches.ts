@@ -18,6 +18,8 @@ export interface WatchConfig {
   brand: string;
   /** GLB path in /public/models, or '' to use the procedural fallback. */
   model: string;
+  /** Whether this model is offered for AR wrist try-on (needs a quality GLB). */
+  hasAR?: boolean;
   /** Auto-rotate the GLB so its thinnest axis (dial normal) points up. */
   autoOrient?: boolean;
   /** Attribution shown in the UI (required by CC-BY licences). */
@@ -49,6 +51,7 @@ export const WATCHES: WatchConfig[] = [
     name: 'Chronograph',
     brand: 'DGG · 3D Commerce',
     model: '/models/chronograph_watch.glb',
+    hasAR: true,
     // Dial faces +Z (standard glTF view) → tilt -90° about X so the dial points
     // up (+Y) and the 12–6 axis runs along the forearm. Same as the Poly watches.
     autoOrient: false,

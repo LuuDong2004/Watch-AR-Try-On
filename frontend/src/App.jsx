@@ -1,252 +1,346 @@
-import { Component, lazy, Suspense, useEffect, useState } from 'react'
-import Watch3DViewer from './components/watch/Watch3DViewer.jsx'
-import QRTryOnModal from './components/ar/QRTryOnModal.jsx'
-import { detectMobile } from './utils/device.js'
+import { lazy, Suspense, useEffect, useState } from 'react';
+import QRTryOnModal from './components/ar/QRTryOnModal.jsx';
+import { detectMobile } from './utils/device.js';
 
-// "Thử AR" now uses the MediaPipe Hand Landmarker wrist engine ported from
-// 11Exe (real-time wrist tracking + occlusion). The old DeepAR component
-// (./components/ar/ARTryOn.jsx) is kept on disk but no longer wired in.
-const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'))
+// Database & Role Switcher
+import { initDatabase, getDbFavorites, getLeadsForShopIds, getMyShopIds, resolveScopeShopIds } from './utils/mockData';
+import RoleSwitcher from './components/RoleSwitcher';
 
-const SAMPLE_WATCHES = [
-  {
-    id: 'chronograph-mudmaster',
-    name: 'Chronograph Surgical White 42mm',
-    brand: 'Aventus',
-    price: 48_900_000,
-    originalPrice: 56_000_000,
-    description:
-      'Phiên bản giới hạn Surgical White — vỏ và dây ceramic trắng tinh khôi, mặt số ba kim đếm giờ phụ, sapphire phủ AR coating. Máy chronograph Thụy Sĩ Sellita SW500, hoàn thiện tay thủ công đẳng cấp haute horlogerie.',
-    specs: {
-      'Đường kính mặt': '42 mm',
-      'Độ dày vỏ': '13.2 mm',
-      'Chất liệu vỏ': 'Ceramic trắng',
-      'Chất liệu dây': 'Ceramic + thép 316L',
-      'Chất liệu kính': 'Sapphire phủ AR',
-      'Bộ máy': 'Sellita SW500 Automatic',
-      'Chống nước': '200 m',
-      'Bảo hành': '5 năm chính hãng'
-    },
-    modelUrl: '/models/watch.glb',
-    // DeepAR wrist effect (Thử AR / mode 'ar')
-    effectUrl: '/effects/chronograph-white.deepar',
-    variant: 'Surgical White',
-    arConfig: {
-      arScale: 1.5,
-      arPositionX: 0,
-      arPositionY: 0,
-      // No pre-rotation — wrist-frame quaternion handles orientation entirely.
-      arRotationX: 0,
-      arRotationY: 0,
-      arRotationOffset: 0,
-      variant: 'Surgical White'
-    }
-  }
-]
+// User (Customer) Components
+import UserHeader from './components/user/UserHeader';
+import UserFooter from './components/user/UserFooter';
+import UserHome from './components/user/UserHome';
+import UserStores from './components/user/UserStores';
+import UserCatalog from './components/user/UserCatalog';
+import UserDetail from './components/user/UserDetail';
+import UserCloset from './components/user/UserCloset';
+import UserContact from './components/user/UserContact';
+import UserAccount from './components/user/UserAccount';
 
-function formatVND(n) {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
-  }).format(n)
-}
+// Shop (Seller) Components
+import ShopSidebar from './components/shop/ShopSidebar';
+import ShopDashboard from './components/shop/ShopDashboard';
+import ShopProducts from './components/shop/ShopProducts';
+import ShopAddProduct from './components/shop/ShopAddProduct';
+import ShopLeads from './components/shop/ShopLeads';
+import ShopAnalytics from './components/shop/ShopAnalytics';
+import ShopSettings from './components/shop/ShopSettings';
+
+// Admin (System) Components
+import AdminSidebar from './components/admin/AdminSidebar';
+import AdminDashboard from './components/admin/AdminDashboard';
+import AdminShops from './components/admin/AdminShops';
+import AdminAudit from './components/admin/AdminAudit';
+import AdminUsers from './components/admin/AdminUsers';
+import AdminLeads from './components/admin/AdminLeads';
+import AdminSettings from './components/admin/AdminSettings';
+
+// Lazy loaded MediaPipe AR try-on overlay
+const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'));
 
 export default function App() {
-  const watch = SAMPLE_WATCHES[0]
-  const [modelOk, setModelOk] = useState(true)
-  const [mode, setMode] = useState('none') // 'none' | 'qr' | 'ar' | 'ar-png'
+  // Global Routing State
+  const [role, setRole] = useState('user');
+  const [page, setPage] = useState('home'); // active page within current role
 
+  // Selection states
+  const [selectedWatchId, setSelectedWatchId] = useState('chrono');
+  const [queryWatchId, setQueryWatchId] = useState(null);
+  const [editWatchId, setEditWatchId] = useState(null);
+  const [mode, setMode] = useState('none'); // overlay camera state
+
+  // Shop manager: which of the owner's stores is in focus ('all' = every owned store)
+  const [shopScope, setShopScope] = useState('all');
+
+  // DB Sync indicators for badge updates
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
+  const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
+
+  // Initialize localStorage seed database on load
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const ar = params.get('ar')
-    if (ar === '1') setMode('ar')
+    initDatabase();
+    
+    // Check deep linking for AR
+    const params = new URLSearchParams(window.location.search);
+    const ar = params.get('ar');
+    if (ar === '1') setMode('ar');
     if (ar) {
-      const url = new URL(window.location.href)
-      url.searchParams.delete('ar')
-      window.history.replaceState({}, '', url.toString())
+      const url = new URL(window.location.href);
+      url.searchParams.delete('ar');
+      window.history.replaceState({}, '', url.toString());
     }
-  }, [])
+  }, []);
 
-  const handleTryOn = () => {
-    setMode(detectMobile() ? 'ar' : 'qr')
-  }
+  // Update dynamic badges on DB updates
+  useEffect(() => {
+    setFavoritesCount(getDbFavorites().length);
+    // Only count new leads for the stores this owner manages, within the active scope.
+    const scopedIds = resolveScopeShopIds(shopScope);
+    setNewLeadsCount(getLeadsForShopIds(scopedIds).filter((l) => l.status === 'new').length);
+  }, [dbUpdateTrigger, page, role, shopScope]);
+
+  // Scroll back to top whenever the user navigates to a new page.
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [page, role]);
+
+  const triggerDbUpdate = () => {
+    setDbUpdateTrigger((prev) => prev + 1);
+  };
+
+  const handleTryOn = (watchId) => {
+    setSelectedWatchId(watchId);
+    setMode(detectMobile() ? 'ar' : 'qr');
+  };
 
   const tryOnUrl = (() => {
-    if (typeof window === 'undefined') return ''
-    const url = new URL(window.location.href)
-    url.searchParams.set('ar', '1')
-    return url.toString()
-  })()
+    if (typeof window === 'undefined') return '';
+    const url = new URL(window.location.href);
+    url.searchParams.set('ar', '1');
+    return url.toString();
+  })();
+
+  const handleRoleChange = (newRole) => {
+    setRole(newRole);
+    // Set default page for the chosen role
+    if (newRole === 'user') setPage('home');
+    if (newRole === 'shop') setPage('dashboard');
+    if (newRole === 'admin') setPage('dashboard');
+    setSelectedWatchId('chrono');
+    setEditWatchId(null);
+  };
+
+  // Rendering based on Role & Page
+  const renderUserPages = () => {
+    switch (page) {
+      case 'home':
+        return (
+          <UserHome
+            onNavigate={(p) => setPage(p)}
+            onSelectWatch={(id) => {
+              setSelectedWatchId(id);
+              setPage('detail');
+            }}
+            onOpenAR={handleTryOn}
+          />
+        );
+      case 'catalog':
+        return (
+          <UserCatalog
+            onSelectWatch={(id) => {
+              setSelectedWatchId(id);
+              setPage('detail');
+            }}
+            onOpenAR={handleTryOn}
+          />
+        );
+      case 'stores':
+        return (
+          <UserStores
+            onNavigate={(p) => setPage(p)}
+            onSelectWatch={(id) => {
+              setSelectedWatchId(id);
+              setPage('detail');
+            }}
+            onOpenAR={handleTryOn}
+          />
+        );
+      case 'detail':
+        return (
+          <UserDetail
+            watchId={selectedWatchId}
+            onOpenAR={handleTryOn}
+            onBack={() => setPage('catalog')}
+            onSelectWatch={(id) => setSelectedWatchId(id)}
+          />
+        );
+      case 'closet':
+        return (
+          <UserCloset
+            onBackToCatalog={() => setPage('catalog')}
+            onOpenContact={() => {
+              setQueryWatchId(selectedWatchId);
+              setPage('contact');
+            }}
+          />
+        );
+      case 'contact':
+        return (
+          <UserContact
+            watchIdForQuery={queryWatchId}
+            onBackToCatalog={() => {
+              setQueryWatchId(null);
+              setPage('catalog');
+            }}
+          />
+        );
+      case 'account':
+        return (
+          <UserAccount
+            onSelectWatch={(id) => {
+              setSelectedWatchId(id);
+              setPage('detail');
+            }}
+            onBackToCatalog={() => setPage('catalog')}
+          />
+        );
+      default:
+        return <UserCatalog onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }} onOpenAR={handleTryOn} />;
+    }
+  };
+
+  const renderShopPages = () => {
+    switch (page) {
+      case 'dashboard':
+        return (
+          <ShopDashboard
+            shopScope={shopScope}
+            onNavigateToLeads={() => setPage('leads')}
+            onNavigateToProducts={() => setPage('products')}
+          />
+        );
+      case 'products':
+        return (
+          <ShopProducts
+            shopScope={shopScope}
+            onEditProduct={(id) => {
+              setEditWatchId(id);
+              setPage('add-product');
+            }}
+            onNavigateToAddProduct={() => {
+              setEditWatchId(null);
+              setPage('add-product');
+            }}
+          />
+        );
+      case 'add-product':
+        return (
+          <ShopAddProduct
+            editWatchId={editWatchId}
+            shopScope={shopScope}
+            onSuccess={() => {
+              setEditWatchId(null);
+              setPage('products');
+              triggerDbUpdate();
+            }}
+            onCancel={() => {
+              setEditWatchId(null);
+              setPage('products');
+            }}
+          />
+        );
+      case 'leads':
+        return <ShopLeads shopScope={shopScope} onStatusUpdated={triggerDbUpdate} />;
+      case 'analytics':
+        return <ShopAnalytics shopScope={shopScope} />;
+      case 'settings':
+        return <ShopSettings />;
+      default:
+        return <ShopDashboard onNavigateToLeads={() => setPage('leads')} onNavigateToProducts={() => setPage('products')} />;
+    }
+  };
+
+  const renderAdminPages = () => {
+    switch (page) {
+      case 'dashboard':
+        return (
+          <AdminDashboard
+            onNavigateToShops={() => setPage('shops')}
+            onNavigateToAudit={() => setPage('audit')}
+          />
+        );
+      case 'shops':
+        return <AdminShops />;
+      case 'audit':
+        return <AdminAudit />;
+      case 'users':
+        return <AdminUsers />;
+      case 'leads':
+        return <AdminLeads />;
+      case 'settings':
+        return <AdminSettings />;
+      default:
+        return <AdminDashboard onNavigateToShops={() => setPage('shops')} onNavigateToAudit={() => setPage('audit')} />;
+    }
+  };
 
   return (
-    <div className="min-h-full bg-[#FAFAFA] text-[#0D0D0D]">
-      <header className="border-b border-gray-100 bg-white sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🕐</span>
-            <span className="font-display text-xl font-semibold">Watch AR Studio</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm text-gray-600">
-            <a className="hover:text-black">Sản phẩm</a>
-            <a className="hover:text-black">Thương hiệu</a>
-            <a className="hover:text-black">AR Try-On</a>
-            <a className="hover:text-black">Liên hệ</a>
-          </nav>
+    <div className="h-full bg-[#F6F4EF] text-[#16162A] select-none font-sans overflow-x-hidden">
+      {/* 1. Client-Side User Flow */}
+      {role === 'user' && (
+        <div className="flex flex-col min-h-screen">
+          <UserHeader
+            currentPage={page}
+            onChangePage={(p) => {
+              setQueryWatchId(null);
+              setPage(p);
+            }}
+            favoritesCount={favoritesCount}
+          />
+          <main className="flex-1">{renderUserPages()}</main>
+          <UserFooter
+            onChangePage={(p) => {
+              setQueryWatchId(null);
+              setPage(p);
+            }}
+          />
         </div>
-      </header>
+      )}
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <section className="grid md:grid-cols-2 gap-8 items-start">
-          <div>
-            {modelOk ? (
-              <Suspense
-                fallback={
-                  <div className="h-80 rounded-2xl bg-gray-100 animate-pulse" />
-                }
-              >
-                <ErrorBoundary onError={() => setModelOk(false)}>
-                  <Watch3DViewer
-                    modelUrl={watch.modelUrl}
-                    variant={watch.variant}
-                    height={380}
-                  />
-                </ErrorBoundary>
-              </Suspense>
-            ) : (
-              <ModelMissingHint />
-            )}
-          </div>
+      {/* 2. Shop/Seller Flow */}
+      {role === 'shop' && (
+        <div className="flex min-h-screen">
+          <ShopSidebar
+            currentPage={page}
+            onChangePage={(p) => setPage(p)}
+            newLeadsCount={newLeadsCount}
+            shopScope={shopScope}
+            onChangeScope={(s) => setShopScope(s)}
+          />
+          <main className="flex-1 h-screen overflow-y-auto flex">{renderShopPages()}</main>
+        </div>
+      )}
 
-          <div>
-            <p className="text-xs uppercase tracking-widest text-gray-400 mb-1">
-              {watch.brand}
-            </p>
-            <h1 className="font-display text-3xl font-semibold mb-3">
-              {watch.name}
-            </h1>
+      {/* 3. System Administrator Flow */}
+      {role === 'admin' && (
+        <div className="flex min-h-screen">
+          <AdminSidebar
+            currentPage={page}
+            onChangePage={(p) => setPage(p)}
+            pendingAuditsCount={1}
+          />
+          <main className="flex-1 h-screen overflow-y-auto flex">{renderAdminPages()}</main>
+        </div>
+      )}
 
-            <div className="flex items-baseline gap-3 mb-5">
-              <span className="text-2xl font-bold">{formatVND(watch.price)}</span>
-              {watch.originalPrice && (
-                <span className="text-sm text-gray-400 line-through">
-                  {formatVND(watch.originalPrice)}
-                </span>
-              )}
-              <span className="ml-1 bg-[#C9A84C]/15 text-[#8a7124] text-xs px-2 py-0.5 rounded-full font-medium">
-                AR Try-On
-              </span>
-            </div>
+      {/* 4. Shared floating Role Switcher */}
+      <RoleSwitcher currentRole={role} onChangeRole={handleRoleChange} />
 
-            <p className="text-gray-600 mb-6 leading-relaxed">
-              {watch.description}
-            </p>
-
-            <div className="flex">
-              <button
-                onClick={handleTryOn}
-                className="flex-1 bg-[#1A1A2E] text-white px-6 py-3.5 rounded-full font-semibold hover:bg-black transition flex items-center justify-center gap-2 shadow-sm"
-              >
-                ✨ Thử AR
-              </button>
-            </div>
-
-            <div className="mt-8 border-t border-gray-100 pt-6">
-              <h3 className="font-semibold mb-3 text-sm">Thông số kỹ thuật</h3>
-              <dl className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                {Object.entries(watch.specs).map(([k, v]) => (
-                  <div key={k} className="contents">
-                    <dt className="text-gray-500">{k}</dt>
-                    <dd className="text-gray-900 font-medium">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-16">
-          <h2 className="font-display text-2xl font-semibold mb-2">
-            Hướng dẫn dùng AR Try-On
-          </h2>
-          <p className="text-gray-600 mb-6 text-sm">
-            Cho phép trình duyệt truy cập camera, đưa cổ tay vào khung hình. Hệ thống sẽ
-            tự động đeo đồng hồ 3D lên cổ tay bạn theo thời gian thực.
-          </p>
-          <ol className="grid md:grid-cols-3 gap-4 text-sm">
-            {[
-              ['1', 'Cấp quyền camera', 'Trình duyệt sẽ hỏi quyền — chọn "Cho phép".'],
-              ['2', 'Đưa cổ tay vào khung', 'Giữ cổ tay cách camera ~30–50 cm.'],
-              ['3', 'Chụp & chia sẻ', 'Nhấn nút máy ảnh để lưu ảnh thử đồng hồ.']
-            ].map(([n, t, d]) => (
-              <li
-                key={n}
-                className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm"
-              >
-                <div className="w-8 h-8 rounded-full bg-[#C9A84C] text-white font-semibold flex items-center justify-center mb-2">
-                  {n}
-                </div>
-                <p className="font-semibold mb-1">{t}</p>
-                <p className="text-gray-500">{d}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
-      </main>
-
-      <footer className="border-t border-gray-100 mt-16 py-8 text-center text-xs text-gray-400">
-        © 2026 Watch AR Studio · Demo MVP
-      </footer>
-
+      {/* 5. AR / QR Overlay triggers */}
       {mode === 'qr' && (
         <QRTryOnModal
           tryOnUrl={tryOnUrl}
-          watchName={watch.name}
+          watchName={selectedWatchId} // wait, QRTryOnModal takes a watchName string.
           onClose={() => setMode('none')}
           onTryHere={() => setMode('ar')}
         />
       )}
 
       {mode === 'ar' && (
-        <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50" />}>
+        <Suspense fallback={<div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center text-xs text-white">Đang khởi động camera...</div>}>
           <ARWristTryOn
-            watchName={watch.name}
-            watchId="chrono"
+            watchName={selectedWatchId}
+            watchId={selectedWatchId}
             onClose={() => setMode('none')}
+            onOpenContact={() => {
+              setMode('none');
+              setQueryWatchId(selectedWatchId);
+              setPage('contact');
+            }}
           />
         </Suspense>
       )}
     </div>
-  )
-}
-
-function ModelMissingHint() {
-  return (
-    <div className="h-80 rounded-2xl border border-dashed border-gray-300 bg-white p-6 flex flex-col items-center justify-center text-center">
-      <p className="text-4xl mb-2">📦</p>
-      <p className="font-semibold mb-1">Chưa có model 3D đồng hồ</p>
-      <p className="text-sm text-gray-500 max-w-xs">
-        Đặt file <code className="bg-gray-100 px-1.5 py-0.5 rounded">watch.glb</code>{' '}
-        vào thư mục <code className="bg-gray-100 px-1.5 py-0.5 rounded">frontend/public/models/</code> rồi tải lại trang.
-      </p>
-    </div>
-  )
-}
-
-class ErrorBoundary extends Component {
-  constructor(props) {
-    super(props)
-    this.state = { hasError: false }
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-  componentDidCatch(err) {
-    console.warn('3D viewer error:', err)
-    this.props.onError?.(err)
-  }
-  render() {
-    if (this.state.hasError) return null
-    return this.props.children
-  }
+  );
 }

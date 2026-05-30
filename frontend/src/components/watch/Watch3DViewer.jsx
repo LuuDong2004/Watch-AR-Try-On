@@ -21,18 +21,30 @@ function Loader() {
   )
 }
 
-export default function Watch3DViewer({ modelUrl, variant, height = 320 }) {
+export default function Watch3DViewer({
+  modelUrl,
+  variant,
+  height = 320,
+  // When true: spins continuously, no pause button, no zoom/drag hint, no border.
+  hideControls = false,
+  // Initial camera position. A 3/4 angle reads more dynamic than a flat front view.
+  camera = [1.7, 0.9, 2.6],
+}) {
   const [hovered, setHovered] = useState(false)
   const [autoRotate, setAutoRotate] = useState(true)
 
+  const showControls = !hideControls
+
   return (
     <div
-      className="relative w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden border border-gray-100"
+      className={`relative w-full overflow-hidden rounded-2xl ${
+        hideControls ? '' : 'bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-100'
+      }`}
       style={{ height }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Canvas camera={{ position: [0, 0, 3], fov: 45 }} dpr={[1, 2]}>
+      <Canvas camera={{ position: camera, fov: 45 }} dpr={[1, 2]}>
         <Suspense fallback={<Loader />}>
           <Stage environment="city" intensity={0.5} adjustCamera={1.35}>
             <WatchModel url={modelUrl} variant={variant} />
@@ -40,31 +52,33 @@ export default function Watch3DViewer({ modelUrl, variant, height = 320 }) {
         </Suspense>
         <OrbitControls
           enablePan={false}
-          enableZoom={hovered}
-          enableRotate
-          autoRotate={autoRotate}
+          enableZoom={showControls && hovered}
+          enableRotate={showControls}
+          autoRotate={hideControls ? true : autoRotate}
           autoRotateSpeed={1.2}
           minPolarAngle={0}
           maxPolarAngle={Math.PI}
         />
       </Canvas>
 
-      <div className="absolute top-3 right-3 flex gap-2">
-        <button
-          onClick={() => setAutoRotate((r) => !r)}
-          className={`text-xs px-3 py-1.5 rounded-full backdrop-blur transition shadow-sm ${
-            autoRotate
-              ? 'bg-[#1A1A2E] text-white'
-              : 'bg-white/80 text-gray-700 hover:bg-white'
-          }`}
-        >
-          {autoRotate ? '⏸ Dừng xoay' : '↻ Tự xoay'}
-        </button>
-      </div>
+      {showControls && (
+        <>
+          <div className="absolute top-3 right-3 flex gap-2">
+            <button
+              onClick={() => setAutoRotate((r) => !r)}
+              className={`text-xs px-3 py-1.5 rounded-full backdrop-blur transition shadow-sm ${
+                autoRotate ? 'bg-[#1A1A2E] text-white' : 'bg-white/80 text-gray-700 hover:bg-white'
+              }`}
+            >
+              {autoRotate ? '⏸ Dừng xoay' : '↻ Tự xoay'}
+            </button>
+          </div>
 
-      <p className="absolute bottom-2 inset-x-0 text-center text-[11px] text-gray-400 pointer-events-none">
-        🖱️ Kéo để xoay · Cuộn (khi trỏ chuột trên ảnh) để zoom
-      </p>
+          <p className="absolute bottom-2 inset-x-0 text-center text-[11px] text-gray-400 pointer-events-none">
+            🖱️ Kéo để xoay · Cuộn (khi trỏ chuột trên ảnh) để zoom
+          </p>
+        </>
+      )}
     </div>
   )
 }
