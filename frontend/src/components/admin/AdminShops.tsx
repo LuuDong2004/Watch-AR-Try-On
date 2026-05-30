@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Store } from 'lucide-react';
 import { getDbShowrooms, Showroom } from '../../utils/mockData';
 
 export default function AdminShops() {
@@ -36,7 +37,9 @@ export default function AdminShops() {
               {showrooms.map((room) => (
                 <tr key={room.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#16162A] flex items-center gap-2">
-                    <span>🏪</span>
+                    <span className="h-7 w-7 rounded-lg bg-[#16162A]/5 flex items-center justify-center text-[#16162A] flex-shrink-0">
+                      <Store className="h-4 w-4" />
+                    </span>
                     <span>{room.name}</span>
                   </td>
                   <td className="py-3.5 px-4 font-medium">{room.phone}</td>

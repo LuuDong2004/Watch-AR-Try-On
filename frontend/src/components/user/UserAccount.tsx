@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Globe, LogOut, Store, Calendar, Heart } from 'lucide-react';
 import { getDbLeads, getDbFavorites, getDbWatches, Lead } from '../../utils/mockData';
 
 interface UserAccountProps {
@@ -140,7 +141,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
               onClick={() => setIsLoggedIn(true)}
               className="w-full bg-white hover:bg-gray-50 border border-gray-200 py-3 rounded-xl font-semibold transition flex items-center justify-center gap-2 text-xs text-gray-700 shadow-sm"
             >
-              <span>🌐</span> Tiếp tục với tài khoản Google
+              <Globe className="h-4 w-4" /> Tiếp tục với tài khoản Google
             </button>
           </form>
         </div>
@@ -180,7 +181,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
               onClick={() => setIsLoggedIn(false)}
               className="w-full mt-6 border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
-              <span>🚪 Đăng xuất</span>
+              <LogOut className="h-4 w-4" /> <span>Đăng xuất</span>
             </button>
           </div>
 
@@ -229,7 +230,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
 
                       <p className="font-bold text-[#16162A] text-sm mb-1">{lead.watchName}</p>
                       <p className="text-[11px] text-gray-500 mb-3 flex items-center gap-1">
-                        <span>🏬 Shop phản hồi:</span>
+                        <span className="inline-flex items-center gap-1"><Store className="h-4 w-4" /> Shop phản hồi:</span>
                         <span className="font-semibold text-gray-700">{lead.shopName}</span>
                       </p>
 
@@ -254,7 +255,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                   ))
                 ) : (
                   <div className="text-center py-12">
-                    <span className="text-4xl">🗓️</span>
+                    <Calendar className="h-10 w-10 mx-auto text-gray-400" />
                     <h4 className="font-serif font-bold text-sm mt-3 mb-1">Chưa gửi liên hệ nào</h4>
                     <p className="text-xs text-gray-400 max-w-xs mx-auto mb-4">
                       Quý khách chưa thực hiện bất kỳ cuộc gọi, cuộc hẹn hoặc nhắn Zalo/Messenger đăng ký trên hệ thống.
@@ -298,7 +299,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <span className="text-4xl">♥</span>
+                    <Heart className="h-10 w-10 mx-auto fill-current text-gray-400" />
                     <h4 className="font-serif font-bold text-sm mt-3 mb-1">Chưa lưu đồng hồ yêu thích</h4>
                     <p className="text-xs text-gray-400 max-w-xs mx-auto mb-4">
                       Nhấp vào biểu tượng trái tim ở bất kỳ trang chi tiết sản phẩm nào để lưu các mẫu ưng ý vào danh mục yêu thích của bạn tại đây.

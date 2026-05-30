@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Package, ShieldCheck, AlertTriangle, Check, X } from 'lucide-react';
 import { getDbWatches } from '../../utils/mockData';
 
 export default function AdminAudit() {
@@ -50,8 +51,8 @@ export default function AdminAudit() {
       <section className="grid lg:grid-cols-12 gap-8 items-start pb-16">
         {/* Left Side: Pending audit list (5 cols) */}
         <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm text-xs">
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4">
-            📦 Mẫu chờ kiểm duyệt ({watches.length})
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
+            <Package className="h-4 w-4" /> Mẫu chờ kiểm duyệt ({watches.length})
           </h3>
 
           <div className="space-y-3">
@@ -83,8 +84,8 @@ export default function AdminAudit() {
         {/* Right Side: Virtual Simulator Inspect (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm text-xs flex flex-col justify-between">
           <div>
-            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4">
-              🛡️ Workspace kiểm soát tỉ lệ đeo thử
+            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4" /> Workspace kiểm soát tỉ lệ đeo thử
             </h3>
 
             {/* Simulation Preview Area */}
@@ -111,8 +112,8 @@ export default function AdminAudit() {
                 )}
               </div>
 
-              <span className="absolute bottom-2 left-3 text-[9px] uppercase tracking-wider text-red-600 font-bold">
-                ⚠️ KHUNG ĐEO THỬ GIẢ LẬP
+              <span className="absolute bottom-2 left-3 text-[9px] uppercase tracking-wider text-red-600 font-bold flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" /> KHUNG ĐEO THỬ GIẢ LẬP
               </span>
             </div>
 
@@ -149,15 +150,15 @@ export default function AdminAudit() {
           <div className="flex gap-3 font-bold border-t border-[#e5e0d8] pt-4">
             <button
               onClick={handleApprove}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition shadow active:scale-95 text-center"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition shadow active:scale-95 flex items-center justify-center gap-1.5"
             >
-              ✓ Phê Duyệt & Xuất Bản
+              <Check className="h-4 w-4" /> Phê Duyệt & Xuất Bản
             </button>
             <button
               onClick={handleReject}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl transition shadow active:scale-95 text-center"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl transition shadow active:scale-95 flex items-center justify-center gap-1.5"
             >
-              ✕ Từ Chối Phê Duyệt
+              <X className="h-4 w-4" /> Từ Chối Phê Duyệt
             </button>
           </div>
         </div>

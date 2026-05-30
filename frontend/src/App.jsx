@@ -3,7 +3,7 @@ import QRTryOnModal from './components/ar/QRTryOnModal.jsx';
 import { detectMobile } from './utils/device.js';
 
 // Database & Role Switcher
-import { initDatabase, getDbFavorites, getLeadsForShopIds, getMyShopIds, resolveScopeShopIds } from './utils/mockData';
+import { initDatabase, getDbFavorites, getLeadsForShopIds, getMyShopIds, resolveScopeShopIds, getShopForWatch } from './utils/mockData';
 import RoleSwitcher from './components/RoleSwitcher';
 
 // User (Customer) Components
@@ -11,10 +11,11 @@ import UserHeader from './components/user/UserHeader';
 import UserFooter from './components/user/UserFooter';
 import UserHome from './components/user/UserHome';
 import UserStores from './components/user/UserStores';
+import UserFavorites from './components/user/UserFavorites';
+import UserPricing from './components/user/UserPricing';
+import UserFeedback from './components/user/UserFeedback';
 import UserCatalog from './components/user/UserCatalog';
 import UserDetail from './components/user/UserDetail';
-import UserCloset from './components/user/UserCloset';
-import UserContact from './components/user/UserContact';
 import UserAccount from './components/user/UserAccount';
 
 // Shop (Seller) Components
@@ -33,6 +34,7 @@ import AdminShops from './components/admin/AdminShops';
 import AdminAudit from './components/admin/AdminAudit';
 import AdminUsers from './components/admin/AdminUsers';
 import AdminLeads from './components/admin/AdminLeads';
+import AdminPlans from './components/admin/AdminPlans';
 import AdminSettings from './components/admin/AdminSettings';
 
 // Lazy loaded MediaPipe AR try-on overlay
@@ -45,7 +47,7 @@ export default function App() {
 
   // Selection states
   const [selectedWatchId, setSelectedWatchId] = useState('chrono');
-  const [queryWatchId, setQueryWatchId] = useState(null);
+  const [selectedShopId, setSelectedShopId] = useState(null);
   const [editWatchId, setEditWatchId] = useState(null);
   const [mode, setMode] = useState('none'); // overlay camera state
 
@@ -138,6 +140,7 @@ export default function App() {
       case 'stores':
         return (
           <UserStores
+            initialShopId={selectedShopId}
             onNavigate={(p) => setPage(p)}
             onSelectWatch={(id) => {
               setSelectedWatchId(id);
@@ -153,26 +156,26 @@ export default function App() {
             onOpenAR={handleTryOn}
             onBack={() => setPage('catalog')}
             onSelectWatch={(id) => setSelectedWatchId(id)}
+            onSelectShop={(shopId) => {
+              setSelectedShopId(shopId);
+              setPage('stores');
+            }}
           />
         );
-      case 'closet':
+      case 'pricing':
+        return <UserPricing onBackToCatalog={() => setPage('catalog')} />;
+      case 'feedback':
+        return <UserFeedback onBackToCatalog={() => setPage('catalog')} />;
+      case 'favorites':
         return (
-          <UserCloset
+          <UserFavorites
+            onSelectWatch={(id) => {
+              setSelectedWatchId(id);
+              setPage('detail');
+            }}
+            onOpenAR={handleTryOn}
             onBackToCatalog={() => setPage('catalog')}
-            onOpenContact={() => {
-              setQueryWatchId(selectedWatchId);
-              setPage('contact');
-            }}
-          />
-        );
-      case 'contact':
-        return (
-          <UserContact
-            watchIdForQuery={queryWatchId}
-            onBackToCatalog={() => {
-              setQueryWatchId(null);
-              setPage('catalog');
-            }}
+            onChanged={triggerDbUpdate}
           />
         );
       case 'account':
@@ -258,6 +261,8 @@ export default function App() {
         return <AdminUsers />;
       case 'leads':
         return <AdminLeads />;
+      case 'plans':
+        return <AdminPlans />;
       case 'settings':
         return <AdminSettings />;
       default:
@@ -273,7 +278,7 @@ export default function App() {
           <UserHeader
             currentPage={page}
             onChangePage={(p) => {
-              setQueryWatchId(null);
+              setSelectedShopId(null);
               setPage(p);
             }}
             favoritesCount={favoritesCount}
@@ -281,7 +286,7 @@ export default function App() {
           <main className="flex-1">{renderUserPages()}</main>
           <UserFooter
             onChangePage={(p) => {
-              setQueryWatchId(null);
+              setSelectedShopId(null);
               setPage(p);
             }}
           />
@@ -335,8 +340,9 @@ export default function App() {
             onClose={() => setMode('none')}
             onOpenContact={() => {
               setMode('none');
-              setQueryWatchId(selectedWatchId);
-              setPage('contact');
+              const shop = getShopForWatch(selectedWatchId);
+              setSelectedShopId(shop?.id || null);
+              setPage('stores');
             }}
           />
         </Suspense>

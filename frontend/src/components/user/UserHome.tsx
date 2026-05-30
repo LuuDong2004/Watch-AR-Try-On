@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Sparkles, ArrowRight, Star, Wand2, UploadCloud, Lock, Check, Bell } from 'lucide-react';
 import Watch3DViewer from '../watch/Watch3DViewer';
 import { getDbWatches } from '../../utils/mockData';
 
@@ -19,7 +20,6 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
   }, []);
 
   const featured = watches.find((w) => w.hasAR) || watches[0];
-  const arWatches = watches.filter((w) => w.hasAR).slice(0, 3);
   const popular = watches.slice(0, 4);
 
   return (
@@ -33,8 +33,8 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
             <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-5">
               <span className="h-px w-8 bg-[#B8924A]" /> Haute Horlogerie × AR
             </span>
-            <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] mb-6">
-              Đeo thử đồng hồ xa xỉ <span className="text-[#B8924A]">ngay trên cổ tay</span> bạn
+            <h1 className="heading-crisp font-display text-4xl md:text-6xl font-bold leading-[1.12] pb-1 mb-6">
+              Đeo thử đồng hồ ảo <span className="text-[#B8924A]">ngay trên tay</span> của bạn
             </h1>
             <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
               Trải nghiệm công nghệ thử đeo AR thời gian thực và xem mô hình 3D 360° sắc nét.
@@ -52,7 +52,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                   onClick={() => onOpenAR(featured.id)}
                   className="border border-white/30 hover:border-[#B8924A] hover:text-[#B8924A] text-white font-semibold px-8 py-3.5 rounded-full transition flex items-center gap-2"
                 >
-                  ✨ Thử AR ngay
+                  <Sparkles className="h-4 w-4" /> Thử AR ngay
                 </button>
               )}
             </div>
@@ -106,88 +106,77 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
         </div>
       </section>
 
-      {/* ===================== VALUE PROPS ===================== */}
+      {/* ============== DESIGN STUDIO — UPLOAD YOUR OWN (COMING SOON) ============== */}
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Vì sao chọn TrueWrist</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Mua đồng hồ cao cấp, tự tin hơn bao giờ hết</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { icon: '✨', title: 'Thử đeo AR thời gian thực', desc: 'Công nghệ hand-tracking ướm đồng hồ lên cổ tay bạn qua webcam, chính xác từng chuyển động.' },
-            { icon: '🔄', title: 'Mô hình 3D 360°', desc: 'Xoay, phóng to và quan sát từng chi tiết niềng, cọc số, dây đeo trước khi quyết định.' },
-            { icon: '🏪', title: 'Liên hệ shop trực tiếp', desc: 'Mỗi sản phẩm gắn với một shop. Liên hệ ngay qua điện thoại, Zalo, Messenger để chốt đơn.' },
-          ].map((f) => (
-            <div key={f.title} className="bg-white rounded-3xl p-8 border border-[#e5e0d8] shadow-sm hover:shadow-md transition">
-              <div className="h-14 w-14 rounded-2xl bg-[#B8924A]/10 flex items-center justify-center text-2xl mb-5">{f.icon}</div>
-              <h3 className="font-display text-lg font-bold mb-2">{f.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#16162A] text-white shadow-2xl">
+          {/* ambient glow */}
+          <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_78%_25%,#B8924A,transparent_55%)]" />
+          <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B8924A]/60 to-transparent" />
 
-      {/* ===================== AR TRY-ON SHOWCASE ===================== */}
-      {arWatches.length > 0 && (
-        <section className="bg-white border-y border-[#e5e0d8]">
-          <div className="max-w-6xl mx-auto px-4 py-16 md:py-20">
-            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
-              <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Có sẵn AR Try-On</span>
-                <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Đeo thử ngay hôm nay</h2>
-              </div>
-              <button onClick={() => onNavigate('catalog')} className="text-sm font-semibold text-[#B8924A] hover:underline whitespace-nowrap">
-                Xem tất cả →
+          <div className="relative grid lg:grid-cols-2 gap-10 lg:gap-14 p-8 md:p-12 lg:p-16 items-center">
+            {/* ---- Copy column ---- */}
+            <div>
+              <span className="inline-flex items-center gap-2 bg-[#B8924A]/15 border border-[#B8924A]/30 text-[#B8924A] text-[11px] font-bold uppercase tracking-[0.25em] px-3.5 py-1.5 rounded-full mb-6">
+                <Wand2 className="h-3.5 w-3.5" /> Sắp ra mắt
+              </span>
+              <h2 className="heading-crisp font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-snug pb-1 mb-5">
+                Thiết kế trải nghiệm <span className="text-[#B8924A]">đồng hồ 3D</span> của riêng bạn
+              </h2>
+              <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-8 max-w-md">
+                Tải lên hình ảnh chiếc đồng hồ bạn mơ ước hoặc phong cách yêu thích — hệ thống sẽ
+                dựng nên mô hình 3D tương ứng để bạn xoay ngắm và đeo thử AR ngay tại nhà.
+              </p>
+
+              <ul className="space-y-3 mb-9">
+                {[
+                  'Tải ảnh tham chiếu của riêng bạn',
+                  'Dựng mô hình 3D tự động theo ý tưởng',
+                  'Đeo thử AR & chia sẻ với bạn bè',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-gray-200">
+                    <span className="h-5 w-5 rounded-full bg-[#B8924A]/20 border border-[#B8924A]/40 flex items-center justify-center text-[#B8924A] flex-shrink-0">
+                      <Check className="h-3 w-3" />
+                    </span>
+                    {item}
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                disabled
+                className="inline-flex items-center gap-2 bg-white/10 text-gray-300 font-semibold px-7 py-3.5 rounded-full border border-white/15 cursor-not-allowed"
+              >
+                <Bell className="h-4 w-4" /> Nhận thông báo khi ra mắt
               </button>
             </div>
-            <div className="grid sm:grid-cols-3 gap-6">
-              {arWatches.map((w) => (
-                <div
-                  key={w.id}
-                  onClick={() => onSelectWatch(w.id)}
-                  className="group rounded-3xl overflow-hidden border border-[#e5e0d8] bg-[#F6F4EF] shadow-sm hover:shadow-xl transition cursor-pointer flex flex-col"
-                >
-                  <div className="relative h-60 overflow-hidden">
-                    <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest">✨ AR</span>
-                  </div>
-                  <div className="p-5 flex flex-col flex-1">
-                    <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
-                    <h3 className="font-display font-bold mt-0.5 mb-2 group-hover:text-[#B8924A] transition">{w.name}</h3>
-                    <span className="font-bold mb-4">{formatVND(w.price)}</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }}
-                      className="mt-auto w-full bg-[#16162A] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition border border-[#B8924A]/30"
-                    >
-                      ✨ Thử Đeo AR Tức Thì
-                    </button>
-                  </div>
+
+            {/* ---- Upload dropzone mockup (visual only) ---- */}
+            <div className="relative">
+              <div className="absolute -inset-3 bg-[#B8924A]/10 blur-3xl rounded-full" />
+              <div className="relative rounded-3xl border-2 border-dashed border-white/20 bg-white/[0.04] backdrop-blur p-8 md:p-10 text-center">
+                {/* coming-soon ribbon */}
+                <span className="absolute top-4 right-4 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest shadow">
+                  Beta
+                </span>
+
+                <div className="h-20 w-20 mx-auto rounded-2xl bg-[#B8924A]/15 border border-[#B8924A]/30 flex items-center justify-center text-[#B8924A] mb-6">
+                  <UploadCloud className="h-9 w-9" />
                 </div>
-              ))}
+                <p className="font-display font-bold text-lg md:text-xl mb-1.5">Kéo thả ảnh vào đây</p>
+                <p className="text-xs text-gray-400 leading-relaxed mb-7">
+                  hoặc bấm để chọn ảnh từ thiết bị<br />PNG, JPG · tối đa 10MB
+                </p>
+
+                <div className="inline-flex items-center gap-2 bg-white/10 text-gray-300 text-sm font-semibold px-6 py-3 rounded-full border border-white/10 select-none">
+                  <Lock className="h-4 w-4" /> Tạo trải nghiệm 3D
+                </div>
+
+                <p className="mt-6 text-[11px] text-gray-500 flex items-center justify-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-[#B8924A]" /> Tính năng đang được hoàn thiện
+                </p>
+              </div>
             </div>
           </div>
-        </section>
-      )}
-
-      {/* ===================== HOW IT WORKS ===================== */}
-      <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Quy trình</span>
-          <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Chỉ 3 bước để sở hữu</h2>
-        </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { n: '01', title: 'Chọn mẫu đồng hồ', desc: 'Duyệt bộ sưu tập và lọc theo thương hiệu, chất liệu, kích thước mặt.' },
-            { n: '02', title: 'Thử đeo bằng AR', desc: 'Bật webcam, đưa cổ tay vào khung hình và xem đồng hồ hiện lên thực tế.' },
-            { n: '03', title: 'Liên hệ shop & sở hữu', desc: 'Ưng ý thì liên hệ trực tiếp shop đăng bán qua điện thoại/Zalo để chốt và nhận hàng.' },
-          ].map((s, i) => (
-            <div key={s.n} className="relative bg-white rounded-3xl p-8 border border-[#e5e0d8] shadow-sm">
-              <span className="font-display text-5xl font-bold text-[#B8924A]/20">{s.n}</span>
-              <h3 className="font-display text-lg font-bold mt-2 mb-2">{s.title}</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
-              {i < 2 && <span className="hidden md:block absolute top-1/2 -right-3 text-[#B8924A] text-xl">→</span>}
-            </div>
-          ))}
         </div>
       </section>
 
@@ -200,8 +189,8 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                 <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Được yêu thích</span>
                 <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Bộ sưu tập nổi bật</h2>
               </div>
-              <button onClick={() => onNavigate('catalog')} className="text-sm font-semibold text-[#B8924A] hover:underline whitespace-nowrap">
-                Toàn bộ sản phẩm →
+              <button onClick={() => onNavigate('catalog')} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#B8924A] hover:underline whitespace-nowrap">
+                Toàn bộ sản phẩm <ArrowRight className="h-4 w-4" />
               </button>
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -243,7 +232,11 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
               { name: 'Minh Anh', role: 'Nhà sáng tạo nội dung', text: 'Đặt lịch nhanh gọn, shop tư vấn rất tận tình. Sẽ quay lại!' },
             ].map((t) => (
               <div key={t.name} className="bg-white/5 border border-white/10 rounded-3xl p-7">
-                <div className="text-[#B8924A] mb-3">★★★★★</div>
+                <div className="flex text-[#B8924A] mb-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </div>
                 <p className="text-sm text-gray-300 leading-relaxed mb-5">“{t.text}”</p>
                 <div className="flex items-center gap-3">
                   <span className="h-10 w-10 rounded-full bg-[#B8924A]/20 border border-[#B8924A]/40 flex items-center justify-center font-bold text-[#B8924A]">
@@ -256,27 +249,6 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===================== FINAL CTA ===================== */}
-      <section className="max-w-6xl mx-auto px-4 py-16 md:py-24">
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#B8924A] to-[#8c6e38] text-white px-6 py-14 md:py-20 text-center shadow-xl">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_70%_30%,#fff,transparent_50%)]" />
-          <div className="relative max-w-2xl mx-auto">
-            <h2 className="font-display text-3xl md:text-5xl font-bold mb-4">Sẵn sàng đeo thử chiếc đồng hồ mơ ước?</h2>
-            <p className="text-white/85 mb-8 text-base md:text-lg">
-              Bắt đầu trải nghiệm AR ngay trên trình duyệt — miễn phí, không cần cài đặt.
-            </p>
-            <div className="flex flex-wrap justify-center gap-3">
-              <button onClick={() => onNavigate('catalog')} className="bg-white text-[#16162A] font-semibold px-8 py-3.5 rounded-full hover:scale-105 active:scale-95 transition shadow-lg">
-                Bắt đầu khám phá
-              </button>
-              <button onClick={() => onNavigate('contact')} className="border border-white/60 hover:bg-white/10 font-semibold px-8 py-3.5 rounded-full transition">
-                Liên hệ tư vấn
-              </button>
-            </div>
           </div>
         </div>
       </section>

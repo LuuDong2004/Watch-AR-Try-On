@@ -1,4 +1,5 @@
 import React from 'react';
+import { MapPin, Phone, Mail, Clock } from 'lucide-react';
 import BrandLogo from '../ui/BrandLogo';
 
 interface UserFooterProps {
@@ -67,8 +68,6 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
             <li><button onClick={() => onChangePage('home')} className="hover:text-white transition">Trang chủ</button></li>
             <li><button onClick={() => onChangePage('catalog')} className="hover:text-white transition">Bộ sưu tập</button></li>
             <li><button onClick={() => onChangePage('stores')} className="hover:text-white transition">Cửa hàng</button></li>
-            <li><button onClick={() => onChangePage('closet')} className="hover:text-white transition">Tủ đồ ảo</button></li>
-            <li><button onClick={() => onChangePage('contact')} className="hover:text-white transition">Liên hệ shop</button></li>
           </ul>
         </div>
 
@@ -87,10 +86,10 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
         <div>
           <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Liên hệ</h4>
           <ul className="space-y-2.5 text-gray-400">
-            <li>📍 15 Lý Tự Trọng, Q1, TP.HCM</li>
-            <li>📞 1900 6868</li>
-            <li>✉️ care@aventus.luxury</li>
-            <li>🕐 09:00 – 21:30 hằng ngày</li>
+            <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> 15 Lý Tự Trọng, Q1, TP.HCM</li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> 1900 6868</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> care@aventus.luxury</li>
+            <li className="flex items-center gap-2"><Clock className="h-4 w-4" /> 09:00 – 21:30 hằng ngày</li>
           </ul>
         </div>
       </div>

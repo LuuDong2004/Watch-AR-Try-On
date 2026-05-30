@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { User } from 'lucide-react';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([
@@ -37,7 +38,9 @@ export default function AdminUsers() {
               {users.map((u) => (
                 <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#16162A] flex items-center gap-2">
-                    <span>👤</span>
+                    <span className="h-7 w-7 rounded-full bg-[#16162A]/5 flex items-center justify-center text-[#16162A] flex-shrink-0">
+                      <User className="h-4 w-4" />
+                    </span>
                     <span>{u.name}</span>
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>

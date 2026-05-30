@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, CalendarCheck, Eye, Sparkles, Mail, CheckCircle2, Star } from 'lucide-react';
 import { getLeadsForShopIds, getWatchesForShopIds, resolveScopeShopIds, Lead } from '../../utils/mockData';
 
 interface ShopDashboardProps {
@@ -42,18 +43,18 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Hộp Tin Tổng Quan</h1>
           <p className="text-xs text-gray-500 mt-1">Giám sát hoạt động 3D/AR, lượt đặt lịch hẹn và leads từ showrooms</p>
         </div>
-        <div className="text-xs text-gray-400 bg-white border border-[#e5e0d8] px-4 py-2 rounded-xl shadow-sm font-semibold">
-          📅 Hôm nay: 30 Tháng 05, 2026
+        <div className="text-xs text-gray-400 bg-white border border-[#e5e0d8] px-4 py-2 rounded-xl shadow-sm font-semibold flex items-center gap-1.5">
+          <Calendar className="h-3.5 w-3.5" /> Hôm nay: 30 Tháng 05, 2026
         </div>
       </header>
 
       {/* Grid: 4 Metric Cards */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
-          { label: 'Số lượt xem 3D', val: '1,420', change: '+12.4%', color: 'text-blue-600', icon: '👀' },
-          { label: 'Số lượt thử AR', val: totalTryons, change: '+25.8%', color: 'text-[#B8924A]', icon: '✨' },
-          { label: 'Liên hệ / Leads mới', val: newLeads, change: `${newLeads} leads đợi phản hồi`, color: 'text-amber-500', icon: '✉️' },
-          { label: 'Lịch hẹn showroom', val: scheduledAppointments, change: 'Trong tuần này', color: 'text-green-600', icon: '📅' }
+          { label: 'Số lượt xem 3D', val: '1,420', change: '+12.4%', color: 'text-blue-600', Icon: Eye },
+          { label: 'Số lượt thử AR', val: totalTryons, change: '+25.8%', color: 'text-[#B8924A]', Icon: Sparkles },
+          { label: 'Liên hệ / Leads mới', val: newLeads, change: `${newLeads} leads đợi phản hồi`, color: 'text-amber-500', Icon: Mail },
+          { label: 'Lịch hẹn showroom', val: scheduledAppointments, change: 'Trong tuần này', color: 'text-green-600', Icon: CalendarCheck }
         ].map((card, idx) => (
           <div
             key={idx}
@@ -64,8 +65,8 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
               <h3 className="text-xl md:text-2xl font-bold text-[#16162A] mb-1">{card.val}</h3>
               <p className="text-[10px] text-gray-500 font-semibold">{card.change}</p>
             </div>
-            <div className="text-2xl h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100">
-              {card.icon}
+            <div className={`h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100 ${card.color}`}>
+              <card.Icon className="h-5 w-5" />
             </div>
           </div>
         ))}
@@ -166,7 +167,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-8">
-                <span className="text-3xl mb-2">🎉</span>
+                <CheckCircle2 className="h-8 w-8 mb-2 text-green-500" />
                 <p className="text-xs">Đã xử lý tất cả liên hệ mới!</p>
               </div>
             )}
@@ -204,7 +205,9 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                     <span>{w.name}</span>
                   </td>
                   <td className="py-3 font-medium text-gray-600">{formatVND(w.price)}</td>
-                  <td className="py-3 text-center text-[#B8924A] font-bold">{w.rating} ★</td>
+                  <td className="py-3 text-center text-[#B8924A] font-bold">
+                    <span className="inline-flex items-center gap-1 justify-center">{w.rating} <Star className="h-3.5 w-3.5 fill-current" /></span>
+                  </td>
                   <td className="py-3 text-center">
                     <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-bold text-[9px]">
                       Hoạt động

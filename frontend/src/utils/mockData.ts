@@ -637,3 +637,34 @@ export function getShowroomsForWatch(watchId: string): Showroom[] {
   const shop = getShopForWatch(watchId);
   return shop ? [shop] : getDbShops();
 }
+
+// --- Feedback (góp ý) -------------------------------------------------------
+export interface Feedback {
+  id: string;
+  target: 'shop' | 'website';
+  shopId?: string;
+  shopName?: string;
+  rating: number; // 1..5
+  topic?: string;
+  message: string;
+  name: string;
+  contact?: string;
+  timestamp: string;
+}
+
+export function getDbFeedback(): Feedback[] {
+  initDatabase();
+  return JSON.parse(localStorage.getItem('ar_feedback') || '[]');
+}
+
+export function addDbFeedback(fb: Omit<Feedback, 'id' | 'timestamp'>) {
+  const list = getDbFeedback();
+  const entry: Feedback = {
+    ...fb,
+    id: `fb-${Date.now()}`,
+    timestamp: new Date().toISOString(),
+  };
+  list.unshift(entry);
+  localStorage.setItem('ar_feedback', JSON.stringify(list));
+  return entry;
+}

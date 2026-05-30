@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Store, Pencil } from 'lucide-react';
 import { getMyShops, saveDbShowroom, Showroom } from '../../utils/mockData';
 
 export default function ShopSettings() {
@@ -33,8 +34,8 @@ export default function ShopSettings() {
       <section className="grid lg:grid-cols-12 gap-8 items-start">
         {/* Left Side: my stores list (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4">
-            🏬 Cửa hàng của tôi ({showrooms.length})
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
+            <Store className="h-4 w-4 text-[#B8924A]" /> Cửa hàng của tôi ({showrooms.length})
           </h3>
 
           {showrooms.map((room) => (
@@ -67,8 +68,8 @@ export default function ShopSettings() {
         {editingRoom && (
           <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm text-xs">
             <form onSubmit={handleSave}>
-              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4">
-                ✏️ Hiệu chỉnh thông tin showroom
+              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-[#B8924A]" /> Hiệu chỉnh thông tin showroom
               </h3>
 
               <div className="space-y-4">

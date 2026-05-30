@@ -8,6 +8,7 @@
  *  - Switch models dynamically in the bottom drawer.
  */
 import { useEffect, useState } from 'react';
+import { X, Check, Watch, Save, Store, ArrowLeft } from 'lucide-react';
 import { CameraView } from '../CameraView';
 import { WatchSelector } from '../WatchSelector';
 import { useARStore } from '../../store/useARStore';
@@ -31,7 +32,7 @@ function CloseButton({ onClose }: { onClose?: () => void }) {
       aria-label="Đóng"
       className="glass pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full text-lg text-white/90 transition active:scale-95 hover:bg-white/20"
     >
-      ✕
+      <X className="h-5 w-5" />
     </button>
   );
 }
@@ -333,7 +334,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
               onClick={handleResetCapture}
               className="glass h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold active:scale-95 text-white/80"
             >
-              ✕
+              <X className="h-5 w-5" />
             </button>
           </div>
 
@@ -355,7 +356,17 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                     : 'bg-[#B8924A] text-white hover:bg-[#a6803f] active:scale-95'
                 }`}
               >
-                <span>{savedToCloset ? '✓ Đã lưu tủ đồ' : '⌚ Lưu vào tủ đồ ảo'}</span>
+                {savedToCloset ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    <span>Đã lưu tủ đồ</span>
+                  </>
+                ) : (
+                  <>
+                    <Watch className="h-4 w-4" />
+                    <span>Lưu vào tủ đồ ảo</span>
+                  </>
+                )}
               </button>
 
               {/* Download */}
@@ -363,7 +374,8 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                 onClick={handleDownload}
                 className="py-3.5 rounded-xl border border-white/20 bg-white/5 hover:bg-white/15 text-white transition flex items-center justify-center gap-1.5 active:scale-95"
               >
-                <span>💾 Tải ảnh xuống</span>
+                <Save className="h-4 w-4" />
+                <span>Tải ảnh xuống</span>
               </button>
             </div>
 
@@ -376,15 +388,17 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
               }}
               className="w-full bg-[#F6F4EF] text-[#16162A] py-3.5 rounded-xl text-xs font-bold hover:bg-white transition flex items-center justify-center gap-1.5 active:scale-95 shadow"
             >
-              <span>🏬 Liên Hệ Shop Mua Mẫu Này</span>
+              <Store className="h-4 w-4" />
+              <span>Liên Hệ Shop Mua Mẫu Này</span>
             </button>
 
             {/* Retake button */}
             <button
               onClick={handleResetCapture}
-              className="w-full text-center text-xs font-semibold text-gray-400 hover:text-white transition py-2"
+              className="w-full inline-flex items-center justify-center gap-1.5 text-center text-xs font-semibold text-gray-400 hover:text-white transition py-2"
             >
-              ← Chụp lại / Quay lại Camera
+              <ArrowLeft className="h-4 w-4" />
+              Chụp lại / Quay lại Camera
             </button>
           </div>
         </div>

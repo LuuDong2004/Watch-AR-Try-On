@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { CalendarClock, Mail } from 'lucide-react';
 import { getDbLeads, Lead } from '../../utils/mockData';
 
 export default function AdminLeads() {
@@ -55,8 +56,12 @@ export default function AdminLeads() {
                   <td className="py-3.5 px-4 font-medium text-gray-700">{l.shopName}</td>
                   <td className="py-3.5 px-4 text-[#B8924A] font-bold">{l.watchName}</td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-[#16162A]/5 text-[#16162A] px-2.5 py-0.5 rounded font-semibold text-[9px] uppercase">
-                      {l.type === 'appointment' ? '🗓️ HẸN TRỰC TIẾP' : '✉️ CHAT TƯ VẤN'}
+                    <span className="bg-[#16162A]/5 text-[#16162A] px-2.5 py-0.5 rounded font-semibold text-[9px] uppercase inline-flex items-center gap-1">
+                      {l.type === 'appointment' ? (
+                        <><CalendarClock className="h-3 w-3" /> HẸN TRỰC TIẾP</>
+                      ) : (
+                        <><Mail className="h-3 w-3" /> CHAT TƯ VẤN</>
+                      )}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">{getStatusBadge(l.status)}</td>

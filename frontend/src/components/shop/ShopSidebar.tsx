@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { LayoutGrid, Hexagon, Plus, Mail, BarChart3, Settings, ChevronDown, Check, type LucideIcon } from 'lucide-react';
 import { getMyShops, OWNERS, CURRENT_OWNER_ID } from '../../utils/mockData';
 import BrandLogo from '../ui/BrandLogo';
 
@@ -10,13 +11,13 @@ interface ShopSidebarProps {
   onChangeScope: (scope: string) => void;
 }
 
-const MENU = [
-  { id: 'dashboard', name: 'Tổng quan', icon: '◈' },
-  { id: 'products', name: 'Sản phẩm', icon: '⬡' },
-  { id: 'add-product', name: 'Đăng mẫu mới', icon: '＋' },
-  { id: 'leads', name: 'Hộp liên hệ', icon: '✉', badge: true },
-  { id: 'analytics', name: 'Thống kê', icon: '◷' },
-  { id: 'settings', name: 'Cài đặt shop', icon: '⚙' },
+const MENU: { id: string; name: string; icon: LucideIcon; badge?: boolean }[] = [
+  { id: 'dashboard', name: 'Tổng quan', icon: LayoutGrid },
+  { id: 'products', name: 'Sản phẩm', icon: Hexagon },
+  { id: 'add-product', name: 'Đăng mẫu mới', icon: Plus },
+  { id: 'leads', name: 'Hộp liên hệ', icon: Mail, badge: true },
+  { id: 'analytics', name: 'Thống kê', icon: BarChart3 },
+  { id: 'settings', name: 'Cài đặt shop', icon: Settings },
 ];
 
 export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, shopScope, onChangeScope }: ShopSidebarProps) {
@@ -48,7 +49,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
             <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Đang quản lý</p>
             <p className="text-xs font-semibold truncate">{scopeLabel}</p>
           </div>
-          <span className={`text-[#B8924A] text-xs transition-transform ${switcherOpen ? 'rotate-180' : ''}`}>▾</span>
+          <ChevronDown className={`text-[#B8924A] h-4 w-4 transition-transform ${switcherOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {switcherOpen && (
@@ -57,7 +58,8 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
               onClick={() => { onChangeScope('all'); setSwitcherOpen(false); }}
               className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === 'all' ? 'text-[#B8924A] font-bold' : 'text-gray-300'}`}
             >
-              Tất cả cửa hàng {shopScope === 'all' && '✓'}
+              <span>Tất cả cửa hàng</span>
+              {shopScope === 'all' && <Check className="h-4 w-4" />}
             </button>
             <div className="h-px bg-white/10" />
             {myShops.map((s) => (
@@ -67,7 +69,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
                 className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === s.id ? 'text-[#B8924A] font-bold' : 'text-gray-300'}`}
               >
                 <span className="truncate">{s.name}</span>
-                {shopScope === s.id && <span>✓</span>}
+                {shopScope === s.id && <Check className="h-4 w-4" />}
               </button>
             ))}
           </div>
@@ -79,6 +81,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {MENU.map((item) => {
           const isActive = currentPage === item.id;
+          const Ic = item.icon;
           return (
             <button
               key={item.id}
@@ -88,7 +91,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
               }`}
             >
               <span className="flex items-center gap-3">
-                <span className={`text-base ${isActive ? 'text-white' : 'text-[#B8924A]'}`}>{item.icon}</span>
+                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
                 {item.name}
               </span>
               {item.badge && newLeadsCount > 0 && (

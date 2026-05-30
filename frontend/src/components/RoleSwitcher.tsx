@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { User, Store, Key, Wrench, RefreshCw } from 'lucide-react';
 import { resetDatabase } from '../utils/mockData';
 
 interface RoleSwitcherProps {
@@ -10,9 +11,9 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
   const [isOpen, setIsOpen] = useState(false);
 
   const roles = [
-    { id: 'user', name: 'Khách hàng', icon: '👤', desc: 'Xem đồng hồ, thử AR, đặt lịch' },
-    { id: 'shop', name: 'Cửa hàng', icon: '🏪', desc: 'Đăng sản phẩm, quản lý Leads, thống kê' },
-    { id: 'admin', name: 'Quản trị viên', icon: '🔑', desc: 'Duyệt model 3D, quản lý shop, user' },
+    { id: 'user', name: 'Khách hàng', icon: User, desc: 'Xem đồng hồ, thử AR, đặt lịch' },
+    { id: 'shop', name: 'Cửa hàng', icon: Store, desc: 'Đăng sản phẩm, quản lý Leads, thống kê' },
+    { id: 'admin', name: 'Quản trị viên', icon: Key, desc: 'Duyệt model 3D, quản lý shop, user' },
   ] as const;
 
   const handleRoleSelect = (roleId: 'user' | 'shop' | 'admin') => {
@@ -28,7 +29,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
         className="flex h-14 w-14 items-center justify-center rounded-full bg-[#16162A] text-white shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all duration-300 border border-[#B8924A]/30"
         title="Chuyển đổi vai trò demo"
       >
-        <span className="text-xl animate-pulse">🛠️</span>
+        <Wrench className="h-6 w-6 animate-pulse" />
       </button>
 
       {/* Dropdown Menu */}
@@ -54,7 +55,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
                       : 'hover:bg-[#e5e0d8]/55'
                   }`}
                 >
-                  <span className="text-2xl mt-0.5">{r.icon}</span>
+                  <span className="mt-0.5"><r.icon className="h-6 w-6" /></span>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">{r.name}</span>
@@ -82,9 +83,10 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
                   resetDatabase();
                 }
               }}
-              className="text-[11px] font-medium text-red-600 hover:text-red-800 transition py-1 px-2 rounded-lg hover:bg-red-50"
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-red-600 hover:text-red-800 transition py-1 px-2 rounded-lg hover:bg-red-50"
             >
-              🔄 Reset Dữ Liệu
+              <RefreshCw className="h-4 w-4" />
+              Reset Dữ Liệu
             </button>
           </div>
         </div>

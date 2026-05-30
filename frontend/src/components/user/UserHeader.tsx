@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { User, Heart } from 'lucide-react';
 import BrandLogo from '../ui/BrandLogo';
 
 interface UserHeaderProps {
@@ -11,8 +12,8 @@ const NAV_ITEMS: { key: string; label: string; match: string[] }[] = [
   { key: 'home', label: 'Trang chủ', match: ['home'] },
   { key: 'catalog', label: 'Sản phẩm', match: ['catalog', 'detail'] },
   { key: 'stores', label: 'Cửa hàng', match: ['stores'] },
-  { key: 'closet', label: 'Tủ đồ ảo', match: ['closet'] },
-  { key: 'contact', label: 'Liên hệ & Đặt lịch', match: ['contact'] },
+  { key: 'pricing', label: 'Nâng cấp', match: ['pricing'] },
+  { key: 'feedback', label: 'Góp ý', match: ['feedback'] },
 ];
 
 export default function UserHeader({ currentPage, onChangePage, favoritesCount }: UserHeaderProps) {
@@ -52,25 +53,19 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
           <button
-            onClick={() => go('account')}
-            className="relative p-2 rounded-full hover:bg-[#e5e0d8]/50 transition text-[#16162A]"
-            title="Đồng hồ yêu thích"
+            onClick={() => go('favorites')}
+            className={`relative p-2 rounded-full transition ${
+              currentPage === 'favorites' ? 'text-[#B8924A] bg-[#B8924A]/10' : 'text-[#16162A] hover:bg-[#e5e0d8]/50'
+            }`}
+            title="Sản phẩm yêu thích"
+            aria-label="Sản phẩm yêu thích"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
+            <Heart className={`h-5 w-5 ${currentPage === 'favorites' ? 'fill-current' : ''}`} />
             {favoritesCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-[#B8924A] text-white text-[9px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 bg-[#B8924A] text-white text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">
                 {favoritesCount}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={() => go('closet')}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#16162A] text-white text-xs font-semibold hover:bg-black transition border border-[#B8924A]/30"
-          >
-            <span>⌚ Tủ đồ ảo</span>
           </button>
 
           <button
@@ -78,7 +73,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
             className="h-9 w-9 rounded-full bg-[#e5e0d8] border border-[#B8924A]/40 flex items-center justify-center font-bold text-sm text-[#16162A] hover:scale-105 transition"
             title="Tài khoản"
           >
-            👤
+            <User className="h-5 w-5" />
           </button>
 
           {/* Mobile menu toggle */}

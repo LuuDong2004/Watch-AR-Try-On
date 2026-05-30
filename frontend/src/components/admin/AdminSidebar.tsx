@@ -1,20 +1,12 @@
 import React from 'react';
 import BrandLogo from '../ui/BrandLogo';
+import { ADMIN_NAV } from './adminNav';
 
 interface AdminSidebarProps {
   currentPage: string;
   onChangePage: (page: string) => void;
   pendingAuditsCount: number;
 }
-
-const MENU = [
-  { id: 'dashboard', name: 'Tổng quan hệ thống', icon: '◈' },
-  { id: 'shops', name: 'Quản lý cửa hàng', icon: '🏬' },
-  { id: 'audit', name: 'Kiểm duyệt 3D', icon: '★', badge: true },
-  { id: 'users', name: 'Người dùng', icon: '⌗' },
-  { id: 'leads', name: 'Leads toàn sàn', icon: '✉' },
-  { id: 'settings', name: 'Cấu hình hệ thống', icon: '⚙' },
-];
 
 export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsCount }: AdminSidebarProps) {
   return (
@@ -26,8 +18,9 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-        {MENU.map((item) => {
+        {ADMIN_NAV.map((item) => {
           const isActive = currentPage === item.id;
+          const Ic = item.icon;
           return (
             <button
               key={item.id}
@@ -37,7 +30,7 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
               }`}
             >
               <span className="flex items-center gap-3">
-                <span className={`text-base ${isActive ? 'text-white' : 'text-[#B8924A]'}`}>{item.icon}</span>
+                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
                 {item.name}
               </span>
               {item.badge && pendingAuditsCount > 0 && (

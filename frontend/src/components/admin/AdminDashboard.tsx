@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Circle, Store, Users, Package, Sparkles, Send, ClipboardList, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { getDbLeads, getDbWatches } from '../../utils/mockData';
 
 interface AdminDashboardProps {
@@ -29,27 +30,30 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Hệ Thống Admin Center</h1>
           <p className="text-xs text-gray-500 mt-1">Giám sát hoạt động của các cửa hàng đối tác, chất lượng file 3D và leads phát sinh</p>
         </div>
-        <span className="bg-red-600 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-full uppercase tracking-wider animate-pulse">
-          🔴 Live Monitoring Active
+        <span className="bg-red-600 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-full uppercase tracking-wider animate-pulse inline-flex items-center gap-1.5">
+          <Circle className="h-4 w-4 fill-current" /> Live Monitoring Active
         </span>
       </header>
 
       {/* Grid: 5 Metrics Cards */}
       <section className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 text-xs">
         {[
-          { label: 'Tổng số Showrooms', val: totalShops, change: 'Rolex, Omega, Aventus', icon: '🏪' },
-          { label: 'Tổng số Người dùng', val: totalUsers, change: '10+ thành viên mới hôm nay', icon: '👥' },
-          { label: 'Số mẫu đồng hồ', val: totalWatches, change: 'Tăng 2 mẫu tuần này', icon: '📦' },
-          { label: 'Số lượt thử AR', val: totalTryons, change: '+18.5% so với tuần trước', icon: '✨' },
-          { label: 'Tổng số Leads/Lịch hẹn', val: totalLeads, change: 'Không có GMV giao dịch', icon: '📨' }
-        ].map((card, idx) => (
+          { label: 'Tổng số Showrooms', val: totalShops, change: 'Rolex, Omega, Aventus', icon: Store },
+          { label: 'Tổng số Người dùng', val: totalUsers, change: '10+ thành viên mới hôm nay', icon: Users },
+          { label: 'Số mẫu đồng hồ', val: totalWatches, change: 'Tăng 2 mẫu tuần này', icon: Package },
+          { label: 'Số lượt thử AR', val: totalTryons, change: '+18.5% so với tuần trước', icon: Sparkles },
+          { label: 'Tổng số Leads/Lịch hẹn', val: totalLeads, change: 'Không có GMV giao dịch', icon: Send }
+        ].map((card: { label: string; val: number; change: string; icon: LucideIcon }, idx) => (
           <div
             key={idx}
             className="bg-white rounded-2xl p-4 border border-[#e5e0d8] shadow-sm flex flex-col justify-between hover:shadow transition"
           >
             <div className="flex justify-between items-center mb-3">
               <span className="text-gray-400 font-bold uppercase tracking-wider text-[8px]">{card.label}</span>
-              <span className="text-lg">{card.icon}</span>
+              {(() => {
+                const Ic = card.icon;
+                return <Ic className="h-5 w-5 text-[#B8924A]" />;
+              })()}
             </div>
             <div>
               <h3 className="text-xl font-bold text-[#16162A] mb-1">{card.val}</h3>
@@ -106,8 +110,8 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
         {/* Pending approvals checklist (4 cols) */}
         <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="font-display text-sm font-bold border-b border-gray-100 pb-2 mb-4">
-              📋 Hàng chờ phê duyệt
+            <h3 className="font-display text-sm font-bold border-b border-gray-100 pb-2 mb-4 flex items-center gap-2">
+              <ClipboardList className="h-4 w-4" /> Hàng chờ phê duyệt
             </h3>
 
             <div className="space-y-4">
@@ -142,7 +146,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
           </div>
 
           <div className="mt-8 bg-blue-50/50 text-blue-700 border border-blue-100 p-3 rounded-xl leading-normal text-[10px] flex items-center gap-2">
-            <span>🛡️</span>
+            <ShieldCheck className="h-4 w-4 flex-shrink-0" />
             <p>Tất cả model 3D trước khi hiển thị cho khách thử AR đều phải được admin rà soát chất lượng vân (textures).</p>
           </div>
         </div>

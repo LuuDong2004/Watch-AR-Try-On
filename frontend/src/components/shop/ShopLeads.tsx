@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Calendar, Mail, X, Phone, Watch, MessageCircle, Trash2 } from 'lucide-react';
 import { getLeadsForShopIds, resolveScopeShopIds, updateLeadStatus, deleteDbLead, Lead } from '../../utils/mockData';
 
 interface ShopLeadsProps {
@@ -140,7 +141,11 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
 
                       {/* Type */}
                       <td className="py-4 px-4 font-medium text-gray-600">
-                        {l.type === 'appointment' ? '🗓️ Đặt Lịch Hẹn' : '✉️ Tư vấn'}
+                        {l.type === 'appointment' ? (
+                          <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> Đặt Lịch Hẹn</span>
+                        ) : (
+                          <span className="flex items-center gap-1.5"><Mail className="h-4 w-4" /> Tư vấn</span>
+                        )}
                       </td>
 
                       {/* Status */}
@@ -157,7 +162,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
             </div>
           ) : (
             <div className="text-center py-16">
-              <span className="text-4xl">✉️</span>
+              <Mail className="h-10 w-10 mx-auto text-gray-300" />
               <h4 className="font-display font-bold text-sm mt-3 mb-1">Hộp liên hệ đang trống</h4>
               <p className="text-xs text-gray-400 max-w-xs mx-auto">
                 Không có cuộc trò chuyện hay lịch hẹn nào phù hợp với bộ lọc đã chọn.
@@ -178,9 +183,9 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
               </div>
               <button
                 onClick={() => setSelectedLead(null)}
-                className="text-gray-400 hover:text-black font-bold text-sm"
+                className="text-gray-400 hover:text-black"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -188,16 +193,16 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
             <div className="space-y-4">
               <div className="bg-[#F6F4EF] p-4 rounded-xl border border-gray-100">
                 <p className="text-[11px] font-bold text-[#16162A] mb-0.5">{selectedLead.name}</p>
-                <p className="text-[10px] text-gray-500">📞 SĐT: {selectedLead.phone}</p>
-                {selectedLead.email && <p className="text-[10px] text-gray-500">✉️ Email: {selectedLead.email}</p>}
+                <p className="text-[10px] text-gray-500 flex items-center gap-1.5"><Phone className="h-3 w-3" /> SĐT: {selectedLead.phone}</p>
+                {selectedLead.email && <p className="text-[10px] text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email: {selectedLead.email}</p>}
               </div>
 
               {/* Watch query details */}
               <div>
                 <span className="text-gray-400 font-bold block text-[8px] uppercase tracking-wider mb-1">Đồng hồ quan tâm</span>
                 <div className="p-3 bg-white border border-gray-100 rounded-xl flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[#16162A] text-white flex items-center justify-center font-bold text-xs">
-                    🕐
+                  <div className="h-8 w-8 rounded-full bg-[#16162A] text-white flex items-center justify-center">
+                    <Watch className="h-4 w-4" />
                   </div>
                   <div>
                     <p className="font-bold text-[#16162A]">{selectedLead.watchName}</p>
@@ -209,8 +214,8 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
               {/* Appointment details if applicable */}
               {selectedLead.type === 'appointment' && (
                 <div>
-                  <span className="text-gray-400 font-bold block text-[8px] uppercase tracking-wider mb-1">
-                    📅 Lịch hẹn showroom
+                  <span className="text-gray-400 font-bold flex items-center gap-1 text-[8px] uppercase tracking-wider mb-1">
+                    <Calendar className="h-3 w-3" /> Lịch hẹn showroom
                   </span>
                   <div className="grid grid-cols-2 gap-3 bg-[#F6F4EF] p-3 rounded-xl border border-gray-100">
                     <div>
@@ -237,17 +242,17 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
               <div className="flex gap-2 pt-2">
                 <a
                   href={`tel:${selectedLead.phone.replace(/\s/g, '')}`}
-                  className="flex-1 bg-[#16162A] text-white py-2 rounded-lg font-bold text-center hover:bg-black transition text-[10px]"
+                  className="flex-1 bg-[#16162A] text-white py-2 rounded-lg font-bold hover:bg-black transition text-[10px] flex items-center justify-center gap-1.5"
                 >
-                  📞 Gọi Hotline Khách
+                  <Phone className="h-3.5 w-3.5" /> Gọi Hotline Khách
                 </a>
                 <a
                   href={`https://zalo.me/${selectedLead.phone.replace(/\s/g, '')}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 border border-[#B8924A] text-[#B8924A] py-2 rounded-lg font-bold text-center hover:bg-[#B8924A]/5 transition text-[10px]"
+                  className="flex-1 border border-[#B8924A] text-[#B8924A] py-2 rounded-lg font-bold hover:bg-[#B8924A]/5 transition text-[10px] flex items-center justify-center gap-1.5"
                 >
-                  💬 Chat Zalo Với Khách
+                  <MessageCircle className="h-3.5 w-3.5" /> Chat Zalo Với Khách
                 </a>
               </div>
             </div>
@@ -293,9 +298,9 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
 
             <button
               onClick={() => handleDeleteLead(selectedLead.id)}
-              className="w-full text-center text-red-600 hover:text-red-800 font-bold block pt-2 text-[10px]"
+              className="w-full text-red-600 hover:text-red-800 font-bold flex items-center justify-center gap-1.5 pt-2 text-[10px]"
             >
-              🗑️ Xóa Liên Hệ Này
+              <Trash2 className="h-3.5 w-3.5" /> Xóa Liên Hệ Này
             </button>
           </div>
         </div>

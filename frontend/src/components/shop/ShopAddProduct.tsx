@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal } from 'lucide-react';
 import { getDbWatches, saveDbWatch, getMyShops, resolveScopeShopIds } from '../../utils/mockData';
 
 interface ShopAddProductProps {
@@ -144,8 +145,12 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
       {/* Page Header */}
       <header className="mb-8 border-b border-[#e5e0d8] pb-4 flex justify-between items-center">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">
-            {isEditMode ? '🔧 Cập Nhật Sản Phẩm' : '✨ Đăng Mẫu Đồng Hồ Mới'}
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A] flex items-center gap-2">
+            {isEditMode ? (
+              <><Pencil className="h-6 w-6 text-[#B8924A]" /> Cập Nhật Sản Phẩm</>
+            ) : (
+              <><Plus className="h-6 w-6 text-[#B8924A]" /> Đăng Mẫu Đồng Hồ Mới</>
+            )}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
             Chọn loại sản phẩm (Thường / AR), nhập thông số và đăng bán
@@ -163,8 +168,8 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-12 gap-8 items-start pb-16">
         {/* Left Column: Inputs details (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm space-y-6">
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A]">
-            📝 Thông tin sản phẩm cơ bản
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#B8924A]" /> Thông tin sản phẩm cơ bản
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
@@ -239,8 +244,8 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-lg">🖼️</span>
-                    {!form.hasAR && <span className="text-[#B8924A] text-sm font-bold">✓</span>}
+                    <ImageIcon className="h-5 w-5 text-gray-500" />
+                    {!form.hasAR && <Check className="h-4 w-4 text-[#B8924A]" />}
                   </div>
                   <p className="font-bold text-[#16162A]">Đồng hồ thường</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Hiển thị bằng ảnh 2D. Đăng bán ngay lập tức.</p>
@@ -258,7 +263,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                     Đang phát triển
                   </span>
                   <div className="flex items-center mb-1">
-                    <span className="text-lg">✨</span>
+                    <Box className="h-5 w-5 text-[#B8924A]" />
                   </div>
                   <p className="font-bold text-[#16162A]">Đồng hồ AR 3D</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Cho phép khách thử đeo AR trên cổ tay.</p>
@@ -270,7 +275,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
             {form.hasAR && (
               <div className="space-y-3 animate-fade-in">
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex gap-2.5 text-amber-800">
-                  <span className="text-base leading-none mt-0.5">🚧</span>
+                  <Construction className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <div className="text-[11px] leading-relaxed">
                     <p className="font-bold">Tính năng AR đang trong giai đoạn phát triển.</p>
                     <p className="text-amber-700 mt-0.5">
@@ -354,8 +359,8 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
             </div>
           </div>
 
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] pt-4">
-            ⚙️ Thông số kỹ thuật (Specs)
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] pt-4 flex items-center gap-2">
+            <Settings2 className="h-4 w-4 text-[#B8924A]" /> Thông số kỹ thuật (Specs)
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
@@ -394,8 +399,8 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           {!form.hasAR ? (
             /* NORMAL PRODUCT — live card preview + tips */
             <div>
-              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-4">
-                🖼️ Xem trước thẻ sản phẩm
+              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-4 flex items-center gap-2">
+                <Eye className="h-4 w-4 text-[#B8924A]" /> Xem trước thẻ sản phẩm
               </h3>
               <div className="rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm bg-[#F6F4EF] mb-5">
                 <div className="h-48 bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] overflow-hidden">
@@ -417,15 +422,16 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   <span className="inline-block mt-3 bg-white text-[#16162A] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#16162A]/15 uppercase tracking-widest">Ảnh 2D</span>
                 </div>
               </div>
-              <div className="bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-relaxed">
-                💡 Mẹo: dùng ảnh nền sáng, chụp chính diện mặt số để thẻ sản phẩm nổi bật. Có thể nâng cấp lên loại AR khi tính năng mở rộng cho cửa hàng.
+              <div className="bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-relaxed flex gap-2">
+                <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#B8924A]" />
+                <span>Mẹo: dùng ảnh nền sáng, chụp chính diện mặt số để thẻ sản phẩm nổi bật. Có thể nâng cấp lên loại AR khi tính năng mở rộng cho cửa hàng.</span>
               </div>
             </div>
           ) : (
           <>
           <div>
-            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-3">
-              📐 Bộ căn chỉnh AR trên cổ tay (Live Preview)
+            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-3 flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-[#B8924A]" /> Bộ căn chỉnh AR trên cổ tay (Live Preview)
             </h3>
             <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
               Kéo các thanh trượt bên dưới để cân chỉnh kích thước và hướng đeo đồng hồ 3D khớp khít nhất với khung cổ tay.
@@ -540,8 +546,9 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
             </div>
           </div>
 
-          <div className="mt-8 bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-normal">
-            💡 **Tip:** Đặt tỉ lệ chuẩn để mặt kính đồng hồ phủ rộng khoảng 75%-80% độ rộng của cổ tay, tạo hiệu ứng đeo thử tự nhiên nhất khi khách hàng bật camera.
+          <div className="mt-8 bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-normal flex gap-2">
+            <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#B8924A]" />
+            <span><span className="font-bold text-gray-700">Mẹo:</span> Đặt tỉ lệ chuẩn để mặt kính đồng hồ phủ rộng khoảng 75%-80% độ rộng của cổ tay, tạo hiệu ứng đeo thử tự nhiên nhất khi khách hàng bật camera.</span>
           </div>
           </>
           )}
