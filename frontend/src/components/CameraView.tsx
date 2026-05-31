@@ -90,7 +90,7 @@ function DebugOverlay() {
             const key = i === LM.WRIST || i === LM.INDEX_MCP || i === LM.PINKY_MCP;
             ctx.beginPath();
             ctx.arc(x, y, key ? 7 : 3, 0, Math.PI * 2);
-            ctx.fillStyle = key ? '#1C9FD9' : 'rgba(255,255,255,0.6)';
+            ctx.fillStyle = key ? '#c8a24a' : 'rgba(255,255,255,0.6)';
             ctx.fill();
           });
         }

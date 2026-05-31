@@ -25,7 +25,7 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
       <section className="grid sm:grid-cols-3 gap-6 mb-8 text-xs">
         <div className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm">
           <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-1">Tỉ lệ Thử AR → Đặt Lịch</p>
-          <h3 className="text-xl md:text-2xl font-bold text-[#1C9FD9] mb-1">
+          <h3 className="text-xl md:text-2xl font-bold text-[#B8924A] mb-1">
             {((leads.filter(l => l.type === 'appointment').length / totalTryons) * 100).toFixed(1)}%
           </h3>
           <p className="text-gray-500">Mức chuyển đổi cao hơn 15% so với ảnh 2D tĩnh</p>
@@ -55,7 +55,7 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
                 <span>86% tương tác</span>
               </div>
               <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-[#1C9FD9] h-full rounded-full" style={{ width: '86%' }} />
+                <div className="bg-[#B8924A] h-full rounded-full" style={{ width: '86%' }} />
               </div>
             </div>
             <div>
@@ -76,7 +76,7 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
             {watches.slice(0, 3).map((w, idx) => (
               <div key={w.id} className="flex justify-between items-center bg-[#F6F4EF] p-3 rounded-xl border border-gray-100">
                 <span className="font-bold">{w.name}</span>
-                <span className="bg-[#1C9FD9] text-white px-2 py-0.5 rounded text-[10px] font-bold">
+                <span className="bg-[#B8924A] text-white px-2 py-0.5 rounded text-[10px] font-bold">
                   {w.reviewCount * 3 + 12} Lượt Thử AR
                 </span>
               </div>

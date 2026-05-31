@@ -45,7 +45,7 @@ export default function HomePage() {
           </p>
           <a
             href="#catalog"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-semibold text-white transition hover:brightness-95"
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-semibold text-black transition hover:brightness-95"
           >
             Khám phá bộ sưu tập ↓
           </a>

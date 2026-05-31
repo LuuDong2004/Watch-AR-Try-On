@@ -40,7 +40,7 @@ export function DashboardLayout({
               end={item.end}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                  isActive ? 'bg-gold text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'
+                  isActive ? 'bg-gold text-black' : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }`
               }
             >

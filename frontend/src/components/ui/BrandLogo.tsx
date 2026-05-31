@@ -9,7 +9,7 @@ import React from 'react';
  * tagline ties it back into the house palette.
  */
 
-const GOLD = '#1C9FD9';
+const GOLD = '#B8924A';
 
 /** Transparent-bg wordmark, safe on any surface. */
 const LOGO_SRC = '/brand/truewrist-logo-alpha.png';

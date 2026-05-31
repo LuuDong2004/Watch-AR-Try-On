@@ -50,7 +50,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
   const getStatusBadge = (status: Lead['status']) => {
     const map = {
       new: { text: 'Đã gửi yêu cầu', bg: 'bg-blue-50 text-blue-600 border-blue-200' },
-      responded: { text: 'Shop đã phản hồi', bg: 'bg-[#1C9FD9]/10 text-[#1C9FD9] border-[#1C9FD9]/20' },
+      responded: { text: 'Shop đã phản hồi', bg: 'bg-[#B8924A]/10 text-[#B8924A] border-[#B8924A]/20' },
       booked: { text: 'Đã xếp lịch hẹn', bg: 'bg-green-50 text-green-600 border-green-200' },
       closed: { text: 'Lịch sử hoàn tất', bg: 'bg-gray-100 text-gray-500 border-gray-200' }
     };
@@ -71,7 +71,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
             <button
               onClick={() => setAuthTab('login')}
               className={`flex-1 py-3 font-semibold transition border-b-2 -mb-[2px] ${
-                authTab === 'login' ? 'border-[#1C9FD9] text-[#1C9FD9]' : 'border-transparent text-gray-500'
+                authTab === 'login' ? 'border-[#B8924A] text-[#B8924A]' : 'border-transparent text-gray-500'
               }`}
             >
               Đăng Nhập
@@ -79,7 +79,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
             <button
               onClick={() => setAuthTab('signup')}
               className={`flex-1 py-3 font-semibold transition border-b-2 -mb-[2px] ${
-                authTab === 'signup' ? 'border-[#1C9FD9] text-[#1C9FD9]' : 'border-transparent text-gray-500'
+                authTab === 'signup' ? 'border-[#B8924A] text-[#B8924A]' : 'border-transparent text-gray-500'
               }`}
             >
               Đăng Ký
@@ -95,7 +95,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="your.email@gmail.com"
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
             <div>
@@ -106,7 +106,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
 
@@ -117,14 +117,14 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                   type="text"
                   required
                   placeholder="Nguyễn Văn A"
-                  className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                  className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
                 />
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#1C9FD9]/30 flex items-center justify-center text-xs"
+              className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 flex items-center justify-center text-xs"
             >
               {authTab === 'login' ? 'Đăng Nhập Ngay' : 'Tạo Tài Khoản Mới'}
             </button>
@@ -157,22 +157,22 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
           {/* Left Panel: Profile summary card (4 cols) */}
           <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
             <div className="flex flex-col items-center text-center border-b border-[#e5e0d8] pb-6 mb-6">
-              <div className="h-20 w-20 rounded-full bg-[#16162A] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#1C9FD9] mb-4">
+              <div className="h-20 w-20 rounded-full bg-[#16162A] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A] mb-4">
                 MA
               </div>
               <h2 className="font-serif text-lg font-bold">Nguyễn Minh Anh</h2>
-              <p className="text-xs text-[#1C9FD9] font-medium mb-1">Thành viên cao cấp (VIP)</p>
+              <p className="text-xs text-[#B8924A] font-medium mb-1">Thành viên cao cấp (VIP)</p>
               <p className="text-[11px] text-gray-400">minhanh.nguyen@gmail.com · 0912 345 678</p>
             </div>
 
             <div className="space-y-3.5 text-xs text-[#16162A]/90">
               <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
                 <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Lịch sử đặt hẹn</span>
-                <span className="font-bold text-[#1C9FD9]">{leads.length} lịch hẹn</span>
+                <span className="font-bold text-[#B8924A]">{leads.length} lịch hẹn</span>
               </div>
               <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
                 <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Đồng hồ yêu thích</span>
-                <span className="font-bold text-[#1C9FD9]">{favorites.length} sản phẩm</span>
+                <span className="font-bold text-[#B8924A]">{favorites.length} sản phẩm</span>
               </div>
             </div>
 
@@ -192,7 +192,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
               <button
                 onClick={() => setActiveSubTab('leads')}
                 className={`py-3 px-6 font-semibold transition border-b-2 -mb-[2px] ${
-                  activeSubTab === 'leads' ? 'border-[#1C9FD9] text-[#1C9FD9]' : 'border-transparent text-gray-500 hover:text-black'
+                  activeSubTab === 'leads' ? 'border-[#B8924A] text-[#B8924A]' : 'border-transparent text-gray-500 hover:text-black'
                 }`}
               >
                 Lịch sử liên hệ ({leads.length})
@@ -200,7 +200,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
               <button
                 onClick={() => setActiveSubTab('favs')}
                 className={`py-3 px-6 font-semibold transition border-b-2 -mb-[2px] ${
-                  activeSubTab === 'favs' ? 'border-[#1C9FD9] text-[#1C9FD9]' : 'border-transparent text-gray-500 hover:text-black'
+                  activeSubTab === 'favs' ? 'border-[#B8924A] text-[#B8924A]' : 'border-transparent text-gray-500 hover:text-black'
                 }`}
               >
                 Mẫu đã yêu thích ({favorites.length})
@@ -214,7 +214,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                   leads.map((lead) => (
                     <div
                       key={lead.id}
-                      className="bg-[#F6F4EF] p-4 rounded-2xl border border-[#e5e0d8] text-xs hover:border-[#1C9FD9] transition"
+                      className="bg-[#F6F4EF] p-4 rounded-2xl border border-[#e5e0d8] text-xs hover:border-[#B8924A] transition"
                     >
                       <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
                         <div>
@@ -262,7 +262,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                     </p>
                     <button
                       onClick={onBackToCatalog}
-                      className="bg-[#1C9FD9] text-white px-5 py-2 rounded-full font-semibold text-xs"
+                      className="bg-[#B8924A] text-white px-5 py-2 rounded-full font-semibold text-xs"
                     >
                       Bắt đầu xem sản phẩm
                     </button>
@@ -280,7 +280,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                       <div
                         key={fav.id}
                         onClick={() => onSelectWatch(fav.id)}
-                        className="bg-[#F6F4EF] p-4 rounded-2xl border border-[#e5e0d8] flex items-center gap-4 hover:border-[#1C9FD9] hover:scale-102 transition cursor-pointer"
+                        className="bg-[#F6F4EF] p-4 rounded-2xl border border-[#e5e0d8] flex items-center gap-4 hover:border-[#B8924A] hover:scale-102 transition cursor-pointer"
                       >
                         <div className="h-12 w-12 rounded-xl overflow-hidden border border-[#e5e0d8] shadow-sm flex-shrink-0 bg-white">
                           <img src={fav.image} alt={fav.name} className="w-full h-full object-cover" />
@@ -306,7 +306,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                     </p>
                     <button
                       onClick={onBackToCatalog}
-                      className="bg-[#1C9FD9] text-white px-5 py-2 rounded-full font-semibold text-xs"
+                      className="bg-[#B8924A] text-white px-5 py-2 rounded-full font-semibold text-xs"
                     >
                       Bắt đầu khám phá
                     </button>

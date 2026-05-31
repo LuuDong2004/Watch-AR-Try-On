@@ -26,7 +26,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
     hasAR: false,
     metal: '#d2d6db',
     dial: '#15171c',
-    accent: '#1C9FD9',
+    accent: '#B8924A',
     specs: {
       'Đường kính mặt': '41 mm',
       'Độ dày vỏ': '12 mm',
@@ -64,7 +64,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           hasAR: found.hasAR ?? !!found.model,
           metal: found.metal || '#cfd3d8',
           dial: found.dial || '#0b2a4a',
-          accent: found.accent || '#1C9FD9',
+          accent: found.accent || '#B8924A',
           specs: {
             'Đường kính mặt': found.specs?.['Đường kính mặt'] || '41 mm',
             'Độ dày vỏ': found.specs?.['Độ dày vỏ'] || '12 mm',
@@ -147,9 +147,9 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A] flex items-center gap-2">
             {isEditMode ? (
-              <><Pencil className="h-6 w-6 text-[#1C9FD9]" /> Cập Nhật Sản Phẩm</>
+              <><Pencil className="h-6 w-6 text-[#B8924A]" /> Cập Nhật Sản Phẩm</>
             ) : (
-              <><Plus className="h-6 w-6 text-[#1C9FD9]" /> Đăng Mẫu Đồng Hồ Mới</>
+              <><Plus className="h-6 w-6 text-[#B8924A]" /> Đăng Mẫu Đồng Hồ Mới</>
             )}
           </h1>
           <p className="text-xs text-gray-500 mt-1">
@@ -169,7 +169,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
         {/* Left Column: Inputs details (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm space-y-6">
           <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] flex items-center gap-2">
-            <FileText className="h-4 w-4 text-[#1C9FD9]" /> Thông tin sản phẩm cơ bản
+            <FileText className="h-4 w-4 text-[#B8924A]" /> Thông tin sản phẩm cơ bản
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
@@ -182,7 +182,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Ví dụ: Rolex Submariner Gold 41mm"
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
 
@@ -195,7 +195,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 value={form.brand}
                 onChange={(e) => setForm({ ...form, brand: e.target.value })}
                 placeholder="Ví dụ: Rolex"
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
 
@@ -211,7 +211,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   value={form.image}
                   onChange={(e) => setForm({ ...form, image: e.target.value })}
                   placeholder="https://...jpg"
-                  className="flex-1 rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition bg-gray-50 text-gray-600 font-mono text-[11px]"
+                  className="flex-1 rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition bg-gray-50 text-gray-600 font-mono text-[11px]"
                 />
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               <select
                 value={form.shopId}
                 onChange={(e) => setForm({ ...form, shopId: e.target.value })}
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition bg-white"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition bg-white"
               >
                 {myShops.map((s) => (
                   <option key={s.id} value={s.id}>{s.name} · {s.address}</option>
@@ -240,12 +240,12 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   type="button"
                   onClick={() => setForm({ ...form, hasAR: false })}
                   className={`text-left rounded-xl border-2 p-3.5 transition ${
-                    !form.hasAR ? 'border-[#1C9FD9] bg-[#1C9FD9]/5 ring-2 ring-[#1C9FD9]/20' : 'border-[#e5e0d8] hover:border-gray-300'
+                    !form.hasAR ? 'border-[#B8924A] bg-[#B8924A]/5 ring-2 ring-[#B8924A]/20' : 'border-[#e5e0d8] hover:border-gray-300'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
                     <ImageIcon className="h-5 w-5 text-gray-500" />
-                    {!form.hasAR && <Check className="h-4 w-4 text-[#1C9FD9]" />}
+                    {!form.hasAR && <Check className="h-4 w-4 text-[#B8924A]" />}
                   </div>
                   <p className="font-bold text-[#16162A]">Đồng hồ thường</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Hiển thị bằng ảnh 2D. Đăng bán ngay lập tức.</p>
@@ -256,14 +256,14 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   type="button"
                   onClick={() => setForm({ ...form, hasAR: true })}
                   className={`relative text-left rounded-xl border-2 p-3.5 transition ${
-                    form.hasAR ? 'border-[#1C9FD9] bg-[#1C9FD9]/5 ring-2 ring-[#1C9FD9]/20' : 'border-[#e5e0d8] hover:border-gray-300'
+                    form.hasAR ? 'border-[#B8924A] bg-[#B8924A]/5 ring-2 ring-[#B8924A]/20' : 'border-[#e5e0d8] hover:border-gray-300'
                   }`}
                 >
                   <span className="absolute top-2 right-2 bg-amber-100 text-amber-700 text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-amber-200 uppercase tracking-wide">
                     Đang phát triển
                   </span>
                   <div className="flex items-center mb-1">
-                    <Box className="h-5 w-5 text-[#1C9FD9]" />
+                    <Box className="h-5 w-5 text-[#B8924A]" />
                   </div>
                   <p className="font-bold text-[#16162A]">Đồng hồ AR 3D</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Cho phép khách thử đeo AR trên cổ tay.</p>
@@ -290,7 +290,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                     value={form.model}
                     onChange={(e) => setForm({ ...form, model: e.target.value })}
                     placeholder="/models/chronograph_watch.glb"
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition bg-gray-50 text-gray-600 font-mono"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition bg-gray-50 text-gray-600 font-mono"
                   />
                 </div>
               </div>
@@ -304,7 +304,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 required
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
 
@@ -315,7 +315,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 type="number"
                 value={form.originalPrice}
                 onChange={(e) => setForm({ ...form, originalPrice: Number(e.target.value) })}
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
               />
             </div>
 
@@ -354,13 +354,13 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={3}
                 placeholder="Mô tả chất liệu máy Thụy Sĩ, đá đính kèm..."
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition resize-none"
+                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition resize-none"
               />
             </div>
           </div>
 
           <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] pt-4 flex items-center gap-2">
-            <Settings2 className="h-4 w-4 text-[#1C9FD9]" /> Thông số kỹ thuật (Specs)
+            <Settings2 className="h-4 w-4 text-[#B8924A]" /> Thông số kỹ thuật (Specs)
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
@@ -371,7 +371,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   type="text"
                   value={val}
                   onChange={(e) => handleSpecChange(key, e.target.value)}
-                  className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                  className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
                 />
               </div>
             ))}
@@ -380,7 +380,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           <div className="pt-4 flex gap-2 justify-end border-t border-[#e5e0d8]">
             <button
               type="submit"
-              className="bg-[#16162A] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#1C9FD9]/30 active:scale-95"
+              className="bg-[#16162A] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#B8924A]/30 active:scale-95"
             >
               {isEditMode ? 'Lưu Thay Đổi & Xuất Bản' : 'Đăng Bán & Duyệt Sản Phẩm'}
             </button>
@@ -400,7 +400,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
             /* NORMAL PRODUCT — live card preview + tips */
             <div>
               <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-4 flex items-center gap-2">
-                <Eye className="h-4 w-4 text-[#1C9FD9]" /> Xem trước thẻ sản phẩm
+                <Eye className="h-4 w-4 text-[#B8924A]" /> Xem trước thẻ sản phẩm
               </h3>
               <div className="rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm bg-[#F6F4EF] mb-5">
                 <div className="h-48 bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] overflow-hidden">
@@ -423,7 +423,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 </div>
               </div>
               <div className="bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-relaxed flex gap-2">
-                <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#1C9FD9]" />
+                <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#B8924A]" />
                 <span>Mẹo: dùng ảnh nền sáng, chụp chính diện mặt số để thẻ sản phẩm nổi bật. Có thể nâng cấp lên loại AR khi tính năng mở rộng cho cửa hàng.</span>
               </div>
             </div>
@@ -431,7 +431,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           <>
           <div>
             <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-3 flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-[#1C9FD9]" /> Bộ căn chỉnh AR trên cổ tay (Live Preview)
+              <SlidersHorizontal className="h-4 w-4 text-[#B8924A]" /> Bộ căn chỉnh AR trên cổ tay (Live Preview)
             </h3>
             <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
               Kéo các thanh trượt bên dưới để cân chỉnh kích thước và hướng đeo đồng hồ 3D khớp khít nhất với khung cổ tay.
@@ -465,11 +465,11 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
 
               {/* Overlay guidelines grid */}
               <div className="absolute inset-0 border border-dashed border-gray-200/50 pointer-events-none flex items-center justify-center">
-                <div className="w-[1px] h-full border-l border-dashed border-[#1C9FD9]/20" />
-                <div className="h-[1px] w-full border-t border-dashed border-[#1C9FD9]/20" />
+                <div className="w-[1px] h-full border-l border-dashed border-[#B8924A]/20" />
+                <div className="h-[1px] w-full border-t border-dashed border-[#B8924A]/20" />
               </div>
 
-              <span className="absolute bottom-2 left-3 text-[9px] uppercase tracking-wider text-[#1C9FD9] font-bold">
+              <span className="absolute bottom-2 left-3 text-[9px] uppercase tracking-wider text-[#B8924A] font-bold">
                 Mô phỏng 3D Calibration
               </span>
             </div>
@@ -480,7 +480,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="font-bold text-gray-500">Tỉ lệ kích thước (Scale)</label>
-                  <span className="font-mono text-[#1C9FD9] font-bold">×{Number(form.arScale).toFixed(2)}</span>
+                  <span className="font-mono text-[#B8924A] font-bold">×{Number(form.arScale).toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -489,7 +489,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   step="0.05"
                   value={form.arScale}
                   onChange={(e) => setForm({ ...form, arScale: Number(e.target.value) })}
-                  className="w-full accent-[#1C9FD9]"
+                  className="w-full accent-[#B8924A]"
                 />
               </div>
 
@@ -497,7 +497,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="font-bold text-gray-500">Dịch dọc trục cổ tay (Y Position)</label>
-                  <span className="font-mono text-[#1C9FD9] font-bold">{Number(form.arPositionY).toFixed(2)}</span>
+                  <span className="font-mono text-[#B8924A] font-bold">{Number(form.arPositionY).toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -506,7 +506,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   step="0.05"
                   value={form.arPositionY}
                   onChange={(e) => setForm({ ...form, arPositionY: Number(e.target.value) })}
-                  className="w-full accent-[#1C9FD9]"
+                  className="w-full accent-[#B8924A]"
                 />
               </div>
 
@@ -514,7 +514,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="font-bold text-gray-500">Dịch ngang cổ tay (X Position)</label>
-                  <span className="font-mono text-[#1C9FD9] font-bold">{Number(form.arPositionX).toFixed(2)}</span>
+                  <span className="font-mono text-[#B8924A] font-bold">{Number(form.arPositionX).toFixed(2)}</span>
                 </div>
                 <input
                   type="range"
@@ -523,7 +523,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   step="0.05"
                   value={form.arPositionX}
                   onChange={(e) => setForm({ ...form, arPositionX: Number(e.target.value) })}
-                  className="w-full accent-[#1C9FD9]"
+                  className="w-full accent-[#B8924A]"
                 />
               </div>
 
@@ -531,7 +531,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="font-bold text-gray-500">Bù góc xoay (Rotation Offset)</label>
-                  <span className="font-mono text-[#1C9FD9] font-bold">{form.arRotationOffset}°</span>
+                  <span className="font-mono text-[#B8924A] font-bold">{form.arRotationOffset}°</span>
                 </div>
                 <input
                   type="range"
@@ -540,14 +540,14 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   step="5"
                   value={form.arRotationOffset}
                   onChange={(e) => setForm({ ...form, arRotationOffset: Number(e.target.value) })}
-                  className="w-full accent-[#1C9FD9]"
+                  className="w-full accent-[#B8924A]"
                 />
               </div>
             </div>
           </div>
 
           <div className="mt-8 bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-normal flex gap-2">
-            <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#1C9FD9]" />
+            <Lightbulb className="h-4 w-4 flex-shrink-0 mt-0.5 text-[#B8924A]" />
             <span><span className="font-bold text-gray-700">Mẹo:</span> Đặt tỉ lệ chuẩn để mặt kính đồng hồ phủ rộng khoảng 75%-80% độ rộng của cổ tay, tạo hiệu ứng đeo thử tự nhiên nhất khi khách hàng bật camera.</span>
           </div>
           </>

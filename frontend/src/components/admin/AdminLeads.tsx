@@ -12,7 +12,7 @@ export default function AdminLeads() {
   const getStatusBadge = (status: Lead['status']) => {
     const map = {
       new: { text: 'Yêu cầu mới', bg: 'bg-red-50 text-red-600 border-red-200' },
-      responded: { text: 'Shop đã phản hồi', bg: 'bg-[#1C9FD9]/10 text-[#1C9FD9] border-[#1C9FD9]/20' },
+      responded: { text: 'Shop đã phản hồi', bg: 'bg-[#B8924A]/10 text-[#B8924A] border-[#B8924A]/20' },
       booked: { text: 'Đã hẹn showroom', bg: 'bg-green-50 text-green-600 border-green-200' },
       closed: { text: 'Đã hoàn tất', bg: 'bg-gray-100 text-gray-500 border-gray-200' }
     };
@@ -54,7 +54,7 @@ export default function AdminLeads() {
                     <p className="text-[9px] text-gray-400 font-semibold">{l.phone}</p>
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-700">{l.shopName}</td>
-                  <td className="py-3.5 px-4 text-[#1C9FD9] font-bold">{l.watchName}</td>
+                  <td className="py-3.5 px-4 text-[#B8924A] font-bold">{l.watchName}</td>
                   <td className="py-3.5 px-4">
                     <span className="bg-[#16162A]/5 text-[#16162A] px-2.5 py-0.5 rounded font-semibold text-[9px] uppercase inline-flex items-center gap-1">
                       {l.type === 'appointment' ? (

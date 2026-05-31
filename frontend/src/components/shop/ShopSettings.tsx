@@ -35,7 +35,7 @@ export default function ShopSettings() {
         {/* Left Side: my stores list (7 cols) */}
         <div className="lg:col-span-7 space-y-4">
           <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
-            <Store className="h-4 w-4 text-[#1C9FD9]" /> Cửa hàng của tôi ({showrooms.length})
+            <Store className="h-4 w-4 text-[#B8924A]" /> Cửa hàng của tôi ({showrooms.length})
           </h3>
 
           {showrooms.map((room) => (
@@ -69,7 +69,7 @@ export default function ShopSettings() {
           <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm text-xs">
             <form onSubmit={handleSave}>
               <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 mb-4 flex items-center gap-2">
-                <Pencil className="h-4 w-4 text-[#1C9FD9]" /> Hiệu chỉnh thông tin showroom
+                <Pencil className="h-4 w-4 text-[#B8924A]" /> Hiệu chỉnh thông tin showroom
               </h3>
 
               <div className="space-y-4">
@@ -80,7 +80,7 @@ export default function ShopSettings() {
                     required
                     value={editingRoom.name}
                     onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
                   />
                 </div>
 
@@ -91,7 +91,7 @@ export default function ShopSettings() {
                     value={editingRoom.address}
                     onChange={(e) => setEditingRoom({ ...editingRoom, address: e.target.value })}
                     rows={2}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition resize-none"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition resize-none"
                   />
                 </div>
 
@@ -102,7 +102,7 @@ export default function ShopSettings() {
                     required
                     value={editingRoom.phone}
                     onChange={(e) => setEditingRoom({ ...editingRoom, phone: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
                   />
                 </div>
 
@@ -113,7 +113,7 @@ export default function ShopSettings() {
                     required
                     value={editingRoom.zalo}
                     onChange={(e) => setEditingRoom({ ...editingRoom, zalo: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition font-mono"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition font-mono"
                   />
                 </div>
 
@@ -124,7 +124,7 @@ export default function ShopSettings() {
                     required
                     value={editingRoom.messenger}
                     onChange={(e) => setEditingRoom({ ...editingRoom, messenger: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition font-mono"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition font-mono"
                   />
                 </div>
 
@@ -135,7 +135,7 @@ export default function ShopSettings() {
                     required
                     value={editingRoom.hours}
                     onChange={(e) => setEditingRoom({ ...editingRoom, hours: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
                   />
                 </div>
               </div>

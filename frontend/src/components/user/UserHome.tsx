@@ -26,15 +26,15 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
     <div className="bg-[#F6F4EF] text-[#16162A] font-sans">
       {/* ============================ HERO ============================ */}
       <section className="relative overflow-hidden bg-[#16162A] text-white">
-        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_30%_20%,#1C9FD9,transparent_55%)]" />
+        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_30%_20%,#B8924A,transparent_55%)]" />
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative">
           {/* Copy */}
           <div>
-            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-[#1C9FD9] font-bold mb-5">
-              <span className="h-px w-8 bg-[#1C9FD9]" /> Haute Horlogerie × AR
+            <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-5">
+              <span className="h-px w-8 bg-[#B8924A]" /> Haute Horlogerie × AR
             </span>
             <h1 className="heading-crisp font-display text-4xl md:text-6xl font-bold leading-[1.12] pb-1 mb-6">
-              Đeo thử đồng hồ ảo <span className="text-[#1C9FD9]">ngay trên tay</span> của bạn
+              Đeo thử đồng hồ ảo <span className="text-[#B8924A]">ngay trên tay</span> của bạn
             </h1>
             <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 max-w-lg">
               Trải nghiệm công nghệ thử đeo AR thời gian thực và xem mô hình 3D 360° sắc nét.
@@ -43,14 +43,14 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => onNavigate('catalog')}
-                className="bg-[#1C9FD9] hover:bg-[#1685B8] text-white font-semibold px-8 py-3.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95"
+                className="bg-[#B8924A] hover:bg-[#a6803f] text-white font-semibold px-8 py-3.5 rounded-full transition shadow-lg hover:scale-105 active:scale-95"
               >
                 Khám phá bộ sưu tập
               </button>
               {featured && (
                 <button
                   onClick={() => onOpenAR(featured.id)}
-                  className="border border-white/30 hover:border-[#1C9FD9] hover:text-[#1C9FD9] text-white font-semibold px-8 py-3.5 rounded-full transition flex items-center gap-2"
+                  className="border border-white/30 hover:border-[#B8924A] hover:text-[#B8924A] text-white font-semibold px-8 py-3.5 rounded-full transition flex items-center gap-2"
                 >
                   <Sparkles className="h-4 w-4" /> Thử AR ngay
                 </button>
@@ -65,7 +65,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                 ['2', 'Shop uy tín'],
               ].map(([n, l]) => (
                 <div key={l}>
-                  <div className="font-display text-2xl md:text-3xl font-bold text-[#1C9FD9]">{n}</div>
+                  <div className="font-display text-2xl md:text-3xl font-bold text-[#B8924A]">{n}</div>
                   <div className="text-[11px] uppercase tracking-wider text-gray-400">{l}</div>
                 </div>
               ))}
@@ -74,7 +74,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
 
           {/* Featured 3D viewer */}
           <div className="relative">
-            <div className="absolute -inset-4 bg-[#1C9FD9]/10 blur-3xl rounded-full" />
+            <div className="absolute -inset-4 bg-[#B8924A]/10 blur-3xl rounded-full" />
             <div className="relative bg-white/5 border border-white/10 rounded-3xl p-4 backdrop-blur shadow-2xl">
               {featured?.model ? (
                 <Watch3DViewer modelUrl={featured.model} variant={featured.variant} height={360} />
@@ -83,10 +83,10 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
               )}
               <div className="flex items-center justify-between mt-4 px-2 pb-1">
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-[#1C9FD9] font-bold">{featured?.brand}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-[#B8924A] font-bold">{featured?.brand}</p>
                   <p className="font-display font-bold text-white">{featured?.name}</p>
                 </div>
-                <span className="bg-[#1C9FD9] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                <span className="bg-[#B8924A] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                   3D · 360°
                 </span>
               </div>
@@ -110,17 +110,17 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
         <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#16162A] text-white shadow-2xl">
           {/* ambient glow */}
-          <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_78%_25%,#1C9FD9,transparent_55%)]" />
-          <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#1C9FD9]/60 to-transparent" />
+          <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_78%_25%,#B8924A,transparent_55%)]" />
+          <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B8924A]/60 to-transparent" />
 
           <div className="relative grid lg:grid-cols-2 gap-10 lg:gap-14 p-8 md:p-12 lg:p-16 items-center">
             {/* ---- Copy column ---- */}
             <div>
-              <span className="inline-flex items-center gap-2 bg-[#1C9FD9]/15 border border-[#1C9FD9]/30 text-[#1C9FD9] text-[11px] font-bold uppercase tracking-[0.25em] px-3.5 py-1.5 rounded-full mb-6">
+              <span className="inline-flex items-center gap-2 bg-[#B8924A]/15 border border-[#B8924A]/30 text-[#B8924A] text-[11px] font-bold uppercase tracking-[0.25em] px-3.5 py-1.5 rounded-full mb-6">
                 <Wand2 className="h-3.5 w-3.5" /> Sắp ra mắt
               </span>
               <h2 className="heading-crisp font-display text-3xl md:text-4xl lg:text-5xl font-bold leading-snug pb-1 mb-5">
-                Thiết kế trải nghiệm <span className="text-[#1C9FD9]">đồng hồ 3D</span> của riêng bạn
+                Thiết kế trải nghiệm <span className="text-[#B8924A]">đồng hồ 3D</span> của riêng bạn
               </h2>
               <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-8 max-w-md">
                 Tải lên hình ảnh chiếc đồng hồ bạn mơ ước hoặc phong cách yêu thích — hệ thống sẽ
@@ -134,7 +134,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                   'Đeo thử AR & chia sẻ với bạn bè',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-gray-200">
-                    <span className="h-5 w-5 rounded-full bg-[#1C9FD9]/20 border border-[#1C9FD9]/40 flex items-center justify-center text-[#1C9FD9] flex-shrink-0">
+                    <span className="h-5 w-5 rounded-full bg-[#B8924A]/20 border border-[#B8924A]/40 flex items-center justify-center text-[#B8924A] flex-shrink-0">
                       <Check className="h-3 w-3" />
                     </span>
                     {item}
@@ -152,14 +152,14 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
 
             {/* ---- Upload dropzone mockup (visual only) ---- */}
             <div className="relative">
-              <div className="absolute -inset-3 bg-[#1C9FD9]/10 blur-3xl rounded-full" />
+              <div className="absolute -inset-3 bg-[#B8924A]/10 blur-3xl rounded-full" />
               <div className="relative rounded-3xl border-2 border-dashed border-white/20 bg-white/[0.04] backdrop-blur p-8 md:p-10 text-center">
                 {/* coming-soon ribbon */}
-                <span className="absolute top-4 right-4 bg-[#1C9FD9] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest shadow">
+                <span className="absolute top-4 right-4 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest shadow">
                   Beta
                 </span>
 
-                <div className="h-20 w-20 mx-auto rounded-2xl bg-[#1C9FD9]/15 border border-[#1C9FD9]/30 flex items-center justify-center text-[#1C9FD9] mb-6">
+                <div className="h-20 w-20 mx-auto rounded-2xl bg-[#B8924A]/15 border border-[#B8924A]/30 flex items-center justify-center text-[#B8924A] mb-6">
                   <UploadCloud className="h-9 w-9" />
                 </div>
                 <p className="font-display font-bold text-lg md:text-xl mb-1.5">Kéo thả ảnh vào đây</p>
@@ -172,7 +172,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                 </div>
 
                 <p className="mt-6 text-[11px] text-gray-500 flex items-center justify-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-[#1C9FD9]" /> Tính năng đang được hoàn thiện
+                  <Sparkles className="h-3.5 w-3.5 text-[#B8924A]" /> Tính năng đang được hoàn thiện
                 </p>
               </div>
             </div>
@@ -186,10 +186,10 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
           <div className="max-w-6xl mx-auto px-4 py-16 md:py-20">
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-10">
               <div>
-                <span className="text-xs uppercase tracking-[0.3em] text-[#1C9FD9] font-bold">Được yêu thích</span>
+                <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Được yêu thích</span>
                 <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Bộ sưu tập nổi bật</h2>
               </div>
-              <button onClick={() => onNavigate('catalog')} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1C9FD9] hover:underline whitespace-nowrap">
+              <button onClick={() => onNavigate('catalog')} className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#B8924A] hover:underline whitespace-nowrap">
                 Toàn bộ sản phẩm <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -203,12 +203,12 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                   <div className="relative h-44 overflow-hidden">
                     <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     {w.hasAR && (
-                      <span className="absolute top-2 right-2 bg-[#1C9FD9] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">AR</span>
+                      <span className="absolute top-2 right-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">AR</span>
                     )}
                   </div>
                   <div className="p-4">
                     <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
-                    <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#1C9FD9] transition">{w.name}</h3>
+                    <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#B8924A] transition">{w.name}</h3>
                     <span className="text-sm font-bold">{formatVND(w.price)}</span>
                   </div>
                 </div>
@@ -222,7 +222,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       <section className="bg-[#16162A] text-white">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs uppercase tracking-[0.3em] text-[#1C9FD9] font-bold">Khách hàng nói gì</span>
+            <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Khách hàng nói gì</span>
             <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Tin tưởng bởi hàng nghìn người</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
@@ -232,14 +232,14 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
               { name: 'Minh Anh', role: 'Nhà sáng tạo nội dung', text: 'Đặt lịch nhanh gọn, shop tư vấn rất tận tình. Sẽ quay lại!' },
             ].map((t) => (
               <div key={t.name} className="bg-white/5 border border-white/10 rounded-3xl p-7">
-                <div className="flex text-[#1C9FD9] mb-3">
+                <div className="flex text-[#B8924A] mb-3">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                   ))}
                 </div>
                 <p className="text-sm text-gray-300 leading-relaxed mb-5">“{t.text}”</p>
                 <div className="flex items-center gap-3">
-                  <span className="h-10 w-10 rounded-full bg-[#1C9FD9]/20 border border-[#1C9FD9]/40 flex items-center justify-center font-bold text-[#1C9FD9]">
+                  <span className="h-10 w-10 rounded-full bg-[#B8924A]/20 border border-[#B8924A]/40 flex items-center justify-center font-bold text-[#B8924A]">
                     {t.name[0]}
                   </span>
                   <div>

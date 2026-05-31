@@ -61,7 +61,7 @@ export default function AdminAudit() {
                 key={w.id}
                 onClick={() => handleSelect(w)}
                 className={`p-3 bg-[#F6F4EF] rounded-xl border transition cursor-pointer flex justify-between items-center ${
-                  selectedWatch.id === w.id ? 'border-[#1C9FD9] bg-[#1C9FD9]/5' : 'border-gray-100'
+                  selectedWatch.id === w.id ? 'border-[#B8924A] bg-[#B8924A]/5' : 'border-gray-100'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function AdminAudit() {
                 'Thông số kỹ thuật đầy đủ nhãn - giá trị khớp đúng catalog.'
               ].map((item, idx) => (
                 <label key={idx} className="flex items-start gap-2.5 cursor-pointer text-gray-600">
-                  <input type="checkbox" defaultChecked className="accent-[#1C9FD9] rounded mt-0.5 h-3.5 w-3.5" />
+                  <input type="checkbox" defaultChecked className="accent-[#B8924A] rounded mt-0.5 h-3.5 w-3.5" />
                   <span>{item}</span>
                 </label>
               ))}

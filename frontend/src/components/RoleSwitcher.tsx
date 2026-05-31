@@ -26,7 +26,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#16162A] text-white shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all duration-300 border border-[#1C9FD9]/30"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#16162A] text-white shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all duration-300 border border-[#B8924A]/30"
         title="Chuyển đổi vai trò demo"
       >
         <Wrench className="h-6 w-6 animate-pulse" />
@@ -60,7 +60,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-sm">{r.name}</span>
                       {isActive && (
-                        <span className="bg-[#1C9FD9] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        <span className="bg-[#B8924A] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                           Đang xem
                         </span>
                       )}

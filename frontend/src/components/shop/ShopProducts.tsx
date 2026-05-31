@@ -53,7 +53,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
         </div>
         <button
           onClick={onNavigateToAddProduct}
-          className="bg-[#16162A] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#1C9FD9]/30 active:scale-95 flex items-center gap-1.5"
+          className="bg-[#16162A] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#B8924A]/30 active:scale-95 flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" /> <span>Đăng Đồng Hồ Mới</span>
         </button>
@@ -68,7 +68,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm kiếm mẫu, hãng..."
-            className="w-full bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] py-2 px-3 pl-8 focus:outline-none focus:ring-1 focus:ring-[#1C9FD9]"
+            className="w-full bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] py-2 px-3 pl-8 focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
           />
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
         </div>
@@ -120,7 +120,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
                       <div>
                         <p className="font-display font-bold text-sm text-[#16162A]">{w.name}</p>
                         <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
-                        <p className="text-[9px] text-[#1C9FD9] font-semibold mt-0.5 flex items-center gap-1"><Store className="h-3 w-3" /> {shopNames[w.shopId] || '—'}</p>
+                        <p className="text-[9px] text-[#B8924A] font-semibold mt-0.5 flex items-center gap-1"><Store className="h-3 w-3" /> {shopNames[w.shopId] || '—'}</p>
                       </div>
                     </td>
 
@@ -148,7 +148,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
                     </td>
 
                     {/* Rating */}
-                    <td className="py-3.5 text-center font-bold text-[#1C9FD9]">
+                    <td className="py-3.5 text-center font-bold text-[#B8924A]">
                       <span className="inline-flex items-center gap-1 justify-center">{w.rating} <Star className="h-3 w-3 fill-current" /> <span className="text-gray-400 font-normal text-[10px]">({w.reviewCount})</span></span>
                     </td>
 
