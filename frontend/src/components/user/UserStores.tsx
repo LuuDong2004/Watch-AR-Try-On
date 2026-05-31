@@ -128,7 +128,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
   if (selected) {
     const shopWatches = watchesAt(selected.id);
     return (
-      <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-8">
+      <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
         <div className="max-w-6xl mx-auto px-4">
           <button
             onClick={() => setSelectedId(null)}
@@ -170,7 +170,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
 
                 {/* Self-serve contact actions */}
                 <div className="flex flex-col gap-2 mt-5">
-                  <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="w-full bg-[#16162A] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition text-center shadow inline-flex items-center justify-center gap-1.5"><Phone className="h-4 w-4" /> Gọi shop</a>
+                  <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="w-full bg-[#17140F] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition text-center shadow inline-flex items-center justify-center gap-1.5"><Phone className="h-4 w-4" /> Gọi shop</a>
                   <div className="grid grid-cols-2 gap-2">
                     <a href={selected.zalo} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Zalo</a>
                     <a href={selected.messenger} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><Globe className="h-4 w-4" /> Messenger</a>
@@ -219,9 +219,9 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                         <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
                         <div className="mt-auto space-y-2">
                           {w.hasAR ? (
-                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
+                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                           ) : (
-                            <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#16162A] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#16162A]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#17140F]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); openContact(w.id); }} className="w-full border border-[#B8924A] text-[#B8924A] text-xs font-semibold py-2 rounded-full hover:bg-[#B8924A]/5 transition inline-flex items-center justify-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Yêu cầu tư vấn</button>
                         </div>
@@ -248,12 +248,12 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                   <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed mb-6">
                     Yêu cầu đã được chuyển tới {selected.name}. Shop sẽ phản hồi qua SĐT/Zalo trong thời gian sớm nhất.
                   </p>
-                  <button onClick={() => setContactOpen(false)} className="bg-[#16162A] text-white px-8 py-2.5 rounded-full font-bold text-sm hover:bg-black transition">Đóng</button>
+                  <button onClick={() => setContactOpen(false)} className="bg-[#17140F] text-white px-8 py-2.5 rounded-full font-bold text-sm hover:bg-black transition">Đóng</button>
                 </div>
               ) : (
                 <form onSubmit={submitContact}>
                   {/* header */}
-                  <div className="bg-[#16162A] text-white px-6 py-5 flex items-start justify-between gap-3">
+                  <div className="bg-[#17140F] text-white px-6 py-5 flex items-start justify-between gap-3">
                     <div>
                       <h2 className="font-display text-lg font-bold">Gửi yêu cầu tư vấn</h2>
                       <p className="text-[11px] text-gray-400 mt-0.5 inline-flex items-center gap-1"><Store className="h-3.5 w-3.5 text-[#B8924A]" /> {selected.name}</p>
@@ -294,7 +294,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{chosen.brand}</p>
-                              <p className="text-xs font-bold text-[#16162A] truncate">{chosen.name}</p>
+                              <p className="text-xs font-bold text-[#17140F] truncate">{chosen.name}</p>
                             </div>
                             <button type="button" onClick={() => setContactForm({ ...contactForm, watchId: '' })} className="text-[10px] font-semibold text-gray-400 hover:text-[#B8924A] transition flex-shrink-0 px-1">Bỏ chọn</button>
                           </div>
@@ -327,7 +327,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                       <TextArea required rows={3} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} placeholder="Nhu cầu tư vấn cụ thể hoặc lịch ghé thăm..." />
                     </Field>
 
-                    <button type="submit" className="w-full bg-[#16162A] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99]">
+                    <button type="submit" className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99]">
                       Gửi yêu cầu
                     </button>
                     <p className="text-[10px] text-gray-400 text-center leading-snug">
@@ -345,7 +345,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
 
   // -------------------------------------------------- SHOP DIRECTORY VIEW
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-8">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Marketplace đồng hồ chính hãng</span>
@@ -373,7 +373,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 onClick={() => setRegion(r)}
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition border ${
                   region === r
-                    ? 'bg-[#16162A] text-white border-[#16162A] shadow'
+                    ? 'bg-[#17140F] text-white border-[#17140F] shadow'
                     : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
                 }`}
               >
@@ -433,7 +433,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
+              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#17140F] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#17140F]"
               aria-label="Trang trước"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -444,7 +444,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 onClick={() => setPage(i + 1)}
                 className={`h-9 min-w-9 px-3 flex items-center justify-center rounded-full text-sm font-semibold transition border ${
                   safePage === i + 1
-                    ? 'bg-[#16162A] text-white border-[#16162A]'
+                    ? 'bg-[#17140F] text-white border-[#17140F]'
                     : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
                 }`}
               >
@@ -454,7 +454,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
+              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#17140F] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#17140F]"
               aria-label="Trang sau"
             >
               <ArrowRight className="h-4 w-4" />

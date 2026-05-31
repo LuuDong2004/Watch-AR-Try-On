@@ -11,9 +11,9 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Cấu Hình Hệ Thống</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Cấu Hình Hệ Thống</h1>
         <p className="text-xs text-gray-500 mt-1">Quản lý tham số hiển thị, dung lượng file upload và thiết lập chung</p>
       </header>
 
@@ -55,7 +55,7 @@ export default function AdminSettings() {
 
           <button
             type="submit"
-            className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 text-xs"
+            className="w-full bg-[#17140F] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 text-xs"
           >
             Lưu Cấu Hình Hệ Thống
           </button>

@@ -323,7 +323,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
 
       {/* Capture Review Modal Overlay */}
       {capturedUrl && (
-        <div className="absolute inset-0 bg-[#16162A]/95 z-40 flex flex-col justify-between p-6 animate-fade-in">
+        <div className="absolute inset-0 bg-[#17140F]/95 z-40 flex flex-col justify-between p-6 animate-fade-in">
           {/* Review Header */}
           <div className="flex justify-between items-center border-b border-white/10 pb-3">
             <div>
@@ -386,7 +386,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                 onClose?.();
                 onOpenContact?.();
               }}
-              className="w-full bg-[#F6F4EF] text-[#16162A] py-3.5 rounded-xl text-xs font-bold hover:bg-white transition flex items-center justify-center gap-1.5 active:scale-95 shadow"
+              className="w-full bg-[#F6F4EF] text-[#17140F] py-3.5 rounded-xl text-xs font-bold hover:bg-white transition flex items-center justify-center gap-1.5 active:scale-95 shadow"
             >
               <Store className="h-4 w-4" />
               <span>Liên Hệ Shop Mua Mẫu Này</span>

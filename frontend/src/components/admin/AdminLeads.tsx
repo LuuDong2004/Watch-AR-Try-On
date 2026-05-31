@@ -26,9 +26,9 @@ export default function AdminLeads() {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Báo Cáo Leads Toàn Hệ Thống</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Báo Cáo Leads Toàn Hệ Thống</h1>
         <p className="text-xs text-gray-500 mt-1">Giám sát lượng khách hàng đăng ký mua sắm tại các đại lý liên kết</p>
       </header>
 
@@ -49,14 +49,14 @@ export default function AdminLeads() {
             <tbody>
               {leads.map((l) => (
                 <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                  <td className="py-3.5 px-4 font-bold text-[#16162A]">
+                  <td className="py-3.5 px-4 font-bold text-[#17140F]">
                     <p>{l.name}</p>
                     <p className="text-[9px] text-gray-400 font-semibold">{l.phone}</p>
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-700">{l.shopName}</td>
                   <td className="py-3.5 px-4 text-[#B8924A] font-bold">{l.watchName}</td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-[#16162A]/5 text-[#16162A] px-2.5 py-0.5 rounded font-semibold text-[9px] uppercase inline-flex items-center gap-1">
+                    <span className="bg-[#17140F]/5 text-[#17140F] px-2.5 py-0.5 rounded font-semibold text-[9px] uppercase inline-flex items-center gap-1">
                       {l.type === 'appointment' ? (
                         <><CalendarClock className="h-3 w-3" /> HẸN TRỰC TIẾP</>
                       ) : (

@@ -33,7 +33,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
         </button>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#16162A]/80">
+        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-[#17140F]/80">
           {NAV_ITEMS.map((item) => {
             const active = item.match.includes(currentPage);
             return (
@@ -55,7 +55,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
           <button
             onClick={() => go('favorites')}
             className={`relative p-2 rounded-full transition ${
-              currentPage === 'favorites' ? 'text-[#B8924A] bg-[#B8924A]/10' : 'text-[#16162A] hover:bg-[#e5e0d8]/50'
+              currentPage === 'favorites' ? 'text-[#B8924A] bg-[#B8924A]/10' : 'text-[#17140F] hover:bg-[#e5e0d8]/50'
             }`}
             title="Sản phẩm yêu thích"
             aria-label="Sản phẩm yêu thích"
@@ -70,7 +70,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
 
           <button
             onClick={() => go('account')}
-            className="h-9 w-9 rounded-full bg-[#e5e0d8] border border-[#B8924A]/40 flex items-center justify-center font-bold text-sm text-[#16162A] hover:scale-105 transition"
+            className="h-9 w-9 rounded-full bg-[#e5e0d8] border border-[#B8924A]/40 flex items-center justify-center font-bold text-sm text-[#17140F] hover:scale-105 transition"
             title="Tài khoản"
           >
             <User className="h-5 w-5" />
@@ -79,7 +79,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileOpen((o) => !o)}
-            className="md:hidden p-2 rounded-full hover:bg-[#e5e0d8]/50 transition text-[#16162A]"
+            className="md:hidden p-2 rounded-full hover:bg-[#e5e0d8]/50 transition text-[#17140F]"
             aria-label="Mở menu"
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -99,7 +99,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
                 key={item.key}
                 onClick={() => go(item.key)}
                 className={`text-left py-2.5 px-3 rounded-lg transition ${
-                  active ? 'bg-[#B8924A]/10 text-[#B8924A]' : 'text-[#16162A]/80 hover:bg-[#e5e0d8]/40'
+                  active ? 'bg-[#B8924A]/10 text-[#B8924A]' : 'text-[#17140F]/80 hover:bg-[#e5e0d8]/40'
                 }`}
               >
                 {item.label}

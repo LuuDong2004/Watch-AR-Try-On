@@ -23,11 +23,11 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
   const totalLeads = leads.length;
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       {/* Welcome admin banner */}
       <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Hệ Thống Admin Center</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Hệ Thống Admin Center</h1>
           <p className="text-xs text-gray-500 mt-1">Giám sát hoạt động của các cửa hàng đối tác, chất lượng file 3D và leads phát sinh</p>
         </div>
         <span className="bg-red-600 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-full uppercase tracking-wider animate-pulse inline-flex items-center gap-1.5">
@@ -56,7 +56,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
               })()}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#16162A] mb-1">{card.val}</h3>
+              <h3 className="text-xl font-bold text-[#17140F] mb-1">{card.val}</h3>
               <p className="text-[9px] text-gray-500 font-semibold leading-relaxed">{card.change}</p>
             </div>
           </div>

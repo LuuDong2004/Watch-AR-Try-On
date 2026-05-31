@@ -141,11 +141,11 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       {/* Page Header */}
       <header className="mb-8 border-b border-[#e5e0d8] pb-4 flex justify-between items-center">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A] flex items-center gap-2">
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F] flex items-center gap-2">
             {isEditMode ? (
               <><Pencil className="h-6 w-6 text-[#B8924A]" /> Cập Nhật Sản Phẩm</>
             ) : (
@@ -168,7 +168,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-12 gap-8 items-start pb-16">
         {/* Left Column: Inputs details (7 cols) */}
         <div className="lg:col-span-7 bg-white p-6 rounded-3xl border border-[#e5e0d8] shadow-sm space-y-6">
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] flex items-center gap-2">
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#17140F] flex items-center gap-2">
             <FileText className="h-4 w-4 text-[#B8924A]" /> Thông tin sản phẩm cơ bản
           </h3>
 
@@ -247,7 +247,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                     <ImageIcon className="h-5 w-5 text-gray-500" />
                     {!form.hasAR && <Check className="h-4 w-4 text-[#B8924A]" />}
                   </div>
-                  <p className="font-bold text-[#16162A]">Đồng hồ thường</p>
+                  <p className="font-bold text-[#17140F]">Đồng hồ thường</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Hiển thị bằng ảnh 2D. Đăng bán ngay lập tức.</p>
                 </button>
 
@@ -265,7 +265,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                   <div className="flex items-center mb-1">
                     <Box className="h-5 w-5 text-[#B8924A]" />
                   </div>
-                  <p className="font-bold text-[#16162A]">Đồng hồ AR 3D</p>
+                  <p className="font-bold text-[#17140F]">Đồng hồ AR 3D</p>
                   <p className="text-[10px] text-gray-500 mt-0.5 leading-snug">Cho phép khách thử đeo AR trên cổ tay.</p>
                 </button>
               </div>
@@ -359,7 +359,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
             </div>
           </div>
 
-          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] pt-4 flex items-center gap-2">
+          <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#17140F] pt-4 flex items-center gap-2">
             <Settings2 className="h-4 w-4 text-[#B8924A]" /> Thông số kỹ thuật (Specs)
           </h3>
 
@@ -380,7 +380,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           <div className="pt-4 flex gap-2 justify-end border-t border-[#e5e0d8]">
             <button
               type="submit"
-              className="bg-[#16162A] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#B8924A]/30 active:scale-95"
+              className="bg-[#17140F] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#B8924A]/30 active:scale-95"
             >
               {isEditMode ? 'Lưu Thay Đổi & Xuất Bản' : 'Đăng Bán & Duyệt Sản Phẩm'}
             </button>
@@ -399,7 +399,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           {!form.hasAR ? (
             /* NORMAL PRODUCT — live card preview + tips */
             <div>
-              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-4 flex items-center gap-2">
+              <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#17140F] mb-4 flex items-center gap-2">
                 <Eye className="h-4 w-4 text-[#B8924A]" /> Xem trước thẻ sản phẩm
               </h3>
               <div className="rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm bg-[#F6F4EF] mb-5">
@@ -408,9 +408,9 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                 </div>
                 <div className="p-4">
                   <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{form.brand || 'Thương hiệu'}</p>
-                  <h4 className="font-display font-bold text-[#16162A] mt-0.5 mb-1">{form.name || 'Tên sản phẩm'}</h4>
+                  <h4 className="font-display font-bold text-[#17140F] mt-0.5 mb-1">{form.name || 'Tên sản phẩm'}</h4>
                   <div className="flex items-baseline gap-2">
-                    <span className="font-bold text-[#16162A]">
+                    <span className="font-bold text-[#17140F]">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(form.price) || 0)}
                     </span>
                     {Number(form.originalPrice) > Number(form.price) && (
@@ -419,7 +419,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
                       </span>
                     )}
                   </div>
-                  <span className="inline-block mt-3 bg-white text-[#16162A] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#16162A]/15 uppercase tracking-widest">Ảnh 2D</span>
+                  <span className="inline-block mt-3 bg-white text-[#17140F] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#17140F]/15 uppercase tracking-widest">Ảnh 2D</span>
                 </div>
               </div>
               <div className="bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-relaxed flex gap-2">
@@ -430,7 +430,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           ) : (
           <>
           <div>
-            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#16162A] mb-3 flex items-center gap-2">
+            <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#17140F] mb-3 flex items-center gap-2">
               <SlidersHorizontal className="h-4 w-4 text-[#B8924A]" /> Bộ căn chỉnh AR trên cổ tay (Live Preview)
             </h3>
             <p className="text-[11px] text-gray-500 mb-6 leading-relaxed">
@@ -449,7 +449,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
 
               {/* Dynamic watch preview superimposed (real product photo) */}
               <div
-                className="h-16 w-16 rounded-full border-2 shadow-2xl relative transition-all duration-100 ease-out overflow-hidden bg-[#16162A]"
+                className="h-16 w-16 rounded-full border-2 shadow-2xl relative transition-all duration-100 ease-out overflow-hidden bg-[#17140F]"
                 style={{
                   borderColor: form.metal,
                   transform: `scale(${form.arScale}) translate(${form.arPositionX * 40}px, ${-form.arPositionY * 40}px) rotate(${form.arRotationOffset}deg)`,

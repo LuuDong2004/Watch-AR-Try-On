@@ -24,7 +24,7 @@ const INITIAL_PLANS: Plan[] = [
     active: true,
     popular: false,
     Icon: Zap,
-    box: 'bg-[#16162A]/5 text-[#16162A]',
+    box: 'bg-[#17140F]/5 text-[#17140F]',
     features: ['Duyệt bộ sưu tập + bộ lọc', 'Xem 3D 360°', 'Thử AR 5 lượt/ngày', 'Lưu yêu thích ≤ 10 mẫu'],
   },
   {
@@ -48,7 +48,7 @@ const INITIAL_PLANS: Plan[] = [
     active: true,
     popular: false,
     Icon: Building2,
-    box: 'bg-[#16162A] text-white',
+    box: 'bg-[#17140F] text-white',
     features: ['Tất cả tính năng Pro +', 'Đăng bán không giới hạn', 'Dashboard phân tích', 'Quản lý nhiều cửa hàng', 'Badge "Đã xác minh"'],
   },
 ];
@@ -90,9 +90,9 @@ export default function AdminPlans() {
   ];
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Quản Lý Gói Dịch Vụ</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Gói Dịch Vụ</h1>
         <p className="text-xs text-gray-500 mt-1">Cấu hình giá, tính năng và trạng thái mở bán của các gói Free / Pro / Business</p>
       </header>
 
@@ -102,7 +102,7 @@ export default function AdminPlans() {
           <div key={i} className="bg-white rounded-2xl p-5 border border-[#e5e0d8] shadow-sm flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{m.label}</p>
-              <h3 className="text-xl md:text-2xl font-bold text-[#16162A] mb-1">{m.val}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">{m.val}</h3>
               <p className="text-[10px] text-gray-500 font-semibold">{m.sub}</p>
             </div>
             <div className={`h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100 ${m.color}`}>
@@ -139,7 +139,7 @@ export default function AdminPlans() {
                           <p.Icon className="h-4 w-4" />
                         </span>
                         <div>
-                          <p className="font-display font-bold text-sm text-[#16162A] flex items-center gap-1.5">
+                          <p className="font-display font-bold text-sm text-[#17140F] flex items-center gap-1.5">
                             {p.name}
                             {p.popular && (
                               <span className="inline-flex items-center gap-1 bg-[#B8924A] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"><Star className="h-2.5 w-2.5 fill-current" /> Phổ biến</span>
@@ -149,7 +149,7 @@ export default function AdminPlans() {
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-[#16162A]">{p.price === 0 ? 'Miễn phí' : formatVND(p.price)}</td>
+                    <td className="py-3.5 px-4 font-bold text-[#17140F]">{p.price === 0 ? 'Miễn phí' : formatVND(p.price)}</td>
                     <td className="py-3.5 px-4 text-center font-semibold text-gray-700">{p.subscribers.toLocaleString('vi-VN')}</td>
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export default function AdminPlans() {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => openEdit(p)}
-                        className="inline-flex items-center gap-1.5 bg-[#16162A] text-white hover:bg-black py-1.5 px-3 rounded-lg font-bold"
+                        className="inline-flex items-center gap-1.5 bg-[#17140F] text-white hover:bg-black py-1.5 px-3 rounded-lg font-bold"
                       >
                         <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa
                       </button>
@@ -192,7 +192,7 @@ export default function AdminPlans() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditingId(null)} />
           <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-[#e5e0d8] overflow-hidden max-h-[90vh] overflow-y-auto animate-slide-up">
             <form onSubmit={saveEdit}>
-              <div className="bg-[#16162A] text-white px-6 py-5 flex items-center justify-between gap-3">
+              <div className="bg-[#17140F] text-white px-6 py-5 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className={`h-10 w-10 rounded-xl flex items-center justify-center ${draft.box}`}><draft.Icon className="h-5 w-5" /></span>
                   <div>
@@ -268,7 +268,7 @@ export default function AdminPlans() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <button type="submit" className="flex-1 bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow active:scale-[0.99]">
+                  <button type="submit" className="flex-1 bg-[#17140F] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow active:scale-[0.99]">
                     Lưu thay đổi
                   </button>
                   <button type="button" onClick={() => setEditingId(null)} className="flex-1 border border-[#e5e0d8] text-gray-500 py-3 rounded-xl font-semibold hover:bg-gray-50 transition">

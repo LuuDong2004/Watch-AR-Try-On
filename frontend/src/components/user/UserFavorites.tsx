@@ -32,7 +32,7 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-8">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <button
@@ -89,9 +89,9 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
                   <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
                   <div className="mt-auto space-y-2">
                     {w.hasAR ? (
-                      <button onClick={() => onOpenAR(w.id)} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
+                      <button onClick={() => onOpenAR(w.id)} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                     ) : (
-                      <button onClick={() => onSelectWatch(w.id)} className="w-full bg-white text-[#16162A] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#16162A]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
+                      <button onClick={() => onSelectWatch(w.id)} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#17140F]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
                     )}
                     <button onClick={() => handleRemove(w.id)} className="w-full border border-[#e5e0d8] text-gray-500 text-xs font-semibold py-2 rounded-full hover:border-red-200 hover:text-red-500 transition inline-flex items-center justify-center gap-1.5"><Trash2 className="h-3.5 w-3.5" /> Bỏ lưu</button>
                   </div>
@@ -110,7 +110,7 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
             </p>
             <button
               onClick={onBackToCatalog}
-              className="bg-[#16162A] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-black transition inline-flex items-center gap-2"
+              className="bg-[#17140F] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-black transition inline-flex items-center gap-2"
             >
               Khám phá bộ sưu tập <ArrowRight className="h-4 w-4" />
             </button>

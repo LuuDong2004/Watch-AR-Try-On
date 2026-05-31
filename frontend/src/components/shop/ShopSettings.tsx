@@ -25,9 +25,9 @@ export default function ShopSettings() {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Cài Đặt Cửa Hàng</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Cài Đặt Cửa Hàng</h1>
         <p className="text-xs text-gray-500 mt-1">Cập nhật thông tin, hotline và link chat cho các cửa hàng bạn quản lý</p>
       </header>
 
@@ -41,10 +41,10 @@ export default function ShopSettings() {
           {showrooms.map((room) => (
             <div key={room.id} className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm text-xs">
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-display text-sm font-bold text-[#16162A]">{room.name}</h4>
+                <h4 className="font-display text-sm font-bold text-[#17140F]">{room.name}</h4>
                 <button
                   onClick={() => handleEditClick(room)}
-                  className="bg-[#16162A] text-white py-1 px-3 rounded-lg font-bold"
+                  className="bg-[#17140F] text-white py-1 px-3 rounded-lg font-bold"
                 >
                   Sửa Thông Tin
                 </button>
@@ -143,7 +143,7 @@ export default function ShopSettings() {
               <div className="mt-5 flex gap-2 font-bold">
                 <button
                   type="submit"
-                  className="flex-1 bg-[#16162A] text-white py-2.5 rounded-lg hover:bg-black transition text-center"
+                  className="flex-1 bg-[#17140F] text-white py-2.5 rounded-lg hover:bg-black transition text-center"
                 >
                   Lưu thay đổi
                 </button>

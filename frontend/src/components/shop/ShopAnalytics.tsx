@@ -15,9 +15,9 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
   const totalLeads = leads.length;
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Thống Kê Tương Tác AR</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Thống Kê Tương Tác AR</h1>
         <p className="text-xs text-gray-500 mt-1">Đo lường mức độ quan tâm của khách hàng qua trải nghiệm thử đồ ảo</p>
       </header>
 
@@ -32,7 +32,7 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
         </div>
         <div className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm">
           <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-1">Thời Gian Trải Nghiệm 3D TB</p>
-          <h3 className="text-xl md:text-2xl font-bold text-[#16162A] mb-1">42 giây / khách</h3>
+          <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">42 giây / khách</h3>
           <p className="text-gray-500">Khách hàng xoay và ngắm nghía chi tiết vỏ đáy</p>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm">

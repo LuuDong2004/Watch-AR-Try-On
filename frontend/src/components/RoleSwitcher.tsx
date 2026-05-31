@@ -26,7 +26,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#16162A] text-white shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all duration-300 border border-[#B8924A]/30"
+        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#17140F] text-white shadow-xl hover:bg-black hover:scale-105 active:scale-95 transition-all duration-300 border border-[#B8924A]/30"
         title="Chuyển đổi vai trò demo"
       >
         <Wrench className="h-6 w-6 animate-pulse" />
@@ -34,9 +34,9 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 rounded-2xl border border-[#e5e0d8] bg-[#F6F4EF]/95 p-4 shadow-2xl backdrop-blur-md animate-slide-up text-[#16162A]">
+        <div className="absolute bottom-16 right-0 w-80 rounded-2xl border border-[#e5e0d8] bg-[#F6F4EF]/95 p-4 shadow-2xl backdrop-blur-md animate-slide-up text-[#17140F]">
           <div className="mb-3 border-b border-[#e5e0d8] pb-2">
-            <h3 className="font-serif text-lg font-bold text-[#16162A] flex items-center gap-1.5">
+            <h3 className="font-serif text-lg font-bold text-[#17140F] flex items-center gap-1.5">
               <span>Demo Role Switcher</span>
             </h3>
             <p className="text-[11px] text-gray-500">Chuyển đổi nhanh giữa các phân hệ của MVP</p>
@@ -51,7 +51,7 @@ export default function RoleSwitcher({ currentRole, onChangeRole }: RoleSwitcher
                   onClick={() => handleRoleSelect(r.id)}
                   className={`flex items-start gap-3 rounded-xl p-2.5 text-left transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#16162A] text-[#F6F4EF] shadow-md scale-[1.02]'
+                      ? 'bg-[#17140F] text-[#F6F4EF] shadow-md scale-[1.02]'
                       : 'hover:bg-[#e5e0d8]/55'
                   }`}
                 >

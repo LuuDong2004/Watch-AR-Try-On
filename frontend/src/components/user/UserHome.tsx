@@ -23,9 +23,9 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
   const popular = watches.slice(0, 4);
 
   return (
-    <div className="bg-[#F6F4EF] text-[#16162A] font-sans">
+    <div className="bg-[#F6F4EF] text-[#17140F] font-sans">
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden bg-[#16162A] text-white">
+      <section className="relative overflow-hidden bg-[#17140F] text-white">
         <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(circle_at_30%_20%,#B8924A,transparent_55%)]" />
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center relative">
           {/* Copy */}
@@ -99,7 +99,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       <section className="bg-white border-y border-[#e5e0d8]">
         <div className="max-w-6xl mx-auto px-4 py-7 flex flex-wrap items-center justify-center md:justify-between gap-x-10 gap-y-3">
           {['ROLEX', 'OMEGA', 'AVENTUS', 'G-SHOCK', 'SUBMARINER', 'HERITAGE'].map((b) => (
-            <span key={b} className="font-display text-lg md:text-xl font-bold text-[#16162A]/30 tracking-widest">
+            <span key={b} className="font-display text-lg md:text-xl font-bold text-[#17140F]/30 tracking-widest">
               {b}
             </span>
           ))}
@@ -108,7 +108,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
 
       {/* ============== DESIGN STUDIO — UPLOAD YOUR OWN (COMING SOON) ============== */}
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#16162A] text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17140F] text-white shadow-2xl">
           {/* ambient glow */}
           <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_78%_25%,#B8924A,transparent_55%)]" />
           <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B8924A]/60 to-transparent" />
@@ -219,7 +219,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       )}
 
       {/* ===================== TESTIMONIALS ===================== */}
-      <section className="bg-[#16162A] text-white">
+      <section className="bg-[#17140F] text-white">
         <div className="max-w-6xl mx-auto px-4 py-16 md:py-20">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Khách hàng nói gì</span>

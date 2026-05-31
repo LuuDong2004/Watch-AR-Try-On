@@ -13,9 +13,9 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Quản Lý Tài Khoản</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Tài Khoản</h1>
         <p className="text-xs text-gray-500 mt-1">Giám sát tài khoản khách hàng, đại lý và phân quyền hệ thống</p>
       </header>
 
@@ -37,15 +37,15 @@ export default function AdminUsers() {
             <tbody>
               {users.map((u) => (
                 <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                  <td className="py-3.5 px-4 font-bold text-[#16162A] flex items-center gap-2">
-                    <span className="h-7 w-7 rounded-full bg-[#16162A]/5 flex items-center justify-center text-[#16162A] flex-shrink-0">
+                  <td className="py-3.5 px-4 font-bold text-[#17140F] flex items-center gap-2">
+                    <span className="h-7 w-7 rounded-full bg-[#17140F]/5 flex items-center justify-center text-[#17140F] flex-shrink-0">
                       <User className="h-4 w-4" />
                     </span>
                     <span>{u.name}</span>
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>
                   <td className="py-3.5 px-4">
-                    <span className="bg-[#16162A]/5 text-[#16162A] px-2 py-0.5 rounded font-semibold text-[9px] uppercase">
+                    <span className="bg-[#17140F]/5 text-[#17140F] px-2 py-0.5 rounded font-semibold text-[9px] uppercase">
                       {u.role}
                     </span>
                   </td>

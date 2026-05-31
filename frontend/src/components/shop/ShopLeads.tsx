@@ -59,11 +59,11 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto relative flex">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto relative flex">
       {/* Main Leads List Panel */}
       <div className="flex-1 mr-0 transition-all duration-300">
         <header className="mb-8">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Hộp Thư Liên Hệ (Leads)</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Hộp Thư Liên Hệ (Leads)</h1>
           <p className="text-xs text-gray-500 mt-1">
             Tin nhắn, hồ sơ thử AR và yêu cầu tư vấn của khách gửi tới cửa hàng bạn quản lý
           </p>
@@ -88,12 +88,12 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                   setSelectedLead(null);
                 }}
                 className={`py-2 px-4 rounded-xl transition flex items-center gap-1.5 ${
-                  isActive ? 'bg-[#16162A] text-white shadow' : 'text-gray-500 hover:text-black'
+                  isActive ? 'bg-[#17140F] text-white shadow' : 'text-gray-500 hover:text-black'
                 }`}
               >
                 <span>{label}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] ${
-                  isActive ? 'bg-white text-[#16162A]' : 'bg-[#F6F4EF] text-gray-400'
+                  isActive ? 'bg-white text-[#17140F]' : 'bg-[#F6F4EF] text-gray-400'
                 }`}>
                   {count}
                 </span>
@@ -127,11 +127,11 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                       }`}
                     >
                       {/* Customer Name */}
-                      <td className="py-4 px-4 font-bold text-[#16162A]">{l.name}</td>
+                      <td className="py-4 px-4 font-bold text-[#17140F]">{l.name}</td>
 
                       {/* Channel */}
                       <td className="py-4 px-4">
-                        <span className="bg-[#16162A]/5 text-[#16162A] px-2 py-0.5 rounded font-semibold text-[9px] uppercase">
+                        <span className="bg-[#17140F]/5 text-[#17140F] px-2 py-0.5 rounded font-semibold text-[9px] uppercase">
                           {l.channel === 'form' ? 'Form Web' : l.channel}
                         </span>
                       </td>
@@ -174,7 +174,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
 
       {/* Leads Drawer Slide panel (Right side) */}
       {selectedLead && (
-        <div className="w-96 ml-6 bg-white border border-[#e5e0d8] rounded-3xl p-6 shadow-2xl flex flex-col justify-between h-fit animate-slide-up sticky top-6 text-[#16162A] text-xs">
+        <div className="w-96 ml-6 bg-white border border-[#e5e0d8] rounded-3xl p-6 shadow-2xl flex flex-col justify-between h-fit animate-slide-up sticky top-6 text-[#17140F] text-xs">
           <div>
             <div className="flex justify-between items-start border-b border-[#e5e0d8] pb-3 mb-4">
               <div>
@@ -192,7 +192,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
             {/* Profile Detail */}
             <div className="space-y-4">
               <div className="bg-[#F6F4EF] p-4 rounded-xl border border-gray-100">
-                <p className="text-[11px] font-bold text-[#16162A] mb-0.5">{selectedLead.name}</p>
+                <p className="text-[11px] font-bold text-[#17140F] mb-0.5">{selectedLead.name}</p>
                 <p className="text-[10px] text-gray-500 flex items-center gap-1.5"><Phone className="h-3 w-3" /> SĐT: {selectedLead.phone}</p>
                 {selectedLead.email && <p className="text-[10px] text-gray-500 flex items-center gap-1.5"><Mail className="h-3 w-3" /> Email: {selectedLead.email}</p>}
               </div>
@@ -201,11 +201,11 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
               <div>
                 <span className="text-gray-400 font-bold block text-[8px] uppercase tracking-wider mb-1">Đồng hồ quan tâm</span>
                 <div className="p-3 bg-white border border-gray-100 rounded-xl flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[#16162A] text-white flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-full bg-[#17140F] text-white flex items-center justify-center">
                     <Watch className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="font-bold text-[#16162A]">{selectedLead.watchName}</p>
+                    <p className="font-bold text-[#17140F]">{selectedLead.watchName}</p>
                     <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{selectedLead.watchBrand}</p>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
               <div className="flex gap-2 pt-2">
                 <a
                   href={`tel:${selectedLead.phone.replace(/\s/g, '')}`}
-                  className="flex-1 bg-[#16162A] text-white py-2 rounded-lg font-bold hover:bg-black transition text-[10px] flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-[#17140F] text-white py-2 rounded-lg font-bold hover:bg-black transition text-[10px] flex items-center justify-center gap-1.5"
                 >
                   <Phone className="h-3.5 w-3.5" /> Gọi Hotline Khách
                 </a>

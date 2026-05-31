@@ -2,12 +2,12 @@ import React from 'react';
 
 /**
  * Shared form primitives for a consistent, accessible look across the app.
- * Tokens: ink #16162A, cream #F6F4EF, gold #B8924A, border #e5e0d8.
+ * Tokens: ink #17140F, cream #F6F4EF, gold #B8924A, border #e5e0d8.
  */
 
 // Base styling for text inputs / selects / textareas.
 export const inputBase =
-  'w-full rounded-xl border border-[#e5e0d8] bg-white px-3.5 py-2.5 text-sm text-[#16162A] ' +
+  'w-full rounded-xl border border-[#e5e0d8] bg-white px-3.5 py-2.5 text-sm text-[#17140F] ' +
   'placeholder:text-gray-400 transition-shadow transition-colors ' +
   'focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20';
 
@@ -69,7 +69,7 @@ export function FormSection({ title, step, children }: { title?: string; step?: 
   return (
     <fieldset className="space-y-4">
       {title && (
-        <legend className="flex items-center gap-2 text-xs font-bold text-[#16162A] mb-1">
+        <legend className="flex items-center gap-2 text-xs font-bold text-[#17140F] mb-1">
           {step != null && (
             <span className="h-5 w-5 rounded-full bg-[#B8924A] text-white text-[10px] flex items-center justify-center font-bold">
               {step}
@@ -103,7 +103,7 @@ export function SegmentedControl({
           type="button"
           onClick={() => onChange(opt.value)}
           className={`flex-1 py-2 text-center rounded-lg transition ${
-            value === opt.value ? 'bg-[#16162A] text-white shadow-sm' : 'text-gray-500 hover:text-[#16162A]'
+            value === opt.value ? 'bg-[#17140F] text-white shadow-sm' : 'text-gray-500 hover:text-[#17140F]'
           }`}
         >
           {opt.label}

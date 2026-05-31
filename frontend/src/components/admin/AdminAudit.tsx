@@ -42,9 +42,9 @@ export default function AdminAudit() {
   if (!selectedWatch) return <div className="p-8 text-center text-xs">Đang tải danh sách chờ duyệt...</div>;
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Kiểm Duyệt Model 3D & AR</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Kiểm Duyệt Model 3D & AR</h1>
         <p className="text-xs text-gray-500 mt-1">Cổng kiểm soát chất lượng: Thử ướm model trên cổ tay mẫu và phê duyệt xuất bản</p>
       </header>
 
@@ -69,7 +69,7 @@ export default function AdminAudit() {
                     <img src={w.image} alt={w.name} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <p className="font-bold text-[#16162A]">{w.name}</p>
+                    <p className="font-bold text-[#17140F]">{w.name}</p>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{w.brand}</p>
                   </div>
                 </div>
@@ -99,7 +99,7 @@ export default function AdminAudit() {
 
               {/* Dynamic watch preview (real product photo) */}
               <div
-                className="h-16 w-16 rounded-full border-2 shadow-2xl relative transition-all duration-100 ease-out overflow-hidden bg-[#16162A]"
+                className="h-16 w-16 rounded-full border-2 shadow-2xl relative transition-all duration-100 ease-out overflow-hidden bg-[#17140F]"
                 style={{
                   borderColor: selectedWatch.metal,
                   transform: `scale(${scale}) translate(${posX * 40}px, ${-posY * 40}px) rotate(${rotation}deg)`,
@@ -131,7 +131,7 @@ export default function AdminAudit() {
 
             {/* Verification Checklist */}
             <div className="space-y-2.5 mb-6">
-              <h4 className="font-bold text-[#16162A] border-b pb-1">Checklist chất lượng mẫu</h4>
+              <h4 className="font-bold text-[#17140F] border-b pb-1">Checklist chất lượng mẫu</h4>
               {[
                 'Vân bề mặt (Texture PBR) hiển thị sắc nét, không bị nhòe.',
                 'Độ rộng kim đeo và núm đồng hồ đúng tỉ lệ ngoài đời.',

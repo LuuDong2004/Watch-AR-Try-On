@@ -44,16 +44,16 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
   });
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       {/* Products Header */}
       <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Danh Sách Sản Phẩm</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Danh Sách Sản Phẩm</h1>
           <p className="text-xs text-gray-500 mt-1">Đăng bán và hiệu chỉnh model 3D/AR cho từng mẫu đồng hồ</p>
         </div>
         <button
           onClick={onNavigateToAddProduct}
-          className="bg-[#16162A] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#B8924A]/30 active:scale-95 flex items-center gap-1.5"
+          className="bg-[#17140F] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#B8924A]/30 active:scale-95 flex items-center gap-1.5"
         >
           <Plus className="h-4 w-4" /> <span>Đăng Đồng Hồ Mới</span>
         </button>
@@ -85,7 +85,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
               key={val}
               onClick={() => setFilterStatus(val as any)}
               className={`py-1.5 px-4 text-center rounded-lg transition ${
-                filterStatus === val ? 'bg-[#16162A] text-white shadow' : 'text-gray-500 hover:text-black'
+                filterStatus === val ? 'bg-[#17140F] text-white shadow' : 'text-gray-500 hover:text-black'
               }`}
             >
               {label}
@@ -113,12 +113,12 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
                 {filteredWatches.map((w) => (
                   <tr key={w.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                     {/* Name */}
-                    <td className="py-3.5 font-semibold text-[#16162A] flex items-center gap-3">
+                    <td className="py-3.5 font-semibold text-[#17140F] flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg overflow-hidden border border-[#e5e0d8] shadow-sm flex-shrink-0 bg-[#F6F4EF]">
                         <img src={w.image} alt={w.name} className="w-full h-full object-cover" />
                       </div>
                       <div>
-                        <p className="font-display font-bold text-sm text-[#16162A]">{w.name}</p>
+                        <p className="font-display font-bold text-sm text-[#17140F]">{w.name}</p>
                         <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
                         <p className="text-[9px] text-[#B8924A] font-semibold mt-0.5 flex items-center gap-1"><Store className="h-3 w-3" /> {shopNames[w.shopId] || '—'}</p>
                       </div>
@@ -156,7 +156,7 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
                     <td className="py-3.5 text-right space-x-1">
                       <button
                         onClick={() => onEditProduct(w.id)}
-                        className="bg-[#16162A] text-white hover:bg-black py-1 px-3 rounded-lg font-bold"
+                        className="bg-[#17140F] text-white hover:bg-black py-1 px-3 rounded-lg font-bold"
                       >
                         Sửa / Cân AR
                       </button>

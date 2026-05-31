@@ -36,11 +36,11 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
   const topWatches = watches.slice(0, 3);
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       {/* Dashboard Welcome Header */}
       <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Hộp Tin Tổng Quan</h1>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Hộp Tin Tổng Quan</h1>
           <p className="text-xs text-gray-500 mt-1">Giám sát hoạt động 3D/AR, lượt đặt lịch hẹn và leads từ showrooms</p>
         </div>
         <div className="text-xs text-gray-400 bg-white border border-[#e5e0d8] px-4 py-2 rounded-xl shadow-sm font-semibold flex items-center gap-1.5">
@@ -62,7 +62,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
           >
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{card.label}</p>
-              <h3 className="text-xl md:text-2xl font-bold text-[#16162A] mb-1">{card.val}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">{card.val}</h3>
               <p className="text-[10px] text-gray-500 font-semibold">{card.change}</p>
             </div>
             <div className={`h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100 ${card.color}`}>
@@ -84,7 +84,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
             {/* Chart Legend */}
             <div className="flex gap-4 text-[10px] font-bold">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B8924A]" />Thử AR</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#16162A]" />Gửi liên hệ</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#17140F]" />Gửi liên hệ</span>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
               {/* Lead Line (Navy) */}
               <polyline
                 fill="none"
-                stroke="#16162A"
+                stroke="#17140F"
                 strokeWidth="2.5"
                 points="40,180 110,175 180,160 250,165 320,135 390,140 460,115"
                 strokeLinecap="round"
@@ -156,7 +156,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                   className="p-3 bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] hover:border-[#B8924A] transition cursor-pointer text-xs"
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-[#16162A]">{lead.name}</span>
+                    <span className="font-bold text-[#17140F]">{lead.name}</span>
                     <span className="text-[9px] bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-bold">
                       NEW
                     </span>
@@ -198,7 +198,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
             <tbody>
               {topWatches.map((w) => (
                 <tr key={w.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                  <td className="py-3 font-semibold text-[#16162A] flex items-center gap-3">
+                  <td className="py-3 font-semibold text-[#17140F] flex items-center gap-3">
                     <div className="h-9 w-9 rounded-lg overflow-hidden border border-[#e5e0d8] shadow-sm flex-shrink-0 bg-[#F6F4EF]">
                       <img src={w.image} alt={w.name} className="w-full h-full object-cover" />
                     </div>

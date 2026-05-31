@@ -33,7 +33,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
     shopScope === 'all' ? 'Tất cả cửa hàng' : myShops.find((s) => s.id === shopScope)?.name || 'Tất cả cửa hàng';
 
   return (
-    <aside className="w-64 bg-[#16162A] text-[#F6F4EF] flex flex-col h-screen sticky top-0 font-sans flex-shrink-0">
+    <aside className="w-64 bg-[#17140F] text-[#F6F4EF] flex flex-col h-screen sticky top-0 font-sans flex-shrink-0">
       {/* Brand */}
       <div className="px-5 pt-6 pb-4">
         <BrandLogo surface="dark" size="sm" tagline="Seller · Kênh người bán" />

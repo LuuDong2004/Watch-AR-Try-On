@@ -271,7 +271,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-full bg-[#F6F4EF] text-[#16162A] select-none font-sans overflow-x-hidden">
+    <div className="h-full bg-[#F6F4EF] text-[#17140F] select-none font-sans overflow-x-hidden">
       {/* 1. Client-Side User Flow */}
       {role === 'user' && (
         <div className="flex flex-col min-h-screen">

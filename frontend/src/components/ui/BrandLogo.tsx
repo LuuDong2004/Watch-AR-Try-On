@@ -11,8 +11,9 @@ import React from 'react';
 
 const GOLD = '#B8924A';
 
-/** Transparent-bg wordmark, safe on any surface. */
-const LOGO_SRC = '/brand/truewrist-logo-alpha.png';
+/** Gold gradient TrueWrist wordmark, white bg keyed out → transparent, safe on
+ *  any surface (cream header + dark navy footer/sidebars). */
+const LOGO_SRC = '/brand/truewrist-logo-gold.png';
 
 interface BrandLogoProps {
   /** Surface the logo sits on. Kept for callsite clarity / future theming. */

@@ -68,7 +68,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-12">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-12">
       <div className="max-w-2xl mx-auto px-4">
         {/* Heading */}
         <div className="text-center max-w-xl mx-auto mb-10">
@@ -92,10 +92,10 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
                 Phản hồi đã được ghi nhận{target === 'shop' ? ' và chuyển tới cửa hàng' : ''}. Chúng tôi rất trân trọng ý kiến của bạn.
               </p>
               <div className="flex items-center justify-center gap-2">
-                <button onClick={resetForm} className="border border-[#e5e0d8] text-[#16162A] px-6 py-2.5 rounded-full font-bold text-sm hover:bg-[#F6F4EF] transition">
+                <button onClick={resetForm} className="border border-[#e5e0d8] text-[#17140F] px-6 py-2.5 rounded-full font-bold text-sm hover:bg-[#F6F4EF] transition">
                   Gửi góp ý khác
                 </button>
-                <button onClick={onBackToCatalog} className="bg-[#16162A] text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-black transition">
+                <button onClick={onBackToCatalog} className="bg-[#17140F] text-white px-6 py-2.5 rounded-full font-bold text-sm hover:bg-black transition">
                   Về trang sản phẩm
                 </button>
               </div>
@@ -103,7 +103,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
           ) : (
             <form onSubmit={handleSubmit}>
               {/* Card header */}
-              <div className="bg-[#16162A] text-white px-6 py-5">
+              <div className="bg-[#17140F] text-white px-6 py-5">
                 <h2 className="font-display text-lg font-bold">Gửi góp ý</h2>
                 <p className="text-[11px] text-gray-400 mt-0.5">Chọn đối tượng bạn muốn góp ý bên dưới</p>
               </div>
@@ -195,7 +195,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#16162A] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99] inline-flex items-center justify-center gap-2"
+                  className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99] inline-flex items-center justify-center gap-2"
                 >
                   <Send className="h-4 w-4" /> Gửi góp ý
                 </button>

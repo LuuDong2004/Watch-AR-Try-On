@@ -80,9 +80,9 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
   const pagedWatches = filteredWatches.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans pb-16">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans pb-16">
       {/* Hero Banner */}
-      <section className="relative bg-[#16162A] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#B8924A]/20">
+      <section className="relative bg-[#17140F] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#B8924A]/20">
         <div className="max-w-3xl mx-auto">
           <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-3 block animate-fade-in">
             TrueWrist Haute Horlogerie & AR Studio
@@ -164,7 +164,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
             {/* Material Filter */}
             <div>
               <label className="text-xs uppercase tracking-wider text-gray-400 font-bold block mb-2">Chất Liệu Vỏ</label>
-              <div className="flex flex-col gap-1.5 text-sm text-[#16162A]/90">
+              <div className="flex flex-col gap-1.5 text-sm text-[#17140F]/90">
                 {[
                   ['all', 'Tất cả'],
                   ['gold', 'Vàng nguyên khối / Gold'],
@@ -217,7 +217,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                   onChange={(e) => setOnlyAR(e.target.checked)}
                   className="rounded border-[#e5e0d8] text-[#B8924A] focus:ring-[#B8924A] accent-[#B8924A] h-4 w-4"
                 />
-                <span className="text-sm font-semibold flex items-center gap-1.5 text-[#16162A]">
+                <span className="text-sm font-semibold flex items-center gap-1.5 text-[#17140F]">
                   <Sparkles className="h-4 w-4" /> <span>Có Sẵn AR Try-On</span>
                 </span>
               </label>
@@ -286,7 +286,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                         <Sparkles className="h-4 w-4" /> AR Try-On
                       </span>
                     ) : (
-                      <span className="absolute top-3 right-3 bg-white/85 backdrop-blur text-[#16162A] text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase">
+                      <span className="absolute top-3 right-3 bg-white/85 backdrop-blur text-[#17140F] text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase">
                         Ảnh 2D
                       </span>
                     )}
@@ -299,7 +299,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
 
                   {/* Watch details */}
                   <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="font-serif text-[#16162A] font-bold group-hover:text-[#B8924A] transition text-base mb-1 line-clamp-1">
+                    <h3 className="font-serif text-[#17140F] font-bold group-hover:text-[#B8924A] transition text-base mb-1 line-clamp-1">
                       {w.name}
                     </h3>
                     <div className="flex items-center gap-1 mb-3">
@@ -309,7 +309,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                     </div>
 
                     <div className="mt-auto flex items-baseline gap-2 mb-4">
-                      <span className="text-[#16162A] font-bold text-sm sm:text-base">
+                      <span className="text-[#17140F] font-bold text-sm sm:text-base">
                         {formatVND(w.price)}
                       </span>
                       {w.originalPrice && (
@@ -326,7 +326,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                           e.stopPropagation();
                           onOpenAR(w.id);
                         }}
-                        className="w-full bg-[#16162A] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#B8924A]/30"
+                        className="w-full bg-[#17140F] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#B8924A]/30"
                       >
                         <Sparkles className="h-4 w-4" /> <span>Thử Đeo AR Tức Thì</span>
                       </button>
@@ -336,7 +336,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                           e.stopPropagation();
                           onSelectWatch(w.id);
                         }}
-                        className="w-full bg-white text-[#16162A] text-xs font-semibold py-2.5 rounded-full hover:bg-[#F6F4EF] transition flex items-center justify-center gap-1.5 shadow-sm border border-[#16162A]/20"
+                        className="w-full bg-white text-[#17140F] text-xs font-semibold py-2.5 rounded-full hover:bg-[#F6F4EF] transition flex items-center justify-center gap-1.5 shadow-sm border border-[#17140F]/20"
                       >
                         <span>Xem Chi Tiết</span> <ArrowRight className="h-4 w-4" />
                       </button>
@@ -362,7 +362,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                     onClick={() => setCurrentPage(p)}
                     className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${
                       p === safePage
-                        ? 'bg-[#16162A] text-white border border-[#B8924A]/40'
+                        ? 'bg-[#17140F] text-white border border-[#B8924A]/40'
                         : 'bg-white border border-[#e5e0d8] hover:border-[#B8924A]'
                     }`}
                   >

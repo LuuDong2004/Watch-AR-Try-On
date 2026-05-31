@@ -36,10 +36,10 @@ const PLANS: Plan[] = [
     price: '0đ',
     period: '/ tháng',
     Icon: Zap,
-    iconBox: 'bg-[#16162A]/5 text-[#16162A]',
-    accent: 'text-[#16162A]',
+    iconBox: 'bg-[#17140F]/5 text-[#17140F]',
+    accent: 'text-[#17140F]',
     cta: 'Dùng ngay — Miễn phí',
-    ctaCls: 'border border-[#e5e0d8] text-[#16162A] hover:bg-[#F6F4EF]',
+    ctaCls: 'border border-[#e5e0d8] text-[#17140F] hover:bg-[#F6F4EF]',
     features: [
       { text: 'Duyệt toàn bộ bộ sưu tập + bộ lọc', on: true },
       { text: 'Xem mô hình 3D 360°', on: true },
@@ -82,11 +82,11 @@ const PLANS: Plan[] = [
     price: '199.000đ',
     period: '/ tháng',
     Icon: Building2,
-    tag: { label: 'Doanh nghiệp', Icon: Building2, cls: 'bg-[#16162A] text-white' },
-    iconBox: 'bg-[#16162A] text-white',
-    accent: 'text-[#16162A]',
+    tag: { label: 'Doanh nghiệp', Icon: Building2, cls: 'bg-[#17140F] text-white' },
+    iconBox: 'bg-[#17140F] text-white',
+    accent: 'text-[#17140F]',
     cta: 'Liên hệ tư vấn',
-    ctaCls: 'bg-[#16162A] text-white hover:bg-black shadow',
+    ctaCls: 'bg-[#17140F] text-white hover:bg-black shadow',
     features: [
       { text: 'Tất cả tính năng Pro +', on: true, strong: true },
       { text: 'Đăng bán sản phẩm không giới hạn', on: true },
@@ -113,7 +113,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-12">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-12">
       <div className="max-w-6xl mx-auto px-4">
         {/* Heading */}
         <div className="text-center max-w-2xl mx-auto mb-14">
@@ -184,7 +184,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
                 {plan.features.map((f, i) => (
                   <li key={i} className={`flex items-start gap-2.5 ${f.on ? 'text-gray-600' : 'text-gray-300'}`}>
                     <Check className={`h-4 w-4 mt-0.5 flex-shrink-0 ${f.on ? plan.accent : 'text-gray-300'}`} />
-                    <span className={f.strong ? 'font-bold text-[#16162A]' : ''}>{f.text}</span>
+                    <span className={f.strong ? 'font-bold text-[#17140F]' : ''}>{f.text}</span>
                   </li>
                 ))}
               </ul>

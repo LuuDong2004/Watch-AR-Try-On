@@ -8,7 +8,7 @@ interface UserFooterProps {
 
 export default function UserFooter({ onChangePage }: UserFooterProps) {
   return (
-    <footer className="bg-[#16162A] text-[#F6F4EF] font-sans mt-auto">
+    <footer className="bg-[#17140F] text-[#F6F4EF] font-sans mt-auto">
       {/* Newsletter / CTA strip */}
       <div className="border-b border-white/10">
         <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-6 items-center">

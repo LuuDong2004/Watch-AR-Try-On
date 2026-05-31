@@ -65,7 +65,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
 
   if (!isLoggedIn) {
     return (
-      <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-16 flex items-center justify-center px-4">
+      <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-16 flex items-center justify-center px-4">
         <div className="bg-white rounded-3xl border border-[#e5e0d8] w-full max-w-md p-6 md:p-8 shadow-xl text-xs text-left">
           <div className="flex border-b border-[#e5e0d8] mb-6 text-sm">
             <button
@@ -124,7 +124,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
 
             <button
               type="submit"
-              className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 flex items-center justify-center text-xs"
+              className="w-full bg-[#17140F] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 flex items-center justify-center text-xs"
             >
               {authTab === 'login' ? 'Đăng Nhập Ngay' : 'Tạo Tài Khoản Mới'}
             </button>
@@ -150,14 +150,14 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
   }
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-8">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
       <div className="max-w-6xl mx-auto px-4">
         {/* User Account Info Layout */}
         <div className="grid lg:grid-cols-12 gap-8 items-start">
           {/* Left Panel: Profile summary card (4 cols) */}
           <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
             <div className="flex flex-col items-center text-center border-b border-[#e5e0d8] pb-6 mb-6">
-              <div className="h-20 w-20 rounded-full bg-[#16162A] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A] mb-4">
+              <div className="h-20 w-20 rounded-full bg-[#17140F] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A] mb-4">
                 MA
               </div>
               <h2 className="font-serif text-lg font-bold">Nguyễn Minh Anh</h2>
@@ -165,7 +165,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
               <p className="text-[11px] text-gray-400">minhanh.nguyen@gmail.com · 0912 345 678</p>
             </div>
 
-            <div className="space-y-3.5 text-xs text-[#16162A]/90">
+            <div className="space-y-3.5 text-xs text-[#17140F]/90">
               <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
                 <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Lịch sử đặt hẹn</span>
                 <span className="font-bold text-[#B8924A]">{leads.length} lịch hẹn</span>
@@ -218,7 +218,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                     >
                       <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
                         <div>
-                          <span className="bg-[#16162A] text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mr-2">
+                          <span className="bg-[#17140F] text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider mr-2">
                             {lead.type === 'appointment' ? 'LỊCH HẸN' : 'TƯ VẤN'}
                           </span>
                           <span className="text-[10px] text-gray-400">
@@ -228,7 +228,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                         {getStatusBadge(lead.status)}
                       </div>
 
-                      <p className="font-bold text-[#16162A] text-sm mb-1">{lead.watchName}</p>
+                      <p className="font-bold text-[#17140F] text-sm mb-1">{lead.watchName}</p>
                       <p className="text-[11px] text-gray-500 mb-3 flex items-center gap-1">
                         <span className="inline-flex items-center gap-1"><Store className="h-4 w-4" /> Shop phản hồi:</span>
                         <span className="font-semibold text-gray-700">{lead.shopName}</span>
@@ -289,10 +289,10 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                           <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold block mb-0.5">
                             {fav.brand}
                           </p>
-                          <h4 className="font-serif text-[#16162A] font-bold text-sm truncate mb-0.5">
+                          <h4 className="font-serif text-[#17140F] font-bold text-sm truncate mb-0.5">
                             {fav.name}
                           </h4>
-                          <span className="text-[#16162A] font-semibold">{formatVND(fav.price)}</span>
+                          <span className="text-[#17140F] font-semibold">{formatVND(fav.price)}</span>
                         </div>
                       </div>
                     ))}

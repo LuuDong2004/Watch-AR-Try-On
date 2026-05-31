@@ -14,9 +14,9 @@ export default function AdminShops() {
   };
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans p-6 md:p-8 w-full overflow-y-auto">
+    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#16162A]">Quản Lý Cửa Hàng</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Cửa Hàng</h1>
         <p className="text-xs text-gray-500 mt-1">Toàn quyền duyệt cấp phép kinh doanh hoặc khoá tài khoản các cửa hàng trên sàn</p>
       </header>
 
@@ -36,8 +36,8 @@ export default function AdminShops() {
             <tbody>
               {showrooms.map((room) => (
                 <tr key={room.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                  <td className="py-3.5 px-4 font-bold text-[#16162A] flex items-center gap-2">
-                    <span className="h-7 w-7 rounded-lg bg-[#16162A]/5 flex items-center justify-center text-[#16162A] flex-shrink-0">
+                  <td className="py-3.5 px-4 font-bold text-[#17140F] flex items-center gap-2">
+                    <span className="h-7 w-7 rounded-lg bg-[#17140F]/5 flex items-center justify-center text-[#17140F] flex-shrink-0">
                       <Store className="h-4 w-4" />
                     </span>
                     <span>{room.name}</span>
