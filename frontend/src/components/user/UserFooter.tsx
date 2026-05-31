@@ -28,9 +28,9 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
               type="email"
               required
               placeholder="Nhập email của bạn"
-              className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
+              className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#1C9FD9]"
             />
-            <button className="bg-[#B8924A] hover:bg-[#a6803f] text-white font-semibold px-6 py-3 rounded-full text-sm transition shadow-md active:scale-95 whitespace-nowrap">
+            <button className="bg-[#1C9FD9] hover:bg-[#1685B8] text-white font-semibold px-6 py-3 rounded-full text-sm transition shadow-md active:scale-95 whitespace-nowrap">
               Đăng ký
             </button>
           </form>
@@ -53,7 +53,7 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
                 key={s}
                 href="#"
                 title={s}
-                className="h-9 w-9 rounded-full bg-white/10 hover:bg-[#B8924A] flex items-center justify-center text-xs font-bold transition"
+                className="h-9 w-9 rounded-full bg-white/10 hover:bg-[#1C9FD9] flex items-center justify-center text-xs font-bold transition"
               >
                 {s[0]}
               </a>
@@ -63,7 +63,7 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
 
         {/* Khám phá */}
         <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Khám phá</h4>
+          <h4 className="font-display font-bold mb-4 text-[#1C9FD9] uppercase text-xs tracking-wider">Khám phá</h4>
           <ul className="space-y-2.5 text-gray-400">
             <li><button onClick={() => onChangePage('home')} className="hover:text-white transition">Trang chủ</button></li>
             <li><button onClick={() => onChangePage('catalog')} className="hover:text-white transition">Bộ sưu tập</button></li>
@@ -73,7 +73,7 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
 
         {/* Dịch vụ */}
         <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Dịch vụ</h4>
+          <h4 className="font-display font-bold mb-4 text-[#1C9FD9] uppercase text-xs tracking-wider">Dịch vụ</h4>
           <ul className="space-y-2.5 text-gray-400">
             <li>Thử đeo AR thời gian thực</li>
             <li>Xem mô hình 3D 360°</li>
@@ -84,7 +84,7 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
 
         {/* Liên hệ */}
         <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Liên hệ</h4>
+          <h4 className="font-display font-bold mb-4 text-[#1C9FD9] uppercase text-xs tracking-wider">Liên hệ</h4>
           <ul className="space-y-2.5 text-gray-400">
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> 15 Lý Tự Trọng, Q1, TP.HCM</li>
             <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> 1900 6868</li>

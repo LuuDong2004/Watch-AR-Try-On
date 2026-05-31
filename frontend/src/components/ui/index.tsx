@@ -14,7 +14,7 @@ type ButtonVariant = 'primary' | 'gold' | 'ghost' | 'danger' | 'outline';
 
 const buttonStyles: Record<ButtonVariant, string> = {
   primary: 'bg-ink text-white hover:bg-black',
-  gold: 'bg-gold text-black hover:brightness-95',
+  gold: 'bg-gold text-white hover:brightness-95',
   danger: 'bg-red-600 text-white hover:bg-red-700',
   ghost: 'bg-transparent text-gray-600 hover:bg-gray-100',
   outline: 'border border-gray-300 text-gray-800 hover:border-gray-400 hover:bg-gray-50',
@@ -103,7 +103,7 @@ export function Badge({
     gray: 'bg-gray-100 text-gray-600',
     green: 'bg-emerald-100 text-emerald-700',
     red: 'bg-red-100 text-red-600',
-    gold: 'bg-gold/15 text-[#8a7124]',
+    gold: 'bg-gold/15 text-[#0E6E99]',
     blue: 'bg-blue-100 text-blue-700',
   };
   return (

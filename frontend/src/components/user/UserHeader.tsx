@@ -40,8 +40,8 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
               <button
                 key={item.key}
                 onClick={() => go(item.key)}
-                className={`hover:text-[#B8924A] transition py-1 ${
-                  active ? 'text-[#B8924A] border-b-2 border-[#B8924A]' : ''
+                className={`hover:text-[#1C9FD9] transition py-1 ${
+                  active ? 'text-[#1C9FD9] border-b-2 border-[#1C9FD9]' : ''
                 }`}
               >
                 {item.label}
@@ -55,14 +55,14 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
           <button
             onClick={() => go('favorites')}
             className={`relative p-2 rounded-full transition ${
-              currentPage === 'favorites' ? 'text-[#B8924A] bg-[#B8924A]/10' : 'text-[#16162A] hover:bg-[#e5e0d8]/50'
+              currentPage === 'favorites' ? 'text-[#1C9FD9] bg-[#1C9FD9]/10' : 'text-[#16162A] hover:bg-[#e5e0d8]/50'
             }`}
             title="Sản phẩm yêu thích"
             aria-label="Sản phẩm yêu thích"
           >
             <Heart className={`h-5 w-5 ${currentPage === 'favorites' ? 'fill-current' : ''}`} />
             {favoritesCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-[#B8924A] text-white text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 bg-[#1C9FD9] text-white text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">
                 {favoritesCount}
               </span>
             )}
@@ -70,7 +70,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
 
           <button
             onClick={() => go('account')}
-            className="h-9 w-9 rounded-full bg-[#e5e0d8] border border-[#B8924A]/40 flex items-center justify-center font-bold text-sm text-[#16162A] hover:scale-105 transition"
+            className="h-9 w-9 rounded-full bg-[#e5e0d8] border border-[#1C9FD9]/40 flex items-center justify-center font-bold text-sm text-[#16162A] hover:scale-105 transition"
             title="Tài khoản"
           >
             <User className="h-5 w-5" />
@@ -99,7 +99,7 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount }
                 key={item.key}
                 onClick={() => go(item.key)}
                 className={`text-left py-2.5 px-3 rounded-lg transition ${
-                  active ? 'bg-[#B8924A]/10 text-[#B8924A]' : 'text-[#16162A]/80 hover:bg-[#e5e0d8]/40'
+                  active ? 'bg-[#1C9FD9]/10 text-[#1C9FD9]' : 'text-[#16162A]/80 hover:bg-[#e5e0d8]/40'
                 }`}
               >
                 {item.label}

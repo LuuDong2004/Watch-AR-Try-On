@@ -57,12 +57,12 @@ const PLANS: Plan[] = [
     price: '49.000đ',
     period: '/ tháng',
     Icon: Crown,
-    tag: { label: 'Phổ biến nhất', Icon: Star, cls: 'bg-[#B8924A] text-white' },
+    tag: { label: 'Phổ biến nhất', Icon: Star, cls: 'bg-[#1C9FD9] text-white' },
     popular: true,
-    iconBox: 'bg-[#B8924A]/15 text-[#B8924A]',
-    accent: 'text-[#B8924A]',
+    iconBox: 'bg-[#1C9FD9]/15 text-[#1C9FD9]',
+    accent: 'text-[#1C9FD9]',
     cta: 'Bắt đầu dùng Pro',
-    ctaCls: 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow',
+    ctaCls: 'bg-[#1C9FD9] text-white hover:bg-[#1685B8] shadow',
     ctaNote: '7 ngày dùng thử miễn phí',
     features: [
       { text: 'Tất cả tính năng Free +', on: true, strong: true },
@@ -117,7 +117,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
       <div className="max-w-6xl mx-auto px-4">
         {/* Heading */}
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Bảng giá & Nâng cấp</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-[#1C9FD9] font-bold mb-2 block">Bảng giá & Nâng cấp</span>
           <h1 className="font-display text-3xl md:text-4xl font-bold mb-3">Chọn gói phù hợp với bạn</h1>
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
             Mở khóa thử AR không giới hạn, lưu yêu thích thoải mái và công cụ kinh doanh cho cửa hàng. Hủy bất cứ lúc nào.
@@ -131,7 +131,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
               key={plan.id}
               className={`relative rounded-3xl bg-white p-7 flex flex-col h-full transition ${
                 plan.popular
-                  ? 'border-2 border-[#B8924A] shadow-2xl md:-translate-y-4'
+                  ? 'border-2 border-[#1C9FD9] shadow-2xl md:-translate-y-4'
                   : 'border border-[#e5e0d8] shadow-sm hover:shadow-md'
               }`}
             >
@@ -167,7 +167,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
                 {plan.cta}
               </button>
               {plan.ctaNote && (
-                <p className="text-center text-[11px] text-[#B8924A] font-semibold mt-2.5 inline-flex items-center justify-center gap-1.5">
+                <p className="text-center text-[11px] text-[#1C9FD9] font-semibold mt-2.5 inline-flex items-center justify-center gap-1.5">
                   <Gift className="h-3.5 w-3.5" /> {plan.ctaNote}
                 </p>
               )}

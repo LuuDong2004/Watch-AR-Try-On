@@ -49,14 +49,14 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
             <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Đang quản lý</p>
             <p className="text-xs font-semibold truncate">{scopeLabel}</p>
           </div>
-          <ChevronDown className={`text-[#B8924A] h-4 w-4 transition-transform ${switcherOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`text-[#1C9FD9] h-4 w-4 transition-transform ${switcherOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {switcherOpen && (
           <div className="absolute left-4 right-4 mt-1.5 bg-[#1f1f38] border border-white/10 rounded-xl shadow-xl z-20 overflow-hidden">
             <button
               onClick={() => { onChangeScope('all'); setSwitcherOpen(false); }}
-              className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === 'all' ? 'text-[#B8924A] font-bold' : 'text-gray-300'}`}
+              className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === 'all' ? 'text-[#1C9FD9] font-bold' : 'text-gray-300'}`}
             >
               <span>Tất cả cửa hàng</span>
               {shopScope === 'all' && <Check className="h-4 w-4" />}
@@ -66,7 +66,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
               <button
                 key={s.id}
                 onClick={() => { onChangeScope(s.id); setSwitcherOpen(false); }}
-                className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === s.id ? 'text-[#B8924A] font-bold' : 'text-gray-300'}`}
+                className={`w-full text-left px-3 py-2.5 text-xs hover:bg-white/5 transition flex items-center justify-between ${shopScope === s.id ? 'text-[#1C9FD9] font-bold' : 'text-gray-300'}`}
               >
                 <span className="truncate">{s.name}</span>
                 {shopScope === s.id && <Check className="h-4 w-4" />}
@@ -87,15 +87,15 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
               key={item.id}
               onClick={() => onChangePage(item.id)}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-[13px] ${
-                isActive ? 'bg-[#B8924A] text-white font-semibold shadow-sm' : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                isActive ? 'bg-[#1C9FD9] text-white font-semibold shadow-sm' : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <span className="flex items-center gap-3">
-                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
+                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#1C9FD9]'}`} />
                 {item.name}
               </span>
               {item.badge && newLeadsCount > 0 && (
-                <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#B8924A]' : 'bg-[#B8924A] text-white'}`}>
+                <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#1C9FD9]' : 'bg-[#1C9FD9] text-white'}`}>
                   {newLeadsCount}
                 </span>
               )}
@@ -107,7 +107,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
       {/* Owner profile */}
       <div className="p-3 border-t border-white/10">
         <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <span className="h-9 w-9 rounded-full bg-white/10 border border-[#B8924A]/40 flex items-center justify-center text-xs font-bold text-[#B8924A]">
+          <span className="h-9 w-9 rounded-full bg-white/10 border border-[#1C9FD9]/40 flex items-center justify-center text-xs font-bold text-[#1C9FD9]">
             {owner.avatar}
           </span>
           <div className="min-w-0">

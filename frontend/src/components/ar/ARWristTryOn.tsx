@@ -50,7 +50,7 @@ function TopControls({ watchName, onClose }: { watchName?: string; onClose?: () 
       <div className="pointer-events-auto flex items-center gap-2">
         <CloseButton onClose={onClose} />
         <div className="leading-tight">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-[#B8924A] font-bold">AR TRY-ON · LUXURY</p>
+          <p className="text-[9px] uppercase tracking-[0.2em] text-[#1C9FD9] font-bold">AR TRY-ON · LUXURY</p>
           {watchName && <p className="text-xs font-semibold text-white/95 truncate max-w-[150px]">{watchName}</p>}
         </div>
         {debug && (
@@ -171,7 +171,7 @@ function DeniedScreen({ onClose }: { onClose?: () => void }) {
               setError(null);
               setStatus('requesting');
             }}
-            className="flex-1 rounded-xl bg-[#B8924A] py-3 text-white transition active:scale-[0.98]"
+            className="flex-1 rounded-xl bg-[#1C9FD9] py-3 text-white transition active:scale-[0.98]"
           >
             Thử lại
           </button>
@@ -192,7 +192,7 @@ function DeniedScreen({ onClose }: { onClose?: () => void }) {
 function LocalLoadingScreen({ label }: { label: string }) {
   return (
     <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/85 font-sans">
-      <div className="h-10 w-10 rounded-full border-2 border-t-[#B8924A] border-white/20 animate-spinslow mb-4" />
+      <div className="h-10 w-10 rounded-full border-2 border-t-[#1C9FD9] border-white/20 animate-spinslow mb-4" />
       <p className="text-xs tracking-wider text-white/80">{label}</p>
     </div>
   );
@@ -328,7 +328,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
           <div className="flex justify-between items-center border-b border-white/10 pb-3">
             <div>
               <h3 className="font-serif text-lg font-bold text-[#F6F4EF]">Tác phẩm đeo thử AR</h3>
-              <p className="text-[10px] text-[#B8924A] font-bold uppercase tracking-wider">Review photo Try-on</p>
+              <p className="text-[10px] text-[#1C9FD9] font-bold uppercase tracking-wider">Review photo Try-on</p>
             </div>
             <button
               onClick={handleResetCapture}
@@ -353,7 +353,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                 className={`py-3.5 rounded-xl transition shadow flex items-center justify-center gap-1.5 ${
                   savedToCloset 
                     ? 'bg-green-600/25 border border-green-500/20 text-green-400' 
-                    : 'bg-[#B8924A] text-white hover:bg-[#a6803f] active:scale-95'
+                    : 'bg-[#1C9FD9] text-white hover:bg-[#1685B8] active:scale-95'
                 }`}
               >
                 {savedToCloset ? (

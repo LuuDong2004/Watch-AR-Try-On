@@ -52,7 +52,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
       <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[
           { label: 'Số lượt xem 3D', val: '1,420', change: '+12.4%', color: 'text-blue-600', Icon: Eye },
-          { label: 'Số lượt thử AR', val: totalTryons, change: '+25.8%', color: 'text-[#B8924A]', Icon: Sparkles },
+          { label: 'Số lượt thử AR', val: totalTryons, change: '+25.8%', color: 'text-[#1C9FD9]', Icon: Sparkles },
           { label: 'Liên hệ / Leads mới', val: newLeads, change: `${newLeads} leads đợi phản hồi`, color: 'text-amber-500', Icon: Mail },
           { label: 'Lịch hẹn showroom', val: scheduledAppointments, change: 'Trong tuần này', color: 'text-green-600', Icon: CalendarCheck }
         ].map((card, idx) => (
@@ -83,7 +83,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
             </div>
             {/* Chart Legend */}
             <div className="flex gap-4 text-[10px] font-bold">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B8924A]" />Thử AR</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#1C9FD9]" />Thử AR</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#16162A]" />Gửi liên hệ</span>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
               {/* TryOn Line (Gold) */}
               <polyline
                 fill="none"
-                stroke="#B8924A"
+                stroke="#1C9FD9"
                 strokeWidth="3.5"
                 points="40,150 110,130 180,90 250,110 320,60 390,75 460,30"
                 strokeLinecap="round"
@@ -118,13 +118,13 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
               />
 
               {/* Chart Dots for Try-On */}
-              <circle cx="40" cy="150" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="110" cy="130" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="180" cy="90" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="250" cy="110" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="320" cy="60" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="390" cy="75" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="460" cy="30" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="40" cy="150" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="110" cy="130" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="180" cy="90" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="250" cy="110" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="320" cy="60" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="390" cy="75" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
+              <circle cx="460" cy="30" r="4.5" fill="#1C9FD9" stroke="#fff" strokeWidth="1.5" />
 
               {/* Chart X axis text */}
               <text x="40" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">24/5</text>
@@ -142,7 +142,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
         <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm flex flex-col">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-display text-sm font-bold">Liên hệ mới khẩn cấp</h3>
-            <button onClick={onNavigateToLeads} className="text-[10px] text-[#B8924A] hover:underline font-bold">
+            <button onClick={onNavigateToLeads} className="text-[10px] text-[#1C9FD9] hover:underline font-bold">
               Xem tất cả
             </button>
           </div>
@@ -153,7 +153,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                 <div
                   key={lead.id}
                   onClick={onNavigateToLeads}
-                  className="p-3 bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] hover:border-[#B8924A] transition cursor-pointer text-xs"
+                  className="p-3 bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] hover:border-[#1C9FD9] transition cursor-pointer text-xs"
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-[#16162A]">{lead.name}</span>
@@ -161,7 +161,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                       NEW
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#B8924A] font-semibold mb-1 truncate">{lead.watchName}</p>
+                  <p className="text-[10px] text-[#1C9FD9] font-semibold mb-1 truncate">{lead.watchName}</p>
                   <p className="text-[10px] text-gray-500 italic line-clamp-1">"{lead.message}"</p>
                 </div>
               ))
@@ -179,7 +179,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
       <section className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
         <div className="flex justify-between items-center mb-4 border-b border-[#e5e0d8] pb-3">
           <h3 className="font-display text-sm font-bold">Mẫu đồng hồ thu hút nhất (3D/AR)</h3>
-          <button onClick={onNavigateToProducts} className="text-[10px] text-[#B8924A] hover:underline font-bold">
+          <button onClick={onNavigateToProducts} className="text-[10px] text-[#1C9FD9] hover:underline font-bold">
             Xem sản phẩm
           </button>
         </div>
@@ -205,7 +205,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                     <span>{w.name}</span>
                   </td>
                   <td className="py-3 font-medium text-gray-600">{formatVND(w.price)}</td>
-                  <td className="py-3 text-center text-[#B8924A] font-bold">
+                  <td className="py-3 text-center text-[#1C9FD9] font-bold">
                     <span className="inline-flex items-center gap-1 justify-center">{w.rating} <Star className="h-3.5 w-3.5 fill-current" /></span>
                   </td>
                   <td className="py-3 text-center">

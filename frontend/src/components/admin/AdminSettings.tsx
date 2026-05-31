@@ -25,7 +25,7 @@ export default function AdminSettings() {
               type="text"
               value={platformName}
               onChange={(e) => setPlatformName(e.target.value)}
-              className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+              className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
             />
           </div>
 
@@ -48,14 +48,14 @@ export default function AdminSettings() {
               type="number"
               value={maxUploadSize}
               onChange={(e) => setMaxUploadSize(Number(e.target.value))}
-              className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+              className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
             />
             <p className="text-[10px] text-gray-400 mt-1">Khuyến nghị: Dưới 25MB để khách hàng tải AR trên di động mượt nhất.</p>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#B8924A]/30 text-xs"
+            className="w-full bg-[#16162A] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow border border-[#1C9FD9]/30 text-xs"
           >
             Lưu Cấu Hình Hệ Thống
           </button>

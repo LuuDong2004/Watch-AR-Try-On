@@ -82,9 +82,9 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans pb-16">
       {/* Hero Banner */}
-      <section className="relative bg-[#16162A] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#B8924A]/20">
+      <section className="relative bg-[#16162A] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#1C9FD9]/20">
         <div className="max-w-3xl mx-auto">
-          <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-3 block animate-fade-in">
+          <span className="text-xs uppercase tracking-[0.3em] text-[#1C9FD9] font-bold mb-3 block animate-fade-in">
             TrueWrist Haute Horlogerie & AR Studio
           </span>
           <h1 className="font-display text-3xl md:text-5xl font-semibold leading-tight mb-4 animate-fade-in text-[#F6F4EF]">
@@ -95,7 +95,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
           </p>
           <a
             href="#catalog-section"
-            className="inline-block bg-[#B8924A] hover:bg-[#a6803f] text-white font-semibold px-8 py-3.5 rounded-full transition shadow-md hover:scale-105 active:scale-95"
+            className="inline-block bg-[#1C9FD9] hover:bg-[#1685B8] text-white font-semibold px-8 py-3.5 rounded-full transition shadow-md hover:scale-105 active:scale-95"
           >
             Khám Phá Bộ Sưu Tập
           </a>
@@ -118,7 +118,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                 setSortBy('featured');
                 setSearchQuery('');
               }}
-              className="text-xs text-[#B8924A] hover:underline"
+              className="text-xs text-[#1C9FD9] hover:underline"
             >
               Đặt lại
             </button>
@@ -131,7 +131,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
               <select
                 value={selectedBrand}
                 onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
+                className="w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#1C9FD9]"
               >
                 <option value="all">Tất cả thương hiệu</option>
                 {brands.map((b) => (
@@ -144,7 +144,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs uppercase tracking-wider text-gray-400 font-bold">Giá Tối Đa</label>
-                <span className="text-xs font-semibold text-[#B8924A]">{formatVND(priceRange)}</span>
+                <span className="text-xs font-semibold text-[#1C9FD9]">{formatVND(priceRange)}</span>
               </div>
               <input
                 type="range"
@@ -153,7 +153,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                 step="5000000"
                 value={priceRange}
                 onChange={(e) => setPriceRange(Number(e.target.value))}
-                className="w-full accent-[#B8924A]"
+                className="w-full accent-[#1C9FD9]"
               />
               <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>5 Trđ</span>
@@ -177,7 +177,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                       name="material"
                       checked={selectedMaterial === val}
                       onChange={() => setSelectedMaterial(val)}
-                      className="accent-[#B8924A]"
+                      className="accent-[#1C9FD9]"
                     />
                     <span>{label}</span>
                   </label>
@@ -200,7 +200,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                       name="diameter"
                       checked={selectedDiameter === val}
                       onChange={() => setSelectedDiameter(val)}
-                      className="accent-[#B8924A]"
+                      className="accent-[#1C9FD9]"
                     />
                     <span>{label}</span>
                   </label>
@@ -215,7 +215,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                   type="checkbox"
                   checked={onlyAR}
                   onChange={(e) => setOnlyAR(e.target.checked)}
-                  className="rounded border-[#e5e0d8] text-[#B8924A] focus:ring-[#B8924A] accent-[#B8924A] h-4 w-4"
+                  className="rounded border-[#e5e0d8] text-[#1C9FD9] focus:ring-[#1C9FD9] accent-[#1C9FD9] h-4 w-4"
                 />
                 <span className="text-sm font-semibold flex items-center gap-1.5 text-[#16162A]">
                   <Sparkles className="h-4 w-4" /> <span>Có Sẵn AR Try-On</span>
@@ -237,11 +237,11 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm theo tên hoặc thương hiệu…"
-                  className="w-full rounded-lg border border-[#e5e0d8] bg-[#F6F4EF] pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
+                  className="w-full rounded-lg border border-[#e5e0d8] bg-[#F6F4EF] pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#1C9FD9]"
                 />
               </div>
               <div className="whitespace-nowrap">
-                Có <span className="font-bold text-[#B8924A]">{filteredWatches.length}</span> sản phẩm phù hợp
+                Có <span className="font-bold text-[#1C9FD9]">{filteredWatches.length}</span> sản phẩm phù hợp
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
 
                     {/* AR / 3D badge — only for models with a real 3D asset */}
                     {w.hasAR ? (
-                      <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
+                      <span className="absolute top-3 right-3 bg-[#1C9FD9] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
                         <Sparkles className="h-4 w-4" /> AR Try-On
                       </span>
                     ) : (
@@ -299,11 +299,11 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
 
                   {/* Watch details */}
                   <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="font-serif text-[#16162A] font-bold group-hover:text-[#B8924A] transition text-base mb-1 line-clamp-1">
+                    <h3 className="font-serif text-[#16162A] font-bold group-hover:text-[#1C9FD9] transition text-base mb-1 line-clamp-1">
                       {w.name}
                     </h3>
                     <div className="flex items-center gap-1 mb-3">
-                      <span className="text-[#B8924A]"><Star className="h-3.5 w-3.5 fill-current" /></span>
+                      <span className="text-[#1C9FD9]"><Star className="h-3.5 w-3.5 fill-current" /></span>
                       <span className="text-xs font-bold">{w.rating}</span>
                       <span className="text-xs text-gray-400">({w.reviewCount} đánh giá)</span>
                     </div>
@@ -326,7 +326,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                           e.stopPropagation();
                           onOpenAR(w.id);
                         }}
-                        className="w-full bg-[#16162A] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#B8924A]/30"
+                        className="w-full bg-[#16162A] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#1C9FD9]/30"
                       >
                         <Sparkles className="h-4 w-4" /> <span>Thử Đeo AR Tức Thì</span>
                       </button>
@@ -352,7 +352,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safePage === 1}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e0d8] bg-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#B8924A] transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e0d8] bg-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#1C9FD9] transition"
                 >
                   <ArrowLeft className="h-4 w-4" /> Trước
                 </button>
@@ -362,8 +362,8 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                     onClick={() => setCurrentPage(p)}
                     className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${
                       p === safePage
-                        ? 'bg-[#16162A] text-white border border-[#B8924A]/40'
-                        : 'bg-white border border-[#e5e0d8] hover:border-[#B8924A]'
+                        ? 'bg-[#16162A] text-white border border-[#1C9FD9]/40'
+                        : 'bg-white border border-[#e5e0d8] hover:border-[#1C9FD9]'
                     }`}
                   >
                     {p}
@@ -372,7 +372,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage === totalPages}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e0d8] bg-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#B8924A] transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#e5e0d8] bg-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#1C9FD9] transition"
                 >
                   Sau <ArrowRight className="h-4 w-4" />
                 </button>
@@ -395,7 +395,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                   setOnlyAR(false);
                   setSearchQuery('');
                 }}
-                className="bg-[#B8924A] text-white px-5 py-2 rounded-full font-semibold text-xs"
+                className="bg-[#1C9FD9] text-white px-5 py-2 rounded-full font-semibold text-xs"
               >
                 Đặt lại bộ lọc
               </button>

@@ -37,13 +37,13 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
         {/* Header */}
         <button
           onClick={onBackToCatalog}
-          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#B8924A] transition mb-6"
+          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#1C9FD9] transition mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Tiếp tục khám phá
         </button>
 
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-[#1C9FD9] font-bold mb-2">
             <Heart className="h-4 w-4 fill-current" /> Danh sách yêu thích
           </span>
           <h1 className="font-display text-2xl md:text-4xl font-bold mb-3">Đồng hồ bạn đã lưu</h1>
@@ -64,14 +64,14 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
                 <div className="relative h-44 overflow-hidden cursor-pointer" onClick={() => onSelectWatch(w.id)}>
                   <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   {w.hasAR && (
-                    <span className="absolute top-2 left-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1">
+                    <span className="absolute top-2 left-2 bg-[#1C9FD9] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1">
                       <Sparkles className="h-3 w-3" /> AR
                     </span>
                   )}
                   {/* Remove from favorites */}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleRemove(w.id); }}
-                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-[#B8924A] hover:bg-white hover:text-red-500 transition shadow"
+                    className="absolute top-2 right-2 h-8 w-8 rounded-full bg-white/90 backdrop-blur flex items-center justify-center text-[#1C9FD9] hover:bg-white hover:text-red-500 transition shadow"
                     title="Bỏ yêu thích"
                     aria-label="Bỏ yêu thích"
                   >
@@ -82,14 +82,14 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
                   <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
                   <h3
                     onClick={() => onSelectWatch(w.id)}
-                    className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 cursor-pointer group-hover:text-[#B8924A] transition"
+                    className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 cursor-pointer group-hover:text-[#1C9FD9] transition"
                   >
                     {w.name}
                   </h3>
                   <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
                   <div className="mt-auto space-y-2">
                     {w.hasAR ? (
-                      <button onClick={() => onOpenAR(w.id)} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
+                      <button onClick={() => onOpenAR(w.id)} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#1C9FD9]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                     ) : (
                       <button onClick={() => onSelectWatch(w.id)} className="w-full bg-white text-[#16162A] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#16162A]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
                     )}
@@ -101,7 +101,7 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-[#e5e0d8] p-12 text-center shadow-sm max-w-lg mx-auto">
-            <div className="h-16 w-16 mx-auto rounded-full bg-[#B8924A]/10 flex items-center justify-center text-[#B8924A] mb-4">
+            <div className="h-16 w-16 mx-auto rounded-full bg-[#1C9FD9]/10 flex items-center justify-center text-[#1C9FD9] mb-4">
               <Heart className="h-7 w-7" />
             </div>
             <h3 className="font-display font-bold text-base mb-1">Chưa có sản phẩm yêu thích</h3>

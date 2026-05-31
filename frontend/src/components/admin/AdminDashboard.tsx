@@ -52,7 +52,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
               <span className="text-gray-400 font-bold uppercase tracking-wider text-[8px]">{card.label}</span>
               {(() => {
                 const Ic = card.icon;
-                return <Ic className="h-5 w-5 text-[#B8924A]" />;
+                return <Ic className="h-5 w-5 text-[#1C9FD9]" />;
               })()}
             </div>
             <div>
@@ -84,18 +84,18 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
 
               <polyline
                 fill="none"
-                stroke="#B8924A"
+                stroke="#1C9FD9"
                 strokeWidth="3.5"
                 points="40,160 120,130 200,140 280,90 360,70 460,30"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              <circle cx="40" cy="160" r="4" fill="#B8924A" />
-              <circle cx="120" cy="130" r="4" fill="#B8924A" />
-              <circle cx="200" cy="140" r="4" fill="#B8924A" />
-              <circle cx="280" cy="90" r="4" fill="#B8924A" />
-              <circle cx="360" cy="70" r="4" fill="#B8924A" />
-              <circle cx="460" cy="30" r="4" fill="#B8924A" />
+              <circle cx="40" cy="160" r="4" fill="#1C9FD9" />
+              <circle cx="120" cy="130" r="4" fill="#1C9FD9" />
+              <circle cx="200" cy="140" r="4" fill="#1C9FD9" />
+              <circle cx="280" cy="90" r="4" fill="#1C9FD9" />
+              <circle cx="360" cy="70" r="4" fill="#1C9FD9" />
+              <circle cx="460" cy="30" r="4" fill="#1C9FD9" />
 
               <text x="40" y="190" fill="#9ca3af" fontSize="8" textAnchor="middle">Tháng 1</text>
               <text x="120" y="190" fill="#9ca3af" fontSize="8" textAnchor="middle">Tháng 2</text>
@@ -118,7 +118,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
               {/* Check 1 */}
               <div
                 onClick={onNavigateToAudit}
-                className="p-3 bg-[#F6F4EF] rounded-xl border border-gray-100 hover:border-[#B8924A] transition cursor-pointer"
+                className="p-3 bg-[#F6F4EF] rounded-xl border border-gray-100 hover:border-[#1C9FD9] transition cursor-pointer"
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold">Model 3D Aventus White</span>
@@ -132,7 +132,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
               {/* Check 2 */}
               <div
                 onClick={onNavigateToShops}
-                className="p-3 bg-[#F6F4EF] rounded-xl border border-gray-100 hover:border-[#B8924A] transition cursor-pointer"
+                className="p-3 bg-[#F6F4EF] rounded-xl border border-gray-100 hover:border-[#1C9FD9] transition cursor-pointer"
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold">Showroom Rolex Hoàn Kiếm</span>

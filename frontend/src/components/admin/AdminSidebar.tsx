@@ -26,15 +26,15 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
               key={item.id}
               onClick={() => onChangePage(item.id)}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition text-[13px] ${
-                isActive ? 'bg-[#B8924A] text-white font-semibold shadow-sm' : 'text-gray-500 hover:bg-white/5 hover:text-white'
+                isActive ? 'bg-[#1C9FD9] text-white font-semibold shadow-sm' : 'text-gray-500 hover:bg-white/5 hover:text-white'
               }`}
             >
               <span className="flex items-center gap-3">
-                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
+                <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#1C9FD9]'}`} />
                 {item.name}
               </span>
               {item.badge && pendingAuditsCount > 0 && (
-                <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#B8924A]' : 'bg-[#B8924A] text-white'}`}>
+                <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#1C9FD9]' : 'bg-[#1C9FD9] text-white'}`}>
                   {pendingAuditsCount}
                 </span>
               )}
@@ -46,7 +46,7 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
       {/* Admin profile */}
       <div className="p-3 border-t border-white/10">
         <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <span className="h-9 w-9 rounded-full bg-white/10 border border-[#B8924A]/40 flex items-center justify-center text-xs font-bold text-[#B8924A]">SA</span>
+          <span className="h-9 w-9 rounded-full bg-white/10 border border-[#1C9FD9]/40 flex items-center justify-center text-xs font-bold text-[#1C9FD9]">SA</span>
           <div className="min-w-0">
             <p className="text-xs font-semibold truncate">System Admin</p>
             <p className="text-[9px] text-gray-500 truncate">admin@aventus.luxury</p>

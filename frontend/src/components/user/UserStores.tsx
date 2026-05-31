@@ -132,7 +132,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
         <div className="max-w-6xl mx-auto px-4">
           <button
             onClick={() => setSelectedId(null)}
-            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#B8924A] transition mb-6"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#1C9FD9] transition mb-6"
           >
             <ArrowLeft className="h-4 w-4" /> Quay lại danh sách cửa hàng
           </button>
@@ -142,10 +142,10 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             <img src={selected.image} onError={(e)=>{const t=e.currentTarget; if(t.src.indexOf("1523275335684")===-1) t.src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1200";}} alt={selected.name} className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
             <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
-              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[#B8924A] font-bold"><Store className="h-4 w-4" /> Cửa hàng chính hãng</span>
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.2em] text-[#1C9FD9] font-bold"><Store className="h-4 w-4" /> Cửa hàng chính hãng</span>
               <h1 className="font-display text-2xl md:text-4xl font-bold mt-1">{selected.name}</h1>
               <div className="flex items-center gap-3 mt-2 text-xs text-gray-200">
-                <span className="inline-flex items-center gap-1 text-[#B8924A] font-bold"><Star className="h-3.5 w-3.5 fill-current" /> {selected.rating}</span>
+                <span className="inline-flex items-center gap-1 text-[#1C9FD9] font-bold"><Star className="h-3.5 w-3.5 fill-current" /> {selected.rating}</span>
                 <span>({selected.reviewCount} đánh giá)</span>
                 <span>·</span>
                 <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" /> {selected.address}</span>
@@ -161,21 +161,21 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 {selected.description && <p className="text-xs text-gray-500 leading-relaxed mb-4">{selected.description}</p>}
                 <h3 className="font-display font-bold text-sm mb-3 border-b border-[#e5e0d8] pb-2">Thông tin liên hệ</h3>
                 <ul className="space-y-3 text-xs">
-                  <li className="flex gap-2"><span className="text-[#B8924A]"><User className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Chủ shop</p><p className="font-semibold text-gray-700">{selected.manager}</p></div></li>
-                  <li className="flex gap-2"><span className="text-[#B8924A]"><Clock className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Giờ làm việc</p><p className="font-semibold text-gray-700">{selected.hours}</p></div></li>
-                  <li className="flex gap-2"><span className="text-[#B8924A]"><Phone className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Hotline</p><p className="font-semibold text-gray-700">{selected.phone}</p></div></li>
-                  <li className="flex gap-2"><span className="text-[#B8924A]"><Mail className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Email</p><p className="font-semibold text-gray-700 break-all">{selected.email}</p></div></li>
-                  <li className="flex gap-2"><span className="text-[#B8924A]"><MapPin className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Khu vực</p><p className="font-semibold text-gray-700">{selected.address}</p></div></li>
+                  <li className="flex gap-2"><span className="text-[#1C9FD9]"><User className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Chủ shop</p><p className="font-semibold text-gray-700">{selected.manager}</p></div></li>
+                  <li className="flex gap-2"><span className="text-[#1C9FD9]"><Clock className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Giờ làm việc</p><p className="font-semibold text-gray-700">{selected.hours}</p></div></li>
+                  <li className="flex gap-2"><span className="text-[#1C9FD9]"><Phone className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Hotline</p><p className="font-semibold text-gray-700">{selected.phone}</p></div></li>
+                  <li className="flex gap-2"><span className="text-[#1C9FD9]"><Mail className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Email</p><p className="font-semibold text-gray-700 break-all">{selected.email}</p></div></li>
+                  <li className="flex gap-2"><span className="text-[#1C9FD9]"><MapPin className="h-4 w-4" /></span><div><p className="text-gray-400 font-bold uppercase tracking-wide text-[9px]">Khu vực</p><p className="font-semibold text-gray-700">{selected.address}</p></div></li>
                 </ul>
 
                 {/* Self-serve contact actions */}
                 <div className="flex flex-col gap-2 mt-5">
                   <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="w-full bg-[#16162A] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition text-center shadow inline-flex items-center justify-center gap-1.5"><Phone className="h-4 w-4" /> Gọi shop</a>
                   <div className="grid grid-cols-2 gap-2">
-                    <a href={selected.zalo} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Zalo</a>
-                    <a href={selected.messenger} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><Globe className="h-4 w-4" /> Messenger</a>
+                    <a href={selected.zalo} target="_blank" rel="noreferrer" className="border border-[#1C9FD9] text-[#1C9FD9] py-2.5 rounded-xl font-bold text-xs hover:bg-[#1C9FD9]/5 transition text-center inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Zalo</a>
+                    <a href={selected.messenger} target="_blank" rel="noreferrer" className="border border-[#1C9FD9] text-[#1C9FD9] py-2.5 rounded-xl font-bold text-xs hover:bg-[#1C9FD9]/5 transition text-center inline-flex items-center justify-center gap-1.5"><Globe className="h-4 w-4" /> Messenger</a>
                   </div>
-                  <button onClick={() => openContact()} className="w-full bg-[#B8924A] hover:bg-[#a6803f] text-white py-2.5 rounded-xl font-bold text-xs transition text-center shadow inline-flex items-center justify-center gap-1.5"><Mail className="h-4 w-4" /> Gửi yêu cầu tư vấn</button>
+                  <button onClick={() => openContact()} className="w-full bg-[#1C9FD9] hover:bg-[#1685B8] text-white py-2.5 rounded-xl font-bold text-xs transition text-center shadow inline-flex items-center justify-center gap-1.5"><Mail className="h-4 w-4" /> Gửi yêu cầu tư vấn</button>
                 </div>
               </div>
 
@@ -185,7 +185,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                   <h3 className="font-display font-bold text-sm mb-3 border-b border-[#e5e0d8] pb-2">Cam kết & dịch vụ</h3>
                   <ul className="space-y-2 text-xs text-gray-600">
                     {selected.services.map((s: string, i: number) => (
-                      <li key={i} className="flex items-start gap-1.5"><span className="text-[#B8924A] font-bold mt-0.5"><Check className="h-4 w-4" /></span><span className="leading-relaxed">{s}</span></li>
+                      <li key={i} className="flex items-start gap-1.5"><span className="text-[#1C9FD9] font-bold mt-0.5"><Check className="h-4 w-4" /></span><span className="leading-relaxed">{s}</span></li>
                     ))}
                   </ul>
                 </div>
@@ -211,19 +211,19 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                     >
                       <div className="relative h-44 overflow-hidden">
                         <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        {w.hasAR && <span className="absolute top-2 right-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1"><Sparkles className="h-4 w-4" /> AR</span>}
+                        {w.hasAR && <span className="absolute top-2 right-2 bg-[#1C9FD9] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1"><Sparkles className="h-4 w-4" /> AR</span>}
                       </div>
                       <div className="p-4 flex flex-col flex-1">
                         <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
-                        <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#B8924A] transition">{w.name}</h3>
+                        <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#1C9FD9] transition">{w.name}</h3>
                         <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
                         <div className="mt-auto space-y-2">
                           {w.hasAR ? (
-                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
+                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#16162A] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#1C9FD9]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#16162A] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#16162A]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
                           )}
-                          <button onClick={(e) => { e.stopPropagation(); openContact(w.id); }} className="w-full border border-[#B8924A] text-[#B8924A] text-xs font-semibold py-2 rounded-full hover:bg-[#B8924A]/5 transition inline-flex items-center justify-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Yêu cầu tư vấn</button>
+                          <button onClick={(e) => { e.stopPropagation(); openContact(w.id); }} className="w-full border border-[#1C9FD9] text-[#1C9FD9] text-xs font-semibold py-2 rounded-full hover:bg-[#1C9FD9]/5 transition inline-flex items-center justify-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Yêu cầu tư vấn</button>
                         </div>
                       </div>
                     </div>
@@ -256,7 +256,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                   <div className="bg-[#16162A] text-white px-6 py-5 flex items-start justify-between gap-3">
                     <div>
                       <h2 className="font-display text-lg font-bold">Gửi yêu cầu tư vấn</h2>
-                      <p className="text-[11px] text-gray-400 mt-0.5 inline-flex items-center gap-1"><Store className="h-3.5 w-3.5 text-[#B8924A]" /> {selected.name}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 inline-flex items-center gap-1"><Store className="h-3.5 w-3.5 text-[#1C9FD9]" /> {selected.name}</p>
                     </div>
                     <button type="button" onClick={() => setContactOpen(false)} className="text-gray-400 hover:text-white transition" aria-label="Đóng"><X className="h-5 w-5" /></button>
                   </div>
@@ -296,11 +296,11 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                               <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{chosen.brand}</p>
                               <p className="text-xs font-bold text-[#16162A] truncate">{chosen.name}</p>
                             </div>
-                            <button type="button" onClick={() => setContactForm({ ...contactForm, watchId: '' })} className="text-[10px] font-semibold text-gray-400 hover:text-[#B8924A] transition flex-shrink-0 px-1">Bỏ chọn</button>
+                            <button type="button" onClick={() => setContactForm({ ...contactForm, watchId: '' })} className="text-[10px] font-semibold text-gray-400 hover:text-[#1C9FD9] transition flex-shrink-0 px-1">Bỏ chọn</button>
                           </div>
                         ) : (
                           <div className="w-full rounded-xl border border-dashed border-[#e5e0d8] bg-[#F6F4EF] px-3.5 py-2.5 text-xs text-gray-500 flex items-center gap-2">
-                            <Store className="h-4 w-4 text-[#B8924A] flex-shrink-0" /> Tư vấn chung — chọn "Yêu cầu tư vấn" trên một sản phẩm để gắn vào yêu cầu.
+                            <Store className="h-4 w-4 text-[#1C9FD9] flex-shrink-0" /> Tư vấn chung — chọn "Yêu cầu tư vấn" trên một sản phẩm để gắn vào yêu cầu.
                           </div>
                         );
                       })()}
@@ -348,7 +348,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     <div className="bg-[#F6F4EF] min-h-screen text-[#16162A] font-sans py-8">
       <div className="max-w-6xl mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Marketplace đồng hồ chính hãng</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-[#1C9FD9] font-bold mb-2 block">Marketplace đồng hồ chính hãng</span>
           <h1 className="font-display text-2xl md:text-4xl font-bold mb-3">Cửa hàng trên TrueWrist</h1>
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
             Chọn một shop để xem toàn bộ sản phẩm đang đăng bán, thử AR và chủ động liên hệ trực tiếp với shop.
@@ -363,7 +363,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm cửa hàng theo tên hoặc địa chỉ..."
-              className="w-full bg-white rounded-full border border-[#e5e0d8] shadow-sm pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+              className="w-full bg-white rounded-full border border-[#e5e0d8] shadow-sm pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
             />
           </div>
           <div className="flex flex-wrap justify-center gap-2">
@@ -374,7 +374,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition border ${
                   region === r
                     ? 'bg-[#16162A] text-white border-[#16162A] shadow'
-                    : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
+                    : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#1C9FD9] hover:text-[#1C9FD9]'
                 }`}
               >
                 {r !== 'all' && <MapPin className="h-3.5 w-3.5" />}
@@ -408,17 +408,17 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 <div className="h-44 overflow-hidden relative">
                   <img src={shop.image} onError={(e)=>{const t=e.currentTarget; if(t.src.indexOf("1523275335684")===-1) t.src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1200";}} alt={shop.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                  <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">{count} sản phẩm</span>
+                  <span className="absolute top-3 right-3 bg-[#1C9FD9] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">{count} sản phẩm</span>
                   <div className="absolute bottom-3 left-4 text-white">
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#B8924A] font-bold"><Store className="h-4 w-4" /> Cửa hàng</span>
+                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#1C9FD9] font-bold"><Store className="h-4 w-4" /> Cửa hàng</span>
                     <h3 className="font-display text-lg font-bold">{shop.name}</h3>
                   </div>
                 </div>
                 <div className="p-5">
                   <p className="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">{shop.description || shop.address}</p>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-[#B8924A] font-bold"><Star className="h-3.5 w-3.5 fill-current" /> {shop.rating} <span className="inline-flex items-center gap-1 text-gray-400 font-normal">· <MapPin className="h-4 w-4" /> {shop.address}</span></span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-[#B8924A] group-hover:underline">Xem shop <ArrowRight className="h-4 w-4" /></span>
+                    <span className="inline-flex items-center gap-1 text-[#1C9FD9] font-bold"><Star className="h-3.5 w-3.5 fill-current" /> {shop.rating} <span className="inline-flex items-center gap-1 text-gray-400 font-normal">· <MapPin className="h-4 w-4" /> {shop.address}</span></span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-[#1C9FD9] group-hover:underline">Xem shop <ArrowRight className="h-4 w-4" /></span>
                   </div>
                 </div>
               </button>
@@ -433,7 +433,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={safePage === 1}
-              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
+              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#1C9FD9] hover:text-[#1C9FD9] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
               aria-label="Trang trước"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -445,7 +445,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                 className={`h-9 min-w-9 px-3 flex items-center justify-center rounded-full text-sm font-semibold transition border ${
                   safePage === i + 1
                     ? 'bg-[#16162A] text-white border-[#16162A]'
-                    : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
+                    : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#1C9FD9] hover:text-[#1C9FD9]'
                 }`}
               >
                 {i + 1}
@@ -454,7 +454,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={safePage === totalPages}
-              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
+              className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#16162A] hover:border-[#1C9FD9] hover:text-[#1C9FD9] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#16162A]"
               aria-label="Trang sau"
             >
               <ArrowRight className="h-4 w-4" />

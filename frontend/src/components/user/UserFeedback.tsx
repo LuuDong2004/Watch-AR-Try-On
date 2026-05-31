@@ -72,7 +72,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
       <div className="max-w-2xl mx-auto px-4">
         {/* Heading */}
         <div className="text-center max-w-xl mx-auto mb-10">
-          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2">
+          <span className="inline-flex items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-[#1C9FD9] font-bold mb-2">
             <MessageSquare className="h-4 w-4" /> Góp ý & Phản hồi
           </span>
           <h1 className="font-display text-2xl md:text-4xl font-bold mb-3">Ý kiến của bạn giúp chúng tôi tốt hơn</h1>
@@ -121,7 +121,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
 
                 {/* Visual context badge */}
                 <div className="flex items-center gap-2.5 rounded-xl bg-[#F6F4EF] border border-[#e5e0d8] px-3.5 py-2.5 text-xs text-gray-600">
-                  <span className="text-[#B8924A]">
+                  <span className="text-[#1C9FD9]">
                     {target === 'shop' ? <Store className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                   </span>
                   {target === 'shop'
@@ -153,7 +153,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
                         className="transition active:scale-90"
                         aria-label={`${n} sao`}
                       >
-                        <Star className={`h-7 w-7 ${n <= (hoverRating || form.rating) ? 'text-[#B8924A] fill-current' : 'text-gray-300'}`} />
+                        <Star className={`h-7 w-7 ${n <= (hoverRating || form.rating) ? 'text-[#1C9FD9] fill-current' : 'text-gray-300'}`} />
                       </button>
                     ))}
                     <span className="ml-2 text-xs font-semibold text-gray-500">{form.rating}/5</span>

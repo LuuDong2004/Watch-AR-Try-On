@@ -45,7 +45,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
   const getStatusBadge = (status: Lead['status']) => {
     const map = {
       new: { text: 'Yêu cầu mới', bg: 'bg-red-50 text-red-600 border-red-200' },
-      responded: { text: 'Đã phản hồi', bg: 'bg-[#B8924A]/10 text-[#B8924A] border-[#B8924A]/20' },
+      responded: { text: 'Đã phản hồi', bg: 'bg-[#1C9FD9]/10 text-[#1C9FD9] border-[#1C9FD9]/20' },
       booked: { text: 'Đã xếp lịch hẹn', bg: 'bg-green-50 text-green-600 border-green-200' },
       closed: { text: 'Đóng / Hoàn tất', bg: 'bg-gray-100 text-gray-500 border-gray-200' }
     };
@@ -123,7 +123,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                       key={l.id}
                       onClick={() => setSelectedLead(l)}
                       className={`border-b border-gray-50 hover:bg-gray-50/80 transition cursor-pointer ${
-                        selectedLead?.id === l.id ? 'bg-[#F6F4EF]/75 font-semibold border-l-4 border-l-[#B8924A]' : ''
+                        selectedLead?.id === l.id ? 'bg-[#F6F4EF]/75 font-semibold border-l-4 border-l-[#1C9FD9]' : ''
                       }`}
                     >
                       {/* Customer Name */}
@@ -137,7 +137,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                       </td>
 
                       {/* Product */}
-                      <td className="py-4 px-4 text-[#B8924A] font-semibold truncate max-w-[150px]">{l.watchName}</td>
+                      <td className="py-4 px-4 text-[#1C9FD9] font-semibold truncate max-w-[150px]">{l.watchName}</td>
 
                       {/* Type */}
                       <td className="py-4 px-4 font-medium text-gray-600">
@@ -250,7 +250,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                   href={`https://zalo.me/${selectedLead.phone.replace(/\s/g, '')}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex-1 border border-[#B8924A] text-[#B8924A] py-2 rounded-lg font-bold hover:bg-[#B8924A]/5 transition text-[10px] flex items-center justify-center gap-1.5"
+                  className="flex-1 border border-[#1C9FD9] text-[#1C9FD9] py-2 rounded-lg font-bold hover:bg-[#1C9FD9]/5 transition text-[10px] flex items-center justify-center gap-1.5"
                 >
                   <MessageCircle className="h-3.5 w-3.5" /> Chat Zalo Với Khách
                 </a>
@@ -268,7 +268,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
                 onClick={() => handleUpdateStatus(selectedLead.id, 'responded')}
                 className={`py-2 rounded-lg transition border ${
                   selectedLead.status === 'responded'
-                    ? 'bg-[#B8924A] text-white border-[#B8924A]'
+                    ? 'bg-[#1C9FD9] text-white border-[#1C9FD9]'
                     : 'border-[#e5e0d8] hover:bg-gray-50'
                 }`}
               >

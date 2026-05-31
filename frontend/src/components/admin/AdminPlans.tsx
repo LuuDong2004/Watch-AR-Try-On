@@ -36,7 +36,7 @@ const INITIAL_PLANS: Plan[] = [
     active: true,
     popular: true,
     Icon: Crown,
-    box: 'bg-[#B8924A]/15 text-[#B8924A]',
+    box: 'bg-[#1C9FD9]/15 text-[#1C9FD9]',
     features: ['Tất cả tính năng Free +', 'Thử AR không giới hạn', 'Lưu yêu thích không giới hạn', 'Cảnh báo giảm giá', 'Badge "Pro"'],
   },
   {
@@ -85,7 +85,7 @@ export default function AdminPlans() {
 
   const metrics = [
     { label: 'Tổng người đăng ký', val: totalSubs.toLocaleString('vi-VN'), sub: `${plans.length} gói đang vận hành`, Icon: Users, color: 'text-blue-600' },
-    { label: 'Doanh thu định kỳ (MRR)', val: formatVND(mrr), sub: 'Ước tính theo số đăng ký', Icon: CircleDollarSign, color: 'text-[#B8924A]' },
+    { label: 'Doanh thu định kỳ (MRR)', val: formatVND(mrr), sub: 'Ước tính theo số đăng ký', Icon: CircleDollarSign, color: 'text-[#1C9FD9]' },
     { label: 'Tỷ lệ trả phí', val: `${paidRate}%`, sub: `${paidSubs.toLocaleString('vi-VN')} người dùng trả phí`, Icon: TrendingUp, color: 'text-green-600' },
   ];
 
@@ -142,7 +142,7 @@ export default function AdminPlans() {
                           <p className="font-display font-bold text-sm text-[#16162A] flex items-center gap-1.5">
                             {p.name}
                             {p.popular && (
-                              <span className="inline-flex items-center gap-1 bg-[#B8924A] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"><Star className="h-2.5 w-2.5 fill-current" /> Phổ biến</span>
+                              <span className="inline-flex items-center gap-1 bg-[#1C9FD9] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"><Star className="h-2.5 w-2.5 fill-current" /> Phổ biến</span>
                             )}
                           </p>
                           <p className="text-[10px] text-gray-400 max-w-[220px] truncate">{p.tagline}</p>
@@ -154,12 +154,12 @@ export default function AdminPlans() {
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden min-w-[60px]">
-                          <div className="h-full bg-[#B8924A]" style={{ width: `${share}%` }} />
+                          <div className="h-full bg-[#1C9FD9]" style={{ width: `${share}%` }} />
                         </div>
                         <span className="text-[10px] font-semibold text-gray-500 w-8 text-right">{share}%</span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-[#B8924A]">{p.price === 0 ? '—' : formatVND(p.price * p.subscribers)}</td>
+                    <td className="py-3.5 px-4 text-right font-bold text-[#1C9FD9]">{p.price === 0 ? '—' : formatVND(p.price * p.subscribers)}</td>
                     <td className="py-3.5 px-4 text-center">
                       <button
                         onClick={() => toggleActive(p.id)}
@@ -210,7 +210,7 @@ export default function AdminPlans() {
                     type="text"
                     value={draft.name}
                     onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
                   />
                 </div>
                 <div>
@@ -219,7 +219,7 @@ export default function AdminPlans() {
                     type="text"
                     value={draft.tagline}
                     onChange={(e) => setDraft({ ...draft, tagline: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
                   />
                 </div>
                 <div>
@@ -230,7 +230,7 @@ export default function AdminPlans() {
                     step={1000}
                     value={draft.price}
                     onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20 transition"
                   />
                   <p className="text-[10px] text-gray-400 mt-1">Đặt 0 để gói miễn phí.</p>
                 </div>
@@ -240,7 +240,7 @@ export default function AdminPlans() {
                   <label className="block text-gray-500 font-bold mb-1.5">Tính năng nổi bật</label>
                   <ul className="space-y-1.5 bg-[#F6F4EF] rounded-xl border border-gray-100 p-3">
                     {draft.features.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2 text-gray-600"><Check className="h-3.5 w-3.5 text-[#B8924A] flex-shrink-0" /> {f}</li>
+                      <li key={i} className="flex items-center gap-2 text-gray-600"><Check className="h-3.5 w-3.5 text-[#1C9FD9] flex-shrink-0" /> {f}</li>
                     ))}
                   </ul>
                 </div>
@@ -261,7 +261,7 @@ export default function AdminPlans() {
                   <button
                     type="button"
                     onClick={() => setDraft({ ...draft, popular: !draft.popular })}
-                    className={`inline-flex items-center h-5 w-9 rounded-full transition relative ${draft.popular ? 'bg-[#B8924A]' : 'bg-gray-300'}`}
+                    className={`inline-flex items-center h-5 w-9 rounded-full transition relative ${draft.popular ? 'bg-[#1C9FD9]' : 'bg-gray-300'}`}
                   >
                     <span className={`h-4 w-4 bg-white rounded-full shadow absolute top-0.5 transition ${draft.popular ? 'left-[18px]' : 'left-0.5'}`} />
                   </button>

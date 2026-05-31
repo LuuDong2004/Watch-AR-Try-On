@@ -2,14 +2,14 @@ import React from 'react';
 
 /**
  * Shared form primitives for a consistent, accessible look across the app.
- * Tokens: ink #16162A, cream #F6F4EF, gold #B8924A, border #e5e0d8.
+ * Tokens: ink #16162A, cream #F6F4EF, gold #1C9FD9, border #e5e0d8.
  */
 
 // Base styling for text inputs / selects / textareas.
 export const inputBase =
   'w-full rounded-xl border border-[#e5e0d8] bg-white px-3.5 py-2.5 text-sm text-[#16162A] ' +
   'placeholder:text-gray-400 transition-shadow transition-colors ' +
-  'focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20';
+  'focus:outline-none focus:border-[#1C9FD9] focus:ring-2 focus:ring-[#1C9FD9]/20';
 
 type FieldProps = {
   label: string;
@@ -28,7 +28,7 @@ export function Field({ label, required, hint, htmlFor, className = '', children
         className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5"
       >
         {label}
-        {required && <span className="text-[#B8924A]">*</span>}
+        {required && <span className="text-[#1C9FD9]">*</span>}
       </label>
       {children}
       {hint && <p className="text-[10.5px] text-gray-400 mt-1 leading-snug">{hint}</p>}
@@ -71,7 +71,7 @@ export function FormSection({ title, step, children }: { title?: string; step?: 
       {title && (
         <legend className="flex items-center gap-2 text-xs font-bold text-[#16162A] mb-1">
           {step != null && (
-            <span className="h-5 w-5 rounded-full bg-[#B8924A] text-white text-[10px] flex items-center justify-center font-bold">
+            <span className="h-5 w-5 rounded-full bg-[#1C9FD9] text-white text-[10px] flex items-center justify-center font-bold">
               {step}
             </span>
           )}
