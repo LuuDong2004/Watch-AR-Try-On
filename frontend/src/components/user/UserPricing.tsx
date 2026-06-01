@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Crown, Building2, Check, Star, Gift } from 'lucide-react';
+import { Zap, Crown, Check, Gift, Star, Building2, Boxes, Sparkles, MapPin, Headset } from 'lucide-react';
 
 interface UserPricingProps {
   onBackToCatalog: () => void;
@@ -7,14 +7,15 @@ interface UserPricingProps {
 
 interface Feature {
   text: string;
-  on: boolean;
-  strong?: boolean;
+  strong?: string;
+  Icon: typeof Zap;
 }
 
 interface Plan {
   id: string;
   name: string;
   tagline: string;
+  oldPrice: string;
   price: string;
   period: string;
   Icon: typeof Zap;
@@ -30,86 +31,53 @@ interface Plan {
 
 const PLANS: Plan[] = [
   {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Thoải mái khám phá, không cần trả phí',
-    price: '0đ',
+    id: 'essential',
+    name: 'Essential',
+    tagline: 'Gói Tháng — cơ bản cho cửa hàng mới bắt đầu',
+    oldPrice: '700.000đ',
+    price: '499.000đ',
     period: '/ tháng',
     Icon: Zap,
-    iconBox: 'bg-[#17140F]/5 text-[#17140F]',
-    accent: 'text-[#17140F]',
-    cta: 'Dùng ngay — Miễn phí',
-    ctaCls: 'border border-[#e5e0d8] text-[#17140F] hover:bg-[#F6F4EF]',
-    features: [
-      { text: 'Duyệt toàn bộ bộ sưu tập + bộ lọc', on: true },
-      { text: 'Xem mô hình 3D 360°', on: true },
-      { text: 'Thử đeo AR — 5 lượt/ngày', on: true },
-      { text: 'Lưu yêu thích — tối đa 10 mẫu', on: true },
-      { text: 'Liên hệ shop — 3 yêu cầu/ngày', on: true },
-      { text: 'Nhắc lịch hẹn xem đồng hồ', on: true },
-      { text: 'Thiết kế đồng hồ 3D từ ảnh', on: false },
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    tagline: 'Cho tín đồ đồng hồ không bỏ lỡ mẫu nào',
-    price: '49.000đ',
-    period: '/ tháng',
-    Icon: Crown,
-    tag: { label: 'Phổ biến nhất', Icon: Star, cls: 'bg-[#B8924A] text-white' },
-    popular: true,
     iconBox: 'bg-[#B8924A]/15 text-[#B8924A]',
     accent: 'text-[#B8924A]',
-    cta: 'Bắt đầu dùng Pro',
-    ctaCls: 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow',
-    ctaNote: '7 ngày dùng thử miễn phí',
+    cta: 'Đăng ký gói Tháng',
+    ctaCls: 'border border-[#B8924A] text-[#B8924A] hover:bg-[#B8924A]/10',
     features: [
-      { text: 'Tất cả tính năng Free +', on: true, strong: true },
-      { text: 'Thử đeo AR — không giới hạn', on: true },
-      { text: 'Lưu yêu thích — không giới hạn', on: true },
-      { text: 'Liên hệ shop — không giới hạn', on: true },
-      { text: 'Cảnh báo giảm giá mẫu đã lưu', on: true },
-      { text: 'Ưu tiên đặt lịch hẹn xem', on: true },
-      { text: 'Badge "Pro" trên hồ sơ', on: true },
-      { text: 'Sớm trải nghiệm Thiết kế đồng hồ 3D từ ảnh', on: false },
+      { Icon: Building2, text: 'Tối đa ', strong: '3 chi nhánh' },
+      { Icon: Boxes, text: 'Tối đa ', strong: '50 sản phẩm' },
+      { Icon: Sparkles, text: 'Trải nghiệm AR Try-on ', strong: 'mượt mà, chuẩn kích thước 1:1' },
+      { Icon: MapPin, text: 'Cửa hàng được đề xuất trong thông tin sản phẩm' },
+      { Icon: Headset, text: 'Hỗ trợ kỹ thuật tức thì' },
     ],
   },
   {
-    id: 'business',
-    name: 'Business',
-    tagline: 'Cho chủ shop & đại lý đồng hồ',
-    price: '199.000đ',
-    period: '/ tháng',
-    Icon: Building2,
-    tag: { label: 'Doanh nghiệp', Icon: Building2, cls: 'bg-[#17140F] text-white' },
+    id: 'premium',
+    name: 'Premium',
+    tagline: 'Gói Năm — cao cấp cho chuỗi cửa hàng & đại lý',
+    oldPrice: '8.400.000đ',
+    price: '4.199.000đ',
+    period: '/ 12 tháng',
+    Icon: Crown,
+    tag: { label: 'Tiết kiệm 50%', Icon: Star, cls: 'bg-[#B8924A] text-white' },
+    popular: true,
     iconBox: 'bg-[#17140F] text-white',
-    accent: 'text-[#17140F]',
-    cta: 'Liên hệ tư vấn',
-    ctaCls: 'bg-[#17140F] text-white hover:bg-black shadow',
+    accent: 'text-[#B8924A]',
+    cta: 'Đăng ký gói Năm',
+    ctaCls: 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow',
+    ctaNote: 'Tiết kiệm hơn 4.2 triệu so với gói tháng',
     features: [
-      { text: 'Tất cả tính năng Pro +', on: true, strong: true },
-      { text: 'Đăng bán sản phẩm không giới hạn', on: true },
-      { text: 'Dashboard phân tích lượt thử AR & leads', on: true },
-      { text: 'Quản lý nhiều cửa hàng', on: true },
-      { text: 'Ghim sản phẩm lên đầu danh mục', on: true },
-      { text: 'Logo + ảnh bìa thương hiệu trên trang shop', on: true },
-      { text: 'Lên lịch đăng sản phẩm tự động', on: true },
-      { text: 'Badge "Đã xác minh" trên cửa hàng', on: true },
-      { text: 'Hỗ trợ ưu tiên 24/7', on: true },
+      { Icon: Building2, text: 'Tối đa ', strong: '50 chi nhánh' },
+      { Icon: Boxes, text: 'Sản phẩm ', strong: 'không giới hạn' },
+      { Icon: Sparkles, text: 'Trải nghiệm AR Try-on ', strong: 'mượt mà, chuẩn kích thước 1:1' },
+      { Icon: MapPin, text: 'Cửa hàng được đề xuất trong thông tin sản phẩm' },
+      { Icon: Headset, text: 'Hỗ trợ kỹ thuật tức thì' },
     ],
   },
 ];
 
 export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   const handleChoose = (plan: Plan) => {
-    if (plan.id === 'free') {
-      onBackToCatalog();
-    } else if (plan.id === 'business') {
-      alert('Cảm ơn bạn! Đội ngũ TrueWrist sẽ liên hệ tư vấn gói Business trong thời gian sớm nhất.');
-    } else {
-      alert('Cảm ơn bạn! Cổng thanh toán đang được hoàn thiện — bạn sẽ sớm có thể nâng cấp Pro.');
-    }
+    alert(`Cảm ơn bạn! Cổng thanh toán đang được hoàn thiện — bạn sẽ sớm có thể đăng ký gói ${plan.name} dành cho đối tác.`);
   };
 
   return (
@@ -117,15 +85,15 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
       <div className="max-w-6xl mx-auto px-4">
         {/* Heading */}
         <div className="text-center max-w-2xl mx-auto mb-14">
-          <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Bảng giá & Nâng cấp</span>
-          <h1 className="font-display text-3xl md:text-4xl font-bold mb-3">Chọn gói phù hợp với bạn</h1>
+          <span className="text-xs uppercase tracking-[0.2em] text-[#B8924A] font-bold mb-2 block">Gói dành cho Đối tác</span>
+          <h1 className="font-display text-3xl md:text-4xl font-bold mb-3">Trở thành đối tác TrueWrist</h1>
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
-            Mở khóa thử AR không giới hạn, lưu yêu thích thoải mái và công cụ kinh doanh cho cửa hàng. Hủy bất cứ lúc nào.
+            Đưa cửa hàng của bạn lên TrueWrist với trải nghiệm thử đồng hồ AR chuẩn kích thước 1:1, được đề xuất trực tiếp trong thông tin sản phẩm. Hủy bất cứ lúc nào.
           </p>
         </div>
 
         {/* Pricing cards */}
-        <div className="grid md:grid-cols-3 gap-6 items-start max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 items-start max-w-3xl mx-auto">
           {PLANS.map((plan) => (
             <div
               key={plan.id}
@@ -155,8 +123,12 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
 
               {/* Price */}
               <div className="mb-5">
-                <span className="font-display text-4xl font-bold">{plan.price}</span>
-                <span className="text-sm text-gray-400 font-medium"> {plan.period}</span>
+                <span className="text-sm text-gray-400 line-through font-medium mr-2">{plan.oldPrice}</span>
+                <span className="text-[10px] uppercase tracking-wide text-[#B8924A] font-bold">Chỉ còn</span>
+                <div className="mt-1">
+                  <span className="font-display text-4xl font-bold">{plan.price}</span>
+                  <span className="text-sm text-gray-400 font-medium"> {plan.period}</span>
+                </div>
               </div>
 
               {/* CTA */}
@@ -175,16 +147,19 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
               {/* Divider */}
               <div className="flex items-center gap-3 my-6">
                 <span className="h-px flex-1 bg-[#e5e0d8]" />
-                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Bao gồm</span>
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Thông tin gói</span>
                 <span className="h-px flex-1 bg-[#e5e0d8]" />
               </div>
 
               {/* Features */}
               <ul className="space-y-3.5 text-sm">
                 {plan.features.map((f, i) => (
-                  <li key={i} className={`flex items-start gap-2.5 ${f.on ? 'text-gray-600' : 'text-gray-300'}`}>
-                    <Check className={`h-4 w-4 mt-0.5 flex-shrink-0 ${f.on ? plan.accent : 'text-gray-300'}`} />
-                    <span className={f.strong ? 'font-bold text-[#17140F]' : ''}>{f.text}</span>
+                  <li key={i} className="flex items-start gap-2.5 text-gray-600">
+                    <f.Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${plan.accent}`} />
+                    <span>
+                      {f.text}
+                      {f.strong && <span className="font-bold text-[#17140F]">{f.strong}</span>}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -194,7 +169,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
 
         {/* Footnote */}
         <p className="text-center text-[11px] text-gray-400 mt-12 max-w-xl mx-auto leading-relaxed">
-          Giá đã bao gồm VAT. Bạn có thể nâng cấp, hạ cấp hoặc hủy gói bất cứ lúc nào. Gói Business phù hợp với các shop muốn đăng bán và quản lý sản phẩm trên TrueWrist.
+          Giá đã bao gồm VAT. Đăng ký gói đối tác để đăng bán sản phẩm, quản lý chi nhánh và hiển thị cửa hàng của bạn trên TrueWrist. Bạn có thể nâng cấp hoặc gia hạn bất cứ lúc nào.
         </p>
       </div>
     </div>

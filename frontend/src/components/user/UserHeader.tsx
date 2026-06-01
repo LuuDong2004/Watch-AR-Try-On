@@ -12,7 +12,7 @@ const NAV_ITEMS: { key: string; label: string; match: string[] }[] = [
   { key: 'home', label: 'Trang chủ', match: ['home'] },
   { key: 'catalog', label: 'Sản phẩm', match: ['catalog', 'detail'] },
   { key: 'stores', label: 'Cửa hàng', match: ['stores'] },
-  { key: 'pricing', label: 'Nâng cấp', match: ['pricing'] },
+  { key: 'pricing', label: 'Đối tác', match: ['pricing'] },
   { key: 'feedback', label: 'Góp ý', match: ['feedback'] },
 ];
 
