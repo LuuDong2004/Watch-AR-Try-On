@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useData } from '../../data/store';
 import { useAuth } from '../../auth/useAuth';
 import { DashboardLayout } from '../../components/layout/DashboardLayout';
@@ -94,10 +94,16 @@ export default function AdminUsersPage() {
   const addUser = useData((s) => s.addUser);
   const updateUser = useData((s) => s.updateUser);
   const deleteUser = useData((s) => s.deleteUser);
+  const loadUsers = useData((s) => s.loadUsers);
   const myId = useAuth((s) => s.session?.userId);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
+
+  // Users are admin-only, so load them when this page mounts.
+  useEffect(() => {
+    loadUsers().catch(() => {});
+  }, [loadUsers]);
 
   const shopName = (id?: string) => (id ? shops.find((s) => s.id === id)?.name ?? '—' : '—');
 

@@ -13,7 +13,8 @@ import { CameraView } from '../CameraView';
 import { WatchSelector } from '../WatchSelector';
 import { useARStore } from '../../store/useARStore';
 import { captureComposite, shareOrDownload } from '../../ar/capture';
-import { addToCloset } from '../../utils/mockData';
+import { addCloset } from '../../api/engagement';
+import { getToken } from '../../api/client';
 import '../../ar/ar-tryon.css';
 
 interface ARWristTryOnProps {
@@ -251,25 +252,32 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
     }
   };
 
-  const handleSaveToCloset = () => {
+  const handleSaveToCloset = async () => {
     if (!capturedUrl || savedToCloset) return;
-    
-    // Convert Blob to dynamic persistent Base64 DataURL or mock URL
-    // For localstorage capacity in browser, base64 for full camera canvas might exceed 5MB quota,
-    // so we can use a elegant mock placeholder or a high-quality mockup from Unsplash that corresponds to the watch model,
-    // which looks absolutely premium and guarantees storage safety!
-    const mockWatchImages: Record<string, string> = {
+
+    if (!getToken()) {
+      alert('Vui lòng đăng nhập để lưu ảnh thử vào Tủ Đồ Ảo của bạn.');
+      return;
+    }
+
+    // High-quality per-model preview so the closet stays light (the raw camera
+    // capture can exceed payload limits); the AR id maps 1:1 to a backend watch.
+    const previewImages: Record<string, string> = {
       chrono: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600',
       wrist: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=600',
       classic: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=600',
       gshock: 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?auto=format&fit=crop&q=80&w=600',
-      smart: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&q=80&w=600'
+      smart: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&q=80&w=600',
     };
-
-    const savedImage = mockWatchImages[selectedWatchId] || mockWatchImages['chrono'];
-    addToCloset(selectedWatchId, savedImage);
-    setSavedToCloset(true);
-    alert('Đã lưu bức ảnh thử đồng hồ vào Tủ Đồ Ảo thành công!');
+    const savedImage = previewImages[selectedWatchId] || previewImages['chrono'];
+    const today = new Date().toLocaleDateString('vi-VN');
+    try {
+      await addCloset(selectedWatchId, savedImage, today);
+      setSavedToCloset(true);
+      alert('Đã lưu bức ảnh thử đồng hồ vào Tủ Đồ Ảo thành công!');
+    } catch {
+      alert('Lưu vào Tủ Đồ Ảo thất bại. Vui lòng thử lại.');
+    }
   };
 
   const handleDownload = () => {

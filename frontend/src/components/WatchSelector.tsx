@@ -1,6 +1,6 @@
 import { WATCHES } from '../config/watches';
 import { useARStore } from '../store/useARStore';
-import { getDbWatches } from '../utils/mockData';
+import { useData } from '../data/store';
 
 /** Luxury horizontal watch carousel pinned to the bottom of the screen.
  *  Only models flagged `hasAR` (a real, quality GLB) are offered for try-on. */
@@ -8,12 +8,13 @@ export function WatchSelector() {
   const selectedWatchId = useARStore((s) => s.selectedWatchId);
   const selectWatch = useARStore((s) => s.selectWatch);
   const modelLoading = useARStore((s) => s.modelLoading);
+  const watches = useData((s) => s.watches);
 
-  // Catalogue photos (from the mock DB) keyed by watch id, for nice thumbnails.
+  // Catalogue photos keyed by AR id, for nice thumbnails (falls back to swatch).
   const imageById: Record<string, string> = {};
-  try {
-    getDbWatches().forEach((w: any) => { if (w?.id) imageById[w.id] = w.image; });
-  } catch { /* DB not ready — fall back to swatch */ }
+  watches.forEach((w) => {
+    if (w.arWatchId && w.image) imageById[w.arWatchId] = w.image;
+  });
 
   const arWatches = WATCHES.filter((w) => w.hasAR);
   const active = arWatches.find((w) => w.id === selectedWatchId) ?? arWatches[0] ?? WATCHES[0];

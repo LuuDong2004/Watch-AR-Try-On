@@ -1,84 +1,101 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Shop, User, Watch } from './types';
-import { seedDB } from './seed';
+import * as catalog from '../api/catalog';
+import * as usersApi from '../api/users';
 
-/** Short unique id for new records. */
-function uid(prefix: string): string {
-  const rnd =
-    typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID().slice(0, 8)
-      : Math.random().toString(36).slice(2, 10);
-  return `${prefix}-${rnd}`;
-}
-
+/**
+ * App data store, backed by the Spring API. Components keep using the same
+ * selectors (`useData((s) => s.watches)` etc.); the arrays start empty and fill
+ * once {@link DataState.loadCatalog} / {@link DataState.loadUsers} resolve.
+ */
 interface DataState {
-  users: User[];
-  shops: Shop[];
   watches: Watch[];
+  shops: Shop[];
+  users: User[];
+  catalogLoaded: boolean;
+  usersLoaded: boolean;
 
-  // Watches
-  addWatch: (w: Omit<Watch, 'id' | 'createdAt'>) => Watch;
-  updateWatch: (id: string, patch: Partial<Watch>) => void;
-  deleteWatch: (id: string) => void;
+  /** Public catalogue (watches + shops). Safe to call without auth. */
+  loadCatalog: () => Promise<void>;
+  /** Admin-only user list. */
+  loadUsers: () => Promise<void>;
 
-  // Shops
-  addShop: (s: Omit<Shop, 'id' | 'createdAt'>) => Shop;
-  updateShop: (id: string, patch: Partial<Shop>) => void;
-  deleteShop: (id: string) => void;
+  addWatch: (w: Partial<Omit<Watch, 'id' | 'createdAt'>>) => Promise<Watch>;
+  updateWatch: (id: string, patch: Partial<Watch>) => Promise<void>;
+  deleteWatch: (id: string) => Promise<void>;
 
-  // Users
-  addUser: (u: Omit<User, 'id' | 'createdAt'>) => User;
-  updateUser: (id: string, patch: Partial<User>) => void;
-  deleteUser: (id: string) => void;
+  addShop: (s: Partial<Omit<Shop, 'id' | 'createdAt'>>) => Promise<Shop>;
+  updateShop: (id: string, patch: Partial<Shop>) => Promise<void>;
+  deleteShop: (id: string) => Promise<void>;
 
-  /** Wipe localStorage data back to the seed. */
-  resetDemo: () => void;
+  addUser: (u: Partial<Omit<User, 'id' | 'createdAt'>>) => Promise<User>;
+  updateUser: (id: string, patch: Partial<User>) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
 }
 
-export const useData = create<DataState>()(
-  persist(
-    (set) => ({
-      users: seedDB.users,
-      shops: seedDB.shops,
-      watches: seedDB.watches,
+export const useData = create<DataState>()((set, get) => ({
+  watches: [],
+  shops: [],
+  users: [],
+  catalogLoaded: false,
+  usersLoaded: false,
 
-      addWatch: (w) => {
-        const watch: Watch = { ...w, id: uid('w'), createdAt: Date.now() };
-        set((s) => ({ watches: [watch, ...s.watches] }));
-        return watch;
-      },
-      updateWatch: (id, patch) =>
-        set((s) => ({ watches: s.watches.map((w) => (w.id === id ? { ...w, ...patch } : w)) })),
-      deleteWatch: (id) => set((s) => ({ watches: s.watches.filter((w) => w.id !== id) })),
+  loadCatalog: async () => {
+    const [watches, shops] = await Promise.all([catalog.listWatches(), catalog.listShops()]);
+    set({ watches, shops, catalogLoaded: true });
+  },
 
-      addShop: (sh) => {
-        const shop: Shop = { ...sh, id: uid('s'), createdAt: Date.now() };
-        set((s) => ({ shops: [shop, ...s.shops] }));
-        return shop;
-      },
-      updateShop: (id, patch) =>
-        set((s) => ({ shops: s.shops.map((sh) => (sh.id === id ? { ...sh, ...patch } : sh)) })),
-      deleteShop: (id) =>
-        set((s) => ({
-          shops: s.shops.filter((sh) => sh.id !== id),
-          // Cascade: drop this shop's watches and unlink its owners.
-          watches: s.watches.filter((w) => w.shopId !== id),
-          users: s.users.map((u) => (u.shopId === id ? { ...u, shopId: undefined } : u)),
-        })),
+  loadUsers: async () => {
+    const users = await usersApi.listUsers();
+    set({ users, usersLoaded: true });
+  },
 
-      addUser: (u) => {
-        const user: User = { ...u, id: uid('u'), createdAt: Date.now() };
-        set((s) => ({ users: [user, ...s.users] }));
-        return user;
-      },
-      updateUser: (id, patch) =>
-        set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)) })),
-      deleteUser: (id) => set((s) => ({ users: s.users.filter((u) => u.id !== id) })),
+  addWatch: async (w) => {
+    const watch = await catalog.createWatch(w);
+    set((s) => ({ watches: [watch, ...s.watches] }));
+    return watch;
+  },
+  updateWatch: async (id, patch) => {
+    const existing = get().watches.find((w) => w.id === id);
+    const updated = await catalog.updateWatch(id, { ...existing, ...patch });
+    set((s) => ({ watches: s.watches.map((w) => (w.id === id ? updated : w)) }));
+  },
+  deleteWatch: async (id) => {
+    await catalog.deleteWatch(id);
+    set((s) => ({ watches: s.watches.filter((w) => w.id !== id) }));
+  },
 
-      resetDemo: () =>
-        set({ users: seedDB.users, shops: seedDB.shops, watches: seedDB.watches }),
-    }),
-    { name: 'watch-ar-demo-db', version: 1 },
-  ),
-);
+  addShop: async (sh) => {
+    const shop = await catalog.createShop(sh);
+    set((s) => ({ shops: [shop, ...s.shops] }));
+    return shop;
+  },
+  updateShop: async (id, patch) => {
+    const existing = get().shops.find((sh) => sh.id === id);
+    const updated = await catalog.updateShop(id, { ...existing, ...patch });
+    set((s) => ({ shops: s.shops.map((sh) => (sh.id === id ? updated : sh)) }));
+  },
+  deleteShop: async (id) => {
+    await catalog.deleteShop(id);
+    set((s) => ({
+      shops: s.shops.filter((sh) => sh.id !== id),
+      // Mirror the backend cascade locally.
+      watches: s.watches.filter((w) => w.shopId !== id),
+      users: s.users.map((u) => (u.shopId === id ? { ...u, shopId: undefined } : u)),
+    }));
+  },
+
+  addUser: async (u) => {
+    const user = await usersApi.createUser(u);
+    set((s) => ({ users: [user, ...s.users] }));
+    return user;
+  },
+  updateUser: async (id, patch) => {
+    const updated = await usersApi.updateUser(id, patch);
+    set((s) => ({ users: s.users.map((u) => (u.id === id ? updated : u)) }));
+  },
+  deleteUser: async (id) => {
+    await usersApi.deleteUser(id);
+    set((s) => ({ users: s.users.filter((u) => u.id !== id) }));
+  },
+}));
