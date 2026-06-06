@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Store, Pencil, Upload, X, MapPin, Phone, Clock,
-  ImageOff, Trash2, Map as MapIcon, Plus, MoreVertical,
+  ImageOff, Trash2, Map as MapIcon, Plus, MoreVertical, Star,
 } from 'lucide-react';
 import { shopApi, uploadApi, ApiError } from '../../api';
 import type { Shop } from '../../api';
@@ -47,7 +47,7 @@ function validateShop(s: Shop): ShopErrors {
 export default function ShopSettings() {
   const user = useSession((s) => s.user);
   const refreshSession = useSession((s) => s.init);
-  const [shop, setShop] = useState<Shop | null>(null);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [editingRoom, setEditingRoom] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -66,16 +66,20 @@ export default function ShopSettings() {
     return () => document.removeEventListener('click', close);
   }, [menuOpenId]);
 
+  const reloadShops = async () => {
+    try { setShops(await shopApi.mine()); } catch { setShops([]); }
+  };
+
   useEffect(() => {
-    if (!user?.shopId) return;
+    if (!user) return;
     let cancelled = false;
     setLoading(true);
-    shopApi.get(user.shopId)
-      .then((s) => { if (!cancelled) setShop(s); })
-      .catch(() => { /* ignore — show empty state */ })
+    shopApi.mine()
+      .then((list) => { if (!cancelled) setShops(list); })
+      .catch(() => { if (!cancelled) setShops([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [user?.shopId]);
+  }, [user?.id]);
 
   const openEditor = (room: Shop) => setEditingRoom({ ...room });
   const openCreate = () => setEditingRoom(emptyShop());
@@ -99,6 +103,18 @@ export default function ShopSettings() {
 
   const clearImage = () => setEditingRoom((prev) => (prev ? { ...prev, image: '' } : prev));
 
+  const handleSetPrimary = async (shopId: string) => {
+    setMenuOpenId(null);
+    try {
+      await shopApi.activate(shopId);
+      await refreshSession();
+      await reloadShops();
+      toast.success('Đã đặt làm cửa hàng chính');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Không đặt được cửa hàng chính');
+    }
+  };
+
   const handleDelete = async (shopId: string) => {
     if (!shopId || deleting) return;
     const ok = await toast.confirm(
@@ -109,10 +125,10 @@ export default function ShopSettings() {
     setDeleting(true);
     try {
       await shopApi.remove(shopId);
-      // The shop's products are removed and the owner is unlinked on the server;
-      // refresh so user.shopId clears.
+      // Products are removed and the owner unlinked on the server; refresh the
+      // session (user.shopId may clear) and reload the owned-shop list.
       await refreshSession();
-      setShop(null);
+      await reloadShops();
       closeEditor();
       toast.success('Đã xóa cửa hàng cùng toàn bộ sản phẩm của cửa hàng.');
     } catch (err) {
@@ -129,16 +145,16 @@ export default function ShopSettings() {
     setSaving(true);
     try {
       if (isCreate) {
-        const created = await shopApi.create(editingRoom);
+        await shopApi.create(editingRoom);
         // Backend links the new shop to the current user; refresh so user.shopId
-        // updates and subsequent edits target the right shop.
+        // updates, then reload the owned-shop list.
         await refreshSession();
-        setShop(created);
+        await reloadShops();
         closeEditor();
         toast.success('Đã tạo cửa hàng mới thành công!');
       } else {
-        const updated = await shopApi.update(editingRoom.id, editingRoom);
-        setShop(updated);
+        await shopApi.update(editingRoom.id, editingRoom);
+        await reloadShops();
         closeEditor();
         toast.success('Đã cập nhật thông tin cửa hàng thành công!');
       }
@@ -157,7 +173,7 @@ export default function ShopSettings() {
     );
   }
 
-  const showrooms = shop ? [shop] : [];
+  const showrooms = shops;
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
@@ -203,11 +219,24 @@ export default function ShopSettings() {
                   onError={(e) => { e.currentTarget.src = DEFAULT_COVER; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+                {room.id === user?.shopId && (
+                  <span className="absolute left-2 top-2 rounded-full bg-[#B8924A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">Cửa hàng chính</span>
+                )}
                 <h4 className="absolute bottom-2 left-3 right-3 font-display text-sm font-bold text-white truncate">{room.name}</h4>
                 {/* Compact action menu: one "⋮" reveals edit / map / delete */}
                 <div className="absolute right-2 top-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {menuOpenId === room.id && (
                     <div className="flex items-center gap-1.5 animate-fade-in">
+                      {room.id !== user?.shopId && (
+                        <button
+                          onClick={() => handleSetPrimary(room.id)}
+                          title="Đặt làm cửa hàng chính"
+                          aria-label="Đặt làm cửa hàng chính"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#B8924A] shadow hover:bg-white active:scale-95 transition"
+                        >
+                          <Star className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={() => { setMenuOpenId(null); openEditor(room); }}
                         title="Sửa thông tin"

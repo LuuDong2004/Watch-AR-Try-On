@@ -53,6 +53,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Idempotent migration: link shops created before ownerId existed.
+        backfillShopOwnership();
+
         if (!props.seed().enabled()) {
             return;
         }
@@ -70,9 +73,42 @@ public class DataSeeder implements CommandLineRunner {
                 userRepository.count(), shopRepository.count(), watchRepository.count());
     }
 
+    /**
+     * Backfill {@code Shop.ownerId} for shops created before the field existed,
+     * so the seller's "my shops" list shows all of them. Runs every boot and is
+     * a no-op once ownership is set.
+     */
+    private void backfillShopOwnership() {
+        boolean[] changed = {false};
+        // Each user's currently-active shop belongs to that user.
+        for (User u : userRepository.findAll()) {
+            if (u.getShopId() == null) {
+                continue;
+            }
+            shopRepository.findById(u.getShopId()).ifPresent(s -> {
+                if (s.getOwnerId() == null) {
+                    s.setOwnerId(u.getId());
+                    shopRepository.save(s);
+                    changed[0] = true;
+                }
+            });
+        }
+        // Recover the seeded shop's original owner if switching active orphaned it.
+        shopRepository.findById("shop-1").ifPresent(s -> {
+            if (s.getOwnerId() == null && userRepository.existsById("u-shop-aventus")) {
+                s.setOwnerId("u-shop-aventus");
+                shopRepository.save(s);
+                changed[0] = true;
+            }
+        });
+        if (changed[0]) {
+            log.info("Backfilled shop ownerId for legacy shops.");
+        }
+    }
+
     private void seedShops() {
         shopRepository.save(Shop.builder()
-                .id("shop-1").name("Aventus Luxury Watches")
+                .id("shop-1").ownerId("u-shop-aventus").name("Aventus Luxury Watches")
                 .phone("0901 234 567").email("sales@aventus.luxury")
                 .address("Quận 1, TP. Hồ Chí Minh")
                 .description("Cửa hàng chuyên đồng hồ cơ Thụy Sĩ chính hãng. Hỗ trợ thử AR trực tuyến, giao toàn quốc và bảo hành 5 năm.")

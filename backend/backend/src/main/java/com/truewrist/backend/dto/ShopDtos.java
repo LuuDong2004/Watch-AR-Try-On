@@ -13,6 +13,7 @@ public final class ShopDtos {
 
     public record ShopResponse(
             String id,
+            String ownerId,
             String name,
             String phone,
             String email,
@@ -34,7 +35,7 @@ public final class ShopDtos {
 
         public static ShopResponse from(Shop s) {
             return new ShopResponse(
-                    s.getId(), s.getName(), s.getPhone(), s.getEmail(), s.getAddress(),
+                    s.getId(), s.getOwnerId(), s.getName(), s.getPhone(), s.getEmail(), s.getAddress(),
                     s.getDescription(), s.getColor(), s.getZalo(), s.getMessenger(),
                     s.getHours(), s.getManager(), s.getImage(), s.getMapUrl(), s.getServices(),
                     s.getRating(), s.getReviewCount(), s.getSince(), s.getStatus(),

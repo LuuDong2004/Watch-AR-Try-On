@@ -61,6 +61,7 @@ export default function App() {
   const [selectedWatchId, setSelectedWatchId] = useState(() => sessionStorage.getItem('tw_watch') || 'chrono');
   const [selectedShopId, setSelectedShopId] = useState(() => sessionStorage.getItem('tw_shop') || null);
   const [editWatchId, setEditWatchId] = useState(null);
+  const [addProductShopId, setAddProductShopId] = useState(null);
   const [mode, setMode] = useState('none');
   // Shop/admin users can preview the customer storefront ("view as user").
   const [storefront, setStorefront] = useState(() => sessionStorage.getItem('tw_storefront') === '1');
@@ -250,14 +251,15 @@ export default function App() {
       case 'products':
         return (
           <ShopProducts
-            onEditProduct={(id) => { setEditWatchId(id); setPage('add-product'); }}
-            onNavigateToAddProduct={() => { setEditWatchId(null); setPage('add-product'); }}
+            onEditProduct={(id) => { setEditWatchId(id); setAddProductShopId(null); setPage('add-product'); }}
+            onNavigateToAddProduct={(shopId) => { setEditWatchId(null); setAddProductShopId(shopId); setPage('add-product'); }}
           />
         );
       case 'add-product':
         return (
           <ShopAddProduct
             editWatchId={editWatchId}
+            shopId={addProductShopId}
             onSuccess={() => { setEditWatchId(null); setPage('products'); triggerDbUpdate(); }}
             onCancel={() => { setEditWatchId(null); setPage('products'); }}
           />

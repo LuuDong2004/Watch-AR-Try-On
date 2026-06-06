@@ -30,6 +30,10 @@ public class Shop {
     @Column(length = 64)
     private String id;
 
+    /** User id of the seller who owns this shop (null for legacy/admin shops). */
+    @Column(name = "owner_id", length = 64)
+    private String ownerId;
+
     @Column(nullable = false)
     private String name;
 

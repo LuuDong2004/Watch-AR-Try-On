@@ -65,6 +65,7 @@ function toWatch(d: any): Watch {
 function toShop(d: any): Shop {
   return {
     id: d.id,
+    ownerId: d.ownerId ?? null,
     name: d.name,
     phone: d.phone,
     email: d.email,
@@ -238,6 +239,10 @@ export const shopApi = {
   async list(): Promise<Shop[]> {
     return (await http.get<any[]>('/api/shops', { auth: false })).map(toShop);
   },
+  /** Shops owned by the signed-in seller (management screen). */
+  async mine(): Promise<Shop[]> {
+    return (await http.get<any[]>('/api/shops/mine')).map(toShop);
+  },
   async get(id: string): Promise<Shop> {
     return toShop(await http.get<any>(`/api/shops/${id}`, { auth: false }));
   },
@@ -249,6 +254,10 @@ export const shopApi = {
   },
   async remove(id: string): Promise<void> {
     await http.del(`/api/shops/${id}`);
+  },
+  /** Set this shop as the seller's active (primary) shop. */
+  async activate(id: string): Promise<Shop> {
+    return toShop(await http.post<any>(`/api/shops/${id}/activate`));
   },
 };
 

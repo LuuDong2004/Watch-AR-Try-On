@@ -35,6 +35,14 @@ public class ShopController {
         return shopService.findAll().stream().map(ShopResponse::from).toList();
     }
 
+    /** Shops the signed-in seller owns (for the management screen). */
+    @GetMapping("/mine")
+    @PreAuthorize("hasAnyRole('ADMIN','SHOP')")
+    public List<ShopResponse> mine(@AuthenticationPrincipal AppUserPrincipal actor) {
+        return shopService.findOwnedBy(actor.getId(), actor.getShopId())
+                .stream().map(ShopResponse::from).toList();
+    }
+
     @GetMapping("/{id}")
     public ShopResponse get(@PathVariable String id) {
         return ShopResponse.from(shopService.findById(id));
@@ -53,6 +61,17 @@ public class ShopController {
         return ShopResponse.from(shopService.create(req, ownerId));
     }
 
+    /** Set the signed-in seller's active shop (must own it). */
+    @PostMapping("/{id}/activate")
+    @PreAuthorize("hasAnyRole('ADMIN','SHOP')")
+    public ShopResponse activate(@PathVariable String id, @AuthenticationPrincipal AppUserPrincipal actor) {
+        if (!shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
+            throw ApiException.forbidden("Bạn chỉ có thể đặt cửa hàng của mình làm chính.");
+        }
+        shopService.setActiveShop(actor.getId(), id);
+        return ShopResponse.from(shopService.findById(id));
+    }
+
     /** Admins edit any shop; a shop owner may edit only their own. */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','SHOP')")
@@ -62,7 +81,7 @@ public class ShopController {
             @AuthenticationPrincipal AppUserPrincipal actor) {
         boolean isAdmin = actor.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !id.equals(actor.getShopId())) {
+        if (!isAdmin && !shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
             throw ApiException.forbidden("Bạn chỉ có thể chỉnh sửa cửa hàng của mình.");
         }
         return ShopResponse.from(shopService.update(id, req));
@@ -76,7 +95,7 @@ public class ShopController {
     public void delete(@PathVariable String id, @AuthenticationPrincipal AppUserPrincipal actor) {
         boolean isAdmin = actor.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !id.equals(actor.getShopId())) {
+        if (!isAdmin && !shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
             throw ApiException.forbidden("Bạn chỉ có thể xóa cửa hàng của mình.");
         }
         shopService.delete(id);
