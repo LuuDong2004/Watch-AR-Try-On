@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  LayoutGrid, Hexagon, Plus, Mail, BarChart3, Store, LogOut,
+  LayoutGrid, Hexagon, Mail, BarChart3, Store, LogOut, CreditCard,
   Home, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import type { User } from '../../api';
@@ -18,11 +18,11 @@ interface ShopSidebarProps {
 
 const MENU: { id: string; name: string; icon: LucideIcon; badge?: boolean }[] = [
   { id: 'dashboard', name: 'Tổng quan', icon: LayoutGrid },
-  { id: 'products', name: 'Sản phẩm', icon: Hexagon },
-  { id: 'add-product', name: 'Đăng mẫu mới', icon: Plus },
-  { id: 'leads', name: 'Hộp liên hệ', icon: Mail, badge: true },
-  { id: 'analytics', name: 'Thống kê', icon: BarChart3 },
   { id: 'settings', name: 'Quản lý cửa hàng', icon: Store },
+  { id: 'products', name: 'Sản phẩm', icon: Hexagon },
+  { id: 'leads', name: 'Khách hàng liên hệ', icon: Mail, badge: true },
+  { id: 'analytics', name: 'Thống kê', icon: BarChart3 },
+  { id: 'plans', name: 'Quản lý gói', icon: CreditCard },
 ];
 
 const COLLAPSE_KEY = 'tw_shop_sidebar_collapsed';

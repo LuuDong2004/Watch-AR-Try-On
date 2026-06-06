@@ -4,6 +4,7 @@ import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Watch;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,8 @@ public final class WatchDtos {
             Long originalPrice,
             String description,
             Map<String, String> specs,
-            String image,
+            @NotBlank String image,
+            @Size(max = 10, message = "Mỗi sản phẩm chỉ được có tối đa 10 ảnh.")
             List<String> gallery,
             String modelUrl,
             Boolean hasAR,
@@ -66,7 +68,7 @@ public final class WatchDtos {
             Double rating,
             Integer reviewCount,
             ListingStatus status,
-            /** Required for admins; shops always use their own shop. */
+            /** Required for admins; sellers may select any shop they own. */
             String shopId) {
 
         public Map<String, String> specsOrEmpty() {

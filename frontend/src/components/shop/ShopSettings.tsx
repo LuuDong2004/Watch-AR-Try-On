@@ -370,8 +370,8 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
     onSave(e);
   };
 
-  const field = 'w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 text-xs focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition';
-  const labelCls = 'block text-gray-500 font-bold mb-1 text-xs';
+  const field = 'w-full rounded-lg border border-[#e5e0d8] px-3 py-2 text-[11px] focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition';
+  const labelCls = 'mb-1 block text-[11px] font-bold text-gray-500';
   const errFor = (k: keyof ShopErrors) => (errors[k] ? ' border-red-400 focus:border-red-400 focus:ring-red-200' : '');
   const ErrMsg = ({ k }: { k: keyof ShopErrors }) => (errors[k] ? <p className="mt-1 text-[10px] font-semibold text-red-500">{errors[k]}</p> : null);
 
@@ -383,16 +383,16 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-start justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-black/60 p-3 backdrop-blur-sm animate-fade-in">
       <form
         onSubmit={handleSubmit}
         noValidate
-        className="my-6 w-full max-w-4xl rounded-3xl bg-white shadow-2xl"
+        className="my-4 w-full max-w-3xl rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Sticky header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-3xl border-b border-[#e5e0d8] bg-white/95 px-6 py-4 backdrop-blur">
-          <h3 className="font-display text-base font-bold text-[#17140F] flex items-center gap-2">
+        <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-2xl border-b border-[#e5e0d8] bg-white/95 px-5 py-3 backdrop-blur">
+          <h3 className="flex items-center gap-2 font-display text-sm font-bold text-[#17140F]">
             {room.id ? <Pencil className="h-4 w-4 text-[#B8924A]" /> : <Plus className="h-4 w-4 text-[#B8924A]" />}
             {room.id ? 'Hiệu chỉnh thông tin showroom' : 'Tạo cửa hàng mới'}
           </h3>
@@ -401,13 +401,13 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-x-6 gap-y-4 px-6 py-5 lg:grid-cols-2 lg:items-start">
-          {/* Left column: visual (cover + map) */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-3 px-5 py-4 lg:grid-cols-2 lg:items-start">
+          {/* Left column: visual */}
+          <div className="space-y-3">
             {/* Cover image */}
             <div>
               <label className={labelCls}>Ảnh bìa cửa hàng</label>
-              <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-[#e5e0d8] bg-[#F6F4EF]">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-[#e5e0d8] bg-[#F6F4EF]">
                 {room.image ? (
                   <img src={room.image} alt="" className="h-full w-full object-cover" />
                 ) : (
@@ -444,7 +444,42 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
               <p className="mt-1.5 text-[10px] text-gray-400">Tải ảnh lên để căn chỉnh tỉ lệ trước khi lưu. Xóa ảnh sẽ quay về ảnh mặc định.</p>
             </div>
 
-            {/* Map link + preview */}
+          </div>
+
+          {/* Right column: text fields */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className={labelCls}>Tên showroom</label>
+              <input type="text" value={room.name} onChange={(e) => set({ name: e.target.value })} className={`${field}${errFor('name')}`} />
+              <ErrMsg k="name" />
+            </div>
+
+            <div className="col-span-2">
+              <label className={labelCls}>Địa chỉ chi nhánh</label>
+              <textarea value={room.address || ''} onChange={(e) => set({ address: e.target.value })} rows={2} className={`${field} resize-none${errFor('address')}`} />
+              <ErrMsg k="address" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Hotline điện thoại</label>
+              <input type="text" value={room.phone || ''} onChange={(e) => set({ phone: e.target.value })} className={`${field}${errFor('phone')}`} />
+              <ErrMsg k="phone" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Giờ mở cửa</label>
+              <input type="text" value={room.hours || ''} onChange={(e) => set({ hours: e.target.value })} className={field} placeholder="09:00 - 21:30" />
+            </div>
+
+            <div className="col-span-2">
+              <label className={labelCls}>Link Zalo Chat</label>
+              <input type="text" value={room.zalo || ''} onChange={(e) => set({ zalo: e.target.value })} className={`${field} font-mono${errFor('zalo')}`} />
+              <ErrMsg k="zalo" />
+            </div>
+
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 lg:col-span-2 lg:grid-cols-2">
             <div>
               <label className={labelCls}>Link Google Maps (chỉ đường)</label>
               <input
@@ -459,53 +494,26 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
                 <MapPreview mapUrl={room.mapUrl} className="mt-2" />
               ) : (
                 <p className="mt-2 inline-flex items-center gap-1.5 text-[10px] text-gray-400">
-                  <MapIcon className="h-3.5 w-3.5" /> Dán link Google Maps để hiển thị bản đồ cửa hàng.
+                  <MapIcon className="h-3.5 w-3.5" /> Dán link Google Maps để hiển thị bản đồ.
                 </p>
               )}
-            </div>
-          </div>
-
-          {/* Right column: text fields */}
-          <div className="space-y-4">
-            <div>
-              <label className={labelCls}>Tên showroom</label>
-              <input type="text" value={room.name} onChange={(e) => set({ name: e.target.value })} className={`${field}${errFor('name')}`} />
-              <ErrMsg k="name" />
-            </div>
-
-            <div>
-              <label className={labelCls}>Địa chỉ chi nhánh</label>
-              <textarea value={room.address || ''} onChange={(e) => set({ address: e.target.value })} rows={2} className={`${field} resize-none${errFor('address')}`} />
-              <ErrMsg k="address" />
-            </div>
-
-            <div>
-              <label className={labelCls}>Hotline điện thoại</label>
-              <input type="text" value={room.phone || ''} onChange={(e) => set({ phone: e.target.value })} className={`${field}${errFor('phone')}`} />
-              <ErrMsg k="phone" />
-            </div>
-
-            <div>
-              <label className={labelCls}>Link Zalo Chat</label>
-              <input type="text" value={room.zalo || ''} onChange={(e) => set({ zalo: e.target.value })} className={`${field} font-mono${errFor('zalo')}`} />
-              <ErrMsg k="zalo" />
             </div>
 
             <div>
               <label className={labelCls}>Link Messenger Chat</label>
-              <input type="text" value={room.messenger || ''} onChange={(e) => set({ messenger: e.target.value })} className={`${field} font-mono${errFor('messenger')}`} />
+              <input
+                type="text"
+                value={room.messenger || ''}
+                onChange={(e) => set({ messenger: e.target.value })}
+                className={`${field} font-mono${errFor('messenger')}`}
+              />
               <ErrMsg k="messenger" />
-            </div>
-
-            <div>
-              <label className={labelCls}>Giờ mở cửa</label>
-              <input type="text" value={room.hours || ''} onChange={(e) => set({ hours: e.target.value })} className={field} placeholder="09:00 - 21:30 · cả tuần" />
             </div>
           </div>
         </div>
 
         {/* Sticky footer */}
-        <div className="sticky bottom-0 flex items-center justify-between gap-2 rounded-b-3xl border-t border-[#e5e0d8] bg-white/95 px-6 py-3 font-bold backdrop-blur">
+        <div className="sticky bottom-0 flex items-center justify-between gap-2 rounded-b-2xl border-t border-[#e5e0d8] bg-white/95 px-5 py-2.5 font-bold backdrop-blur">
           <div>
             {room.id && (
               <button

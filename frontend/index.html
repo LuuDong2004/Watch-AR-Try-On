@@ -84,6 +84,15 @@
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
       }
+      * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+      }
       .font-display { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
       /* Bold display headings on dark panels: render on their own GPU layer so
          Chromium uses grayscale (not LCD subpixel) AA — removes color fringing. */

@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, CalendarCheck, Eye, Sparkles, Mail, CheckCircle2, Star } from 'lucide-react';
-import { watchApi, leadApi } from '../../api';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Calendar,
+  CalendarCheck,
+  CheckCircle2,
+  Mail,
+  Package,
+  Sparkles,
+  Star,
+} from 'lucide-react';
+import { leadApi, watchApi } from '../../api';
 import type { Lead, Watch } from '../../api';
 import { useSession } from '../../auth/session';
 
@@ -9,233 +17,452 @@ interface ShopDashboardProps {
   onNavigateToProducts: () => void;
 }
 
-export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts }: ShopDashboardProps) {
-  const user = useSession((s) => s.user);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const CHART_LEFT = 40;
+const CHART_RIGHT = 460;
+const CHART_TOP = 20;
+const CHART_BOTTOM = 170;
+
+const formatVND = (value: number) =>
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const getLeadTime = (lead: Lead) => {
+  if (lead.createdAt) return lead.createdAt;
+  const parsed = lead.timestamp ? Date.parse(lead.timestamp) : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+export default function ShopDashboard({
+  onNavigateToLeads,
+  onNavigateToProducts,
+}: ShopDashboardProps) {
+  const user = useSession((state) => state.user);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
-    if (!user?.shopId) return;
+    if (!user?.shopId) {
+      setLeads([]);
+      setWatches([]);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
+    setLoadError('');
+
     Promise.all([watchApi.list(user.shopId), leadApi.list()])
-      .then(([w, l]) => {
+      .then(([watchList, leadList]) => {
         if (cancelled) return;
-        setWatches(w);
-        setLeads(l);
+        setWatches(watchList);
+        setLeads(leadList.filter((lead) => lead.shopId === user.shopId));
       })
-      .catch(() => { /* ignore — show empty state */ })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        if (cancelled) return;
+        setWatches([]);
+        setLeads([]);
+        setLoadError('Không thể tải dữ liệu tổng quan của cửa hàng.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.shopId]);
 
-  const formatVND = (n: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      maximumFractionDigits: 0
-    }).format(n);
-  };
+  const dashboardData = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const rangeStart = todayStart - 6 * DAY_MS;
+    const activeWatches = watches.filter((watch) => (watch.status || 'active') === 'active');
+    const arWatches = activeWatches.filter((watch) => watch.hasAR);
+    const newLeads = leads.filter((lead) => lead.status === 'new');
+    const appointmentLeads = leads.filter((lead) => lead.type === 'appointment');
+    const bookedAppointments = appointmentLeads.filter((lead) => lead.status === 'booked');
+    const triedOnLeads = leads.filter((lead) => lead.hasTriedOn);
+    const triedOnLastSevenDays = triedOnLeads.filter((lead) => getLeadTime(lead) >= rangeStart);
 
-  // Metrics
-  const totalLeads = leads.length;
-  const newLeads = leads.filter((l) => l.status === 'new').length;
-  const totalTryons = leads.filter((l) => l.hasTriedOn).length + 86; // add some simulated baseline stats
-  const scheduledAppointments = leads.filter((l) => l.type === 'appointment' && l.status === 'booked').length;
+    const chartDays = Array.from({ length: 7 }, (_, index) => {
+      const start = rangeStart + index * DAY_MS;
+      const end = start + DAY_MS;
+      const date = new Date(start);
+      const dailyLeads = leads.filter((lead) => {
+        const createdAt = getLeadTime(lead);
+        return createdAt >= start && createdAt < end;
+      });
 
-  const urgentLeads = leads.filter((l) => l.status === 'new').slice(0, 3);
-  const topWatches = watches.slice(0, 3);
+      return {
+        label: new Intl.DateTimeFormat('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+        }).format(date),
+        total: dailyLeads.length,
+        triedOn: dailyLeads.filter((lead) => lead.hasTriedOn).length,
+      };
+    });
+
+    const maxChartValue = Math.max(
+      1,
+      ...chartDays.flatMap((day) => [day.total, day.triedOn]),
+    );
+    const chartX = (index: number) =>
+      CHART_LEFT + (index * (CHART_RIGHT - CHART_LEFT)) / Math.max(chartDays.length - 1, 1);
+    const chartY = (value: number) =>
+      CHART_BOTTOM - (value / maxChartValue) * (CHART_BOTTOM - CHART_TOP);
+    const totalPoints = chartDays
+      .map((day, index) => `${chartX(index)},${chartY(day.total)}`)
+      .join(' ');
+    const triedOnPoints = chartDays
+      .map((day, index) => `${chartX(index)},${chartY(day.triedOn)}`)
+      .join(' ');
+
+    const leadCountByWatch = leads.reduce<Record<string, number>>((counts, lead) => {
+      if (lead.watchId) counts[lead.watchId] = (counts[lead.watchId] || 0) + 1;
+      return counts;
+    }, {});
+    const topWatches = [...watches]
+      .sort((left, right) => {
+        const leadDifference =
+          (leadCountByWatch[right.id] || 0) - (leadCountByWatch[left.id] || 0);
+        if (leadDifference !== 0) return leadDifference;
+        return (right.createdAt || 0) - (left.createdAt || 0);
+      })
+      .slice(0, 5);
+
+    return {
+      activeWatches,
+      arWatches,
+      newLeads,
+      appointmentLeads,
+      bookedAppointments,
+      triedOnLeads,
+      triedOnLastSevenDays,
+      chartDays,
+      maxChartValue,
+      totalPoints,
+      triedOnPoints,
+      chartX,
+      chartY,
+      leadCountByWatch,
+      topWatches,
+    };
+  }, [leads, watches]);
+
+  const currentDate = new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date());
+
+  const urgentLeads = dashboardData.newLeads.slice(0, 3);
+  const hasChartData = dashboardData.chartDays.some(
+    (day) => day.total > 0 || day.triedOn > 0,
+  );
 
   if (loading) {
     return (
-      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+      <div className="flex min-h-screen w-full items-center justify-center bg-[#F6F4EF] text-sm text-[#8A8170]">
         Đang tải…
       </div>
     );
   }
 
   return (
-    <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
-      {/* Dashboard Welcome Header */}
-      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="min-h-screen w-full overflow-y-auto bg-[#F6F4EF] p-6 font-sans text-[#17140F] md:p-8">
+      <header className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Hộp Tin Tổng Quan</h1>
-          <p className="text-xs text-gray-500 mt-1">Giám sát hoạt động 3D/AR, lượt đặt lịch hẹn và leads từ showrooms</p>
+          <h1 className="font-display text-2xl font-bold text-[#17140F] md:text-3xl">
+            Tổng Quan Cửa Hàng
+          </h1>
+          <p className="mt-1 text-xs text-gray-500">
+            Dữ liệu sản phẩm, liên hệ và lịch hẹn được cập nhật trực tiếp từ hệ thống.
+          </p>
         </div>
-        <div className="text-xs text-gray-400 bg-white border border-[#e5e0d8] px-4 py-2 rounded-xl shadow-sm font-semibold flex items-center gap-1.5">
-          <Calendar className="h-3.5 w-3.5" /> Hôm nay: 30 Tháng 05, 2026
+        <div className="flex items-center gap-1.5 rounded-xl border border-[#e5e0d8] bg-white px-4 py-2 text-xs font-semibold capitalize text-gray-400 shadow-sm">
+          <Calendar className="h-3.5 w-3.5" />
+          {currentDate}
         </div>
       </header>
 
-      {/* Grid: 4 Metric Cards */}
-      <section className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {loadError && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-600">
+          {loadError}
+        </div>
+      )}
+
+      <section className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Số lượt xem 3D', val: '1,420', change: '+12.4%', color: 'text-blue-600', Icon: Eye },
-          { label: 'Số lượt thử AR', val: totalTryons, change: '+25.8%', color: 'text-[#B8924A]', Icon: Sparkles },
-          { label: 'Liên hệ / Leads mới', val: newLeads, change: `${newLeads} leads đợi phản hồi`, color: 'text-amber-500', Icon: Mail },
-          { label: 'Lịch hẹn showroom', val: scheduledAppointments, change: 'Trong tuần này', color: 'text-green-600', Icon: CalendarCheck }
-        ].map((card, idx) => (
+          {
+            label: 'Sản phẩm đang bán',
+            value: dashboardData.activeWatches.length,
+            detail: `${dashboardData.arWatches.length} sản phẩm hỗ trợ AR`,
+            color: 'text-blue-600',
+            Icon: Package,
+          },
+          {
+            label: 'Yêu cầu có thử AR',
+            value: dashboardData.triedOnLeads.length,
+            detail: `${dashboardData.triedOnLastSevenDays.length} yêu cầu trong 7 ngày qua`,
+            color: 'text-[#B8924A]',
+            Icon: Sparkles,
+          },
+          {
+            label: 'Liên hệ mới',
+            value: dashboardData.newLeads.length,
+            detail: `${leads.length} tổng yêu cầu`,
+            color: 'text-amber-500',
+            Icon: Mail,
+          },
+          {
+            label: 'Lịch hẹn đã xếp',
+            value: dashboardData.bookedAppointments.length,
+            detail: `${dashboardData.appointmentLeads.length} tổng lịch hẹn`,
+            color: 'text-green-600',
+            Icon: CalendarCheck,
+          },
+        ].map((card) => (
           <div
-            key={idx}
-            className="bg-white rounded-2xl p-5 border border-[#e5e0d8] shadow-sm flex items-center justify-between hover:shadow transition"
+            key={card.label}
+            className="flex items-center justify-between rounded-2xl border border-[#e5e0d8] bg-white p-5 shadow-sm transition hover:shadow"
           >
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{card.label}</p>
-              <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">{card.val}</h3>
-              <p className="text-[10px] text-gray-500 font-semibold">{card.change}</p>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                {card.label}
+              </p>
+              <h3 className="mb-1 text-xl font-bold text-[#17140F] md:text-2xl">{card.value}</h3>
+              <p className="text-[10px] font-semibold text-gray-500">{card.detail}</p>
             </div>
-            <div className={`h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100 ${card.color}`}>
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-xl border border-gray-100 bg-[#F6F4EF] ${card.color}`}
+            >
               <card.Icon className="h-5 w-5" />
             </div>
           </div>
         ))}
       </section>
 
-      {/* Grid: Chart and urgent alerts */}
-      <section className="grid lg:grid-cols-12 gap-8 mb-8">
-        {/* Statistics Chart (7 cols) */}
-        <div className="lg:col-span-8 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-6">
+      <section className="mb-8 grid gap-8 lg:grid-cols-12">
+        <div className="flex flex-col justify-between rounded-3xl border border-[#e5e0d8] bg-white p-6 shadow-sm lg:col-span-8">
+          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div>
-              <h3 className="font-display text-sm font-bold">Thống kê tương tác 7 ngày qua</h3>
-              <p className="text-[10px] text-gray-400">So sánh tần suất thử AR và phát sinh yêu cầu tư vấn</p>
+              <h3 className="font-display text-sm font-bold">Tương tác 7 ngày qua</h3>
+              <p className="text-[10px] text-gray-400">
+                Tổng yêu cầu khách hàng và số yêu cầu có ghi nhận đã thử AR.
+              </p>
             </div>
-            {/* Chart Legend */}
             <div className="flex gap-4 text-[10px] font-bold">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#B8924A]" />Thử AR</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#17140F]" />Gửi liên hệ</span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#17140F]" />
+                Yêu cầu
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#B8924A]" />
+                Đã thử AR
+              </span>
             </div>
           </div>
 
-          {/* Luxury Custom SVG Chart */}
-          <div className="h-64 w-full relative">
-            <svg viewBox="0 0 500 200" className="w-full h-full">
-              {/* Grid Lines */}
-              <line x1="40" y1="20" x2="480" y2="20" stroke="#f3f4f6" strokeWidth="1" />
-              <line x1="40" y1="70" x2="480" y2="70" stroke="#f3f4f6" strokeWidth="1" />
-              <line x1="40" y1="120" x2="480" y2="120" stroke="#f3f4f6" strokeWidth="1" />
-              <line x1="40" y1="170" x2="480" y2="170" stroke="#f3f4f6" strokeWidth="1" />
+          <div className="relative h-64 w-full">
+            <svg viewBox="0 0 500 200" className="h-full w-full" role="img" aria-label="Biểu đồ tương tác 7 ngày qua">
+              {[CHART_TOP, (CHART_TOP + CHART_BOTTOM) / 2, CHART_BOTTOM].map((y, index) => (
+                <g key={y}>
+                  <line
+                    x1={CHART_LEFT}
+                    y1={y}
+                    x2="480"
+                    y2={y}
+                    stroke="#f0ede8"
+                    strokeWidth="1"
+                  />
+                  <text x="30" y={y + 3} fill="#9ca3af" fontSize="8" textAnchor="end">
+                    {index === 0
+                      ? dashboardData.maxChartValue
+                      : index === 1
+                        ? Math.round(dashboardData.maxChartValue / 2)
+                        : 0}
+                  </text>
+                </g>
+              ))}
 
-              {/* TryOn Line (Gold) */}
-              <polyline
-                fill="none"
-                stroke="#B8924A"
-                strokeWidth="3.5"
-                points="40,150 110,130 180,90 250,110 320,60 390,75 460,30"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              {/* Lead Line (Navy) */}
               <polyline
                 fill="none"
                 stroke="#17140F"
                 strokeWidth="2.5"
-                points="40,180 110,175 180,160 250,165 320,135 390,140 460,115"
+                points={dashboardData.totalPoints}
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeDasharray="4"
+              />
+              <polyline
+                fill="none"
+                stroke="#B8924A"
+                strokeWidth="3"
+                points={dashboardData.triedOnPoints}
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
 
-              {/* Chart Dots for Try-On */}
-              <circle cx="40" cy="150" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="110" cy="130" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="180" cy="90" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="250" cy="110" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="320" cy="60" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="390" cy="75" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-              <circle cx="460" cy="30" r="4.5" fill="#B8924A" stroke="#fff" strokeWidth="1.5" />
-
-              {/* Chart X axis text */}
-              <text x="40" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">24/5</text>
-              <text x="110" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">25/5</text>
-              <text x="180" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">26/5</text>
-              <text x="250" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">27/5</text>
-              <text x="320" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">28/5</text>
-              <text x="390" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">29/5</text>
-              <text x="460" y="192" fill="#9ca3af" fontSize="8" textAnchor="middle">30/5</text>
+              {dashboardData.chartDays.map((day, index) => (
+                <g key={day.label}>
+                  <circle
+                    cx={dashboardData.chartX(index)}
+                    cy={dashboardData.chartY(day.total)}
+                    r="3.5"
+                    fill="#17140F"
+                    stroke="#fff"
+                    strokeWidth="1.5"
+                  />
+                  <circle
+                    cx={dashboardData.chartX(index)}
+                    cy={dashboardData.chartY(day.triedOn)}
+                    r="3.5"
+                    fill="#B8924A"
+                    stroke="#fff"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x={dashboardData.chartX(index)}
+                    y="192"
+                    fill="#9ca3af"
+                    fontSize="8"
+                    textAnchor="middle"
+                  >
+                    {day.label}
+                  </text>
+                </g>
+              ))}
             </svg>
+
+            {!hasChartData && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center pb-8 text-xs text-gray-400">
+                Chưa có tương tác trong 7 ngày qua.
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Urgent Actions Alert Leads list (4 cols) */}
-        <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-display text-sm font-bold">Liên hệ mới khẩn cấp</h3>
-            <button onClick={onNavigateToLeads} className="text-[10px] text-[#B8924A] hover:underline font-bold">
+        <div className="flex flex-col rounded-3xl border border-[#e5e0d8] bg-white p-6 shadow-sm lg:col-span-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-sm font-bold">Liên hệ mới cần xử lý</h3>
+            <button
+              type="button"
+              onClick={onNavigateToLeads}
+              className="text-[10px] font-bold text-[#B8924A] hover:underline"
+            >
               Xem tất cả
             </button>
           </div>
 
-          <div className="space-y-3 flex-1">
+          <div className="flex-1 space-y-3">
             {urgentLeads.length > 0 ? (
               urgentLeads.map((lead) => (
-                <div
+                <button
+                  type="button"
                   key={lead.id}
                   onClick={onNavigateToLeads}
-                  className="p-3 bg-[#F6F4EF] rounded-xl border border-[#e5e0d8] hover:border-[#B8924A] transition cursor-pointer text-xs"
+                  className="w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-3 text-left text-xs transition hover:border-[#B8924A]"
                 >
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="mb-1 flex items-center justify-between">
                     <span className="font-bold text-[#17140F]">{lead.name}</span>
-                    <span className="text-[9px] bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-bold">
-                      NEW
+                    <span className="rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[9px] font-bold text-red-600">
+                      MỚI
                     </span>
                   </div>
-                  <p className="text-[10px] text-[#B8924A] font-semibold mb-1 truncate">{lead.watchName}</p>
-                  <p className="text-[10px] text-gray-500 italic line-clamp-1">"{lead.message}"</p>
-                </div>
+                  <p className="mb-1 truncate text-[10px] font-semibold text-[#B8924A]">
+                    {lead.watchName || (lead.type === 'appointment' ? 'Đặt lịch showroom' : 'Yêu cầu tư vấn')}
+                  </p>
+                  <p className="line-clamp-1 text-[10px] italic text-gray-500">
+                    {lead.message || lead.phone}
+                  </p>
+                </button>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-8">
-                <CheckCircle2 className="h-8 w-8 mb-2 text-green-500" />
-                <p className="text-xs">Đã xử lý tất cả liên hệ mới!</p>
+              <div className="flex h-full flex-col items-center justify-center py-8 text-center text-gray-400">
+                <CheckCircle2 className="mb-2 h-8 w-8 text-green-500" />
+                <p className="text-xs">Không có liên hệ mới cần xử lý.</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* Top Performing watches table */}
-      <section className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
-        <div className="flex justify-between items-center mb-4 border-b border-[#e5e0d8] pb-3">
-          <h3 className="font-display text-sm font-bold">Mẫu đồng hồ thu hút nhất (3D/AR)</h3>
-          <button onClick={onNavigateToProducts} className="text-[10px] text-[#B8924A] hover:underline font-bold">
+      <section className="rounded-3xl border border-[#e5e0d8] bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between border-b border-[#e5e0d8] pb-3">
+          <div>
+            <h3 className="font-display text-sm font-bold">Sản phẩm được quan tâm nhiều nhất</h3>
+            <p className="mt-0.5 text-[10px] text-gray-400">
+              Xếp hạng theo số yêu cầu khách hàng gắn với từng sản phẩm.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onNavigateToProducts}
+            className="text-[10px] font-bold text-[#B8924A] hover:underline"
+          >
             Xem sản phẩm
           </button>
         </div>
 
         <div className="overflow-x-auto text-xs">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full border-collapse text-left">
             <thead>
-              <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[9px]">
+              <tr className="border-b border-gray-100 text-[9px] uppercase tracking-wider text-gray-400">
                 <th className="py-2.5">Tên sản phẩm</th>
-                <th className="py-2.5">Phân khúc giá</th>
+                <th className="py-2.5">Giá bán</th>
                 <th className="py-2.5 text-center">Đánh giá</th>
-                <th className="py-2.5 text-center">AR Model</th>
-                <th className="py-2.5 text-right">Lượt thử AR (Ước tính)</th>
+                <th className="py-2.5 text-center">Hiển thị</th>
+                <th className="py-2.5 text-right">Yêu cầu khách hàng</th>
               </tr>
             </thead>
             <tbody>
-              {topWatches.map((w) => (
-                <tr key={w.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                  <td className="py-3 font-semibold text-[#17140F] flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-lg overflow-hidden border border-[#e5e0d8] shadow-sm flex-shrink-0 bg-[#F6F4EF]">
-                      <img src={w.image} alt={w.name} className="w-full h-full object-cover" />
-                    </div>
-                    <span>{w.name}</span>
+              {dashboardData.topWatches.length > 0 ? (
+                dashboardData.topWatches.map((watch) => (
+                  <tr key={watch.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
+                    <td className="flex items-center gap-3 py-3 font-semibold text-[#17140F]">
+                      <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-[#e5e0d8] bg-[#F6F4EF] shadow-sm">
+                        <img src={watch.image} alt={watch.name} className="h-full w-full object-cover" />
+                      </div>
+                      <span>{watch.name}</span>
+                    </td>
+                    <td className="py-3 font-medium text-gray-600">{formatVND(watch.price)}</td>
+                    <td className="py-3 text-center font-bold text-[#B8924A]">
+                      <span className="inline-flex items-center justify-center gap-1">
+                        {watch.rating ?? 0}
+                        <Star className="h-3.5 w-3.5 fill-current" />
+                      </span>
+                    </td>
+                    <td className="py-3 text-center">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                          watch.hasAR
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {watch.hasAR ? 'Có AR' : 'Ảnh 2D'}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right font-bold text-gray-700">
+                      {dashboardData.leadCountByWatch[watch.id] || 0}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center text-xs text-gray-400">
+                    Cửa hàng chưa có sản phẩm.
                   </td>
-                  <td className="py-3 font-medium text-gray-600">{formatVND(w.price)}</td>
-                  <td className="py-3 text-center text-[#B8924A] font-bold">
-                    <span className="inline-flex items-center gap-1 justify-center">{w.rating} <Star className="h-3.5 w-3.5 fill-current" /></span>
-                  </td>
-                  <td className="py-3 text-center">
-                    <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-bold text-[9px]">
-                      Hoạt động
-                    </span>
-                  </td>
-                  <td className="py-3 text-right font-bold text-gray-700">+{Math.floor((w.reviewCount ?? 0) * 4.8)}</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
