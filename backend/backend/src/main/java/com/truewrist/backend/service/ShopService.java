@@ -40,6 +40,39 @@ public class ShopService {
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy cửa hàng."));
     }
 
+    /** All shops a seller owns (by ownerId), plus their legacy active shop. */
+    public List<Shop> findOwnedBy(String ownerId, String activeShopId) {
+        java.util.LinkedHashMap<String, Shop> byId = new java.util.LinkedHashMap<>();
+        for (Shop s : shopRepository.findByOwnerId(ownerId)) {
+            byId.put(s.getId(), s);
+        }
+        if (activeShopId != null && !byId.containsKey(activeShopId)) {
+            shopRepository.findById(activeShopId).ifPresent(s -> byId.put(s.getId(), s));
+        }
+        List<Shop> owned = new java.util.ArrayList<>(byId.values());
+        owned.sort(Comparator.comparingLong(Shop::getCreatedAt).reversed());
+        return owned;
+    }
+
+    /** Set the user's active shop (the one product screens default to). */
+    @Transactional
+    public void setActiveShop(String userId, String shopId) {
+        userRepository.findById(userId).ifPresent(u -> {
+            u.setShopId(shopId);
+            userRepository.save(u);
+        });
+    }
+
+    /** True when the user owns the shop (ownerId match, or it's their active shop). */
+    public boolean isOwnedBy(String shopId, String userId, String activeShopId) {
+        if (shopId.equals(activeShopId)) {
+            return true;
+        }
+        return shopRepository.findById(shopId)
+                .map(s -> userId.equals(s.getOwnerId()))
+                .orElse(false);
+    }
+
     @Transactional
     public Shop create(ShopRequest req) {
         return create(req, null);
@@ -53,6 +86,7 @@ public class ShopService {
     public Shop create(ShopRequest req, String ownerUserId) {
         Shop shop = Shop.builder()
                 .id(Ids.generate("s"))
+                .ownerId(ownerUserId)
                 .name(req.name())
                 .phone(req.phone())
                 .email(req.email())

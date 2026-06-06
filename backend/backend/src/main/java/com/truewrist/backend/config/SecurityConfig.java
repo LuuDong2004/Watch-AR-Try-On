@@ -71,6 +71,8 @@ public class SecurityConfig {
                         // Public auth + OAuth2 endpoints
                         .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
+                        // A seller's own shops require auth (must come before the public wildcard)
+                        .requestMatchers(HttpMethod.GET, "/api/shops/mine").authenticated()
                         // Public storefront reads
                         .requestMatchers(HttpMethod.GET, "/api/watches/**", "/api/shops/**").permitAll()
                         // Public storefront submissions (contact form / feedback); user id

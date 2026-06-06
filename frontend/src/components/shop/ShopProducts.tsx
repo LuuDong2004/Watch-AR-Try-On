@@ -1,45 +1,55 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Store, Box, Check, Star, Package } from 'lucide-react';
+import { Plus, Search, Store, Box, Check, Star, Package, ChevronDown } from 'lucide-react';
 import { watchApi, shopApi, ApiError } from '../../api';
-import type { Watch } from '../../api';
+import type { Watch, Shop } from '../../api';
 import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 
 interface ShopProductsProps {
   onEditProduct: (id: string) => void;
-  onNavigateToAddProduct: () => void;
+  /** Open the add-product form targeting the given shop. */
+  onNavigateToAddProduct: (shopId: string) => void;
 }
 
 export default function ShopProducts({ onEditProduct, onNavigateToAddProduct }: ShopProductsProps) {
   const user = useSession((s) => s.user);
+  const [myShops, setMyShops] = useState<Shop[]>([]);
+  const [selectedShopId, setSelectedShopId] = useState<string>('');
   const [watches, setWatches] = useState<Watch[]>([]);
-  const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'pending'>('all');
   const [loading, setLoading] = useState(true);
 
-  const loadWatches = useCallback(async () => {
-    if (!user?.shopId) return;
-    const list = await watchApi.list(user.shopId);
-    setWatches(list);
-  }, [user?.shopId]);
+  const shopNames: Record<string, string> = Object.fromEntries(myShops.map((s) => [s.id, s.name]));
 
+  // Load the seller's shops once; default the selection to the active shop.
   useEffect(() => {
-    if (!user?.shopId) return;
+    if (!user) return;
+    let cancelled = false;
+    shopApi.mine()
+      .then((shops) => {
+        if (cancelled) return;
+        setMyShops(shops);
+        setSelectedShopId((cur) => cur || user.shopId || shops[0]?.id || '');
+      })
+      .catch(() => { /* ignore — empty state */ });
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const loadWatches = useCallback(async () => {
+    if (!selectedShopId) { setWatches([]); return; }
+    setWatches(await watchApi.list(selectedShopId));
+  }, [selectedShopId]);
+
+  // Reload products whenever the selected shop changes.
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    Promise.all([watchApi.list(user.shopId), shopApi.list()])
-      .then(([list, shops]) => {
-        if (cancelled) return;
-        setWatches(list);
-        const map: Record<string, string> = {};
-        shops.forEach((s) => { map[s.id] = s.name; });
-        setShopNames(map);
-      })
-      .catch(() => { /* ignore — show empty state */ })
+    loadWatches()
+      .catch(() => { /* ignore */ })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [user?.shopId]);
+  }, [loadWatches]);
 
   const formatVND = (n: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -76,18 +86,42 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct }: 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
       {/* Products Header */}
-      <header className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <header className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Danh Sách Sản Phẩm</h1>
-          <p className="text-xs text-gray-500 mt-1">Đăng bán và hiệu chỉnh model 3D/AR cho từng mẫu đồng hồ</p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Sản Phẩm</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Sản phẩm của <span className="font-semibold text-[#B8924A]">{shopNames[selectedShopId] || 'cửa hàng'}</span> — đăng bán và hiệu chỉnh model 3D/AR
+          </p>
         </div>
         <button
-          onClick={onNavigateToAddProduct}
-          className="bg-[#17140F] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#B8924A]/30 active:scale-95 flex items-center gap-1.5"
+          onClick={() => selectedShopId && onNavigateToAddProduct(selectedShopId)}
+          disabled={!selectedShopId}
+          className="bg-[#17140F] text-white hover:bg-black font-semibold text-xs py-3 px-6 rounded-full transition shadow border border-[#B8924A]/30 active:scale-95 flex items-center gap-1.5 disabled:opacity-50"
         >
           <Plus className="h-4 w-4" /> <span>Đăng Đồng Hồ Mới</span>
         </button>
       </header>
+
+      {/* Shop selector (per-shop product management) */}
+      {myShops.length > 0 && (
+        <div className="mb-6 flex flex-wrap items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            <Store className="h-3.5 w-3.5 text-[#B8924A]" /> Cửa hàng:
+          </span>
+          <div className="relative">
+            <select
+              value={selectedShopId}
+              onChange={(e) => setSelectedShopId(e.target.value)}
+              className="appearance-none rounded-xl border border-[#e5e0d8] bg-white py-2 pl-3.5 pr-9 text-xs font-semibold text-[#17140F] shadow-sm focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+            >
+              {myShops.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}{s.id === user?.shopId ? ' (chính)' : ''}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          </div>
+        </div>
+      )}
 
       {/* Toolbar Filters */}
       <section className="bg-white p-4 rounded-2xl border border-[#e5e0d8] shadow-sm mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between text-xs">

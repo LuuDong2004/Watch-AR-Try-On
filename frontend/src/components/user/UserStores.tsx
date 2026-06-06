@@ -5,6 +5,7 @@ import type { Shop, Watch } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
 import { toast } from '../../store/useToast';
 import { mapDirectionsUrl } from '../../utils/maps';
+import { detectRegion } from '../../utils/region';
 import MapPreview from '../MapPreview';
 
 interface UserStoresProps {
@@ -130,19 +131,14 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     }
   };
 
-  // Region = the part after the last comma in the address ("Quận 1, TP. Hồ Chí Minh" -> "TP. Hồ Chí Minh").
-  const getRegion = (address?: string) => {
-    if (!address) return 'Khác';
-    const parts = address.split(',');
-    return parts[parts.length - 1].trim() || address.trim();
-  };
-  const regions = Array.from(new Set(shops.map((s) => getRegion(s.address)))).sort((a, b) => a.localeCompare(b, 'vi'));
+  // Canonical city/province for grouping (diacritic-insensitive, district-aware).
+  const regions = Array.from(new Set(shops.map((s) => detectRegion(s.address)))).sort((a, b) => a.localeCompare(b, 'vi'));
 
   const filteredShops = shops.filter((s) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
       !q || [s.name, s.address, s.description].filter(Boolean).join(' ').toLowerCase().includes(q);
-    const matchesRegion = region === 'all' || getRegion(s.address) === region;
+    const matchesRegion = region === 'all' || detectRegion(s.address) === region;
     return matchesSearch && matchesRegion;
   });
 
@@ -441,29 +437,54 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
             </p>
           </div>
         ) : (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {pagedShops.map((shop) => {
             const count = watchesAt(shop.id).length;
+            const region = detectRegion(shop.address);
             return (
               <button
                 key={shop.id}
                 onClick={() => setSelectedId(shop.id)}
-                className="group text-left rounded-3xl overflow-hidden border border-[#e5e0d8] bg-white shadow-sm hover:shadow-xl transition"
+                className="group flex flex-col overflow-hidden rounded-3xl border border-[#e5e0d8] bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
               >
-                <div className="h-44 overflow-hidden relative">
-                  <img src={shop.image} onError={(e)=>{const t=e.currentTarget; if(t.src.indexOf("1523275335684")===-1) t.src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1200";}} alt={shop.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                  <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">{count} sản phẩm</span>
-                  <div className="absolute bottom-3 left-4 text-white">
-                    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-[#B8924A] font-bold"><Store className="h-4 w-4" /> Cửa hàng</span>
-                    <h3 className="font-display text-lg font-bold">{shop.name}</h3>
+                {/* Cover */}
+                <div className="relative h-40 overflow-hidden">
+                  <img
+                    src={shop.image}
+                    onError={(e) => { const t = e.currentTarget; if (t.src.indexOf('1523275335684') === -1) t.src = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1200'; }}
+                    alt={shop.name}
+                    className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  {/* Top chips */}
+                  <div className="absolute inset-x-3 top-3 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold text-[#17140F] shadow-sm">
+                      <Star className="h-3 w-3 fill-[#B8924A] text-[#B8924A]" /> {shop.rating ?? '—'}
+                    </span>
+                    <span className="rounded-full bg-[#B8924A] px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm">{count} sản phẩm</span>
                   </div>
+                  {/* Name */}
+                  <h3 className="absolute inset-x-4 bottom-3 font-display text-lg font-bold text-white drop-shadow">{shop.name}</h3>
                 </div>
-                <div className="p-5">
-                  <p className="text-xs text-gray-500 mb-3 leading-relaxed line-clamp-2">{shop.description || shop.address}</p>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="inline-flex items-center gap-1 text-[#B8924A] font-bold"><Star className="h-3.5 w-3.5 fill-current" /> {shop.rating} <span className="inline-flex items-center gap-1 text-gray-400 font-normal">· <MapPin className="h-4 w-4" /> {shop.address}</span></span>
-                    <span className="inline-flex items-center gap-1 font-semibold text-[#B8924A] group-hover:underline">Xem shop <ArrowRight className="h-4 w-4" /></span>
+
+                {/* Body */}
+                <div className="flex flex-1 flex-col p-4">
+                  <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-[#F6F4EF] px-2.5 py-1 text-[10px] font-semibold text-[#8A7A55]">
+                    <MapPin className="h-3 w-3 text-[#B8924A]" /> {region}
+                  </span>
+                  <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-gray-500">{shop.description || shop.address}</p>
+
+                  {(shop.services?.length ?? 0) > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {(shop.services ?? []).slice(0, 2).map((s, i) => (
+                        <span key={i} className="rounded-md bg-[#B8924A]/10 px-2 py-0.5 text-[9px] font-semibold text-[#8A7A55]">{s}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-auto flex items-center justify-between border-t border-[#f0ebe2] pt-3 text-xs">
+                    <span className="truncate text-gray-400">{shop.address}</span>
+                    <span className="inline-flex shrink-0 items-center gap-1 font-bold text-[#B8924A] group-hover:gap-2 transition-all">Xem cửa hàng <ArrowRight className="h-4 w-4" /></span>
                   </div>
                 </div>
               </button>

@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal, Upload, X } from 'lucide-react';
-import { watchApi, uploadApi, ApiError } from '../../api';
-import type { Watch } from '../../api';
+import { Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal, Upload, X, Store } from 'lucide-react';
+import { watchApi, shopApi, uploadApi, ApiError } from '../../api';
+import type { Watch, Shop } from '../../api';
 import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 
 interface ShopAddProductProps {
   editWatchId?: string | null;
+  /** Target shop for a new product (defaults to the active shop). */
+  shopId?: string | null;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: ShopAddProductProps) {
+export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCancel }: ShopAddProductProps) {
   const user = useSession((s) => s.user);
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [myShops, setMyShops] = useState<Shop[]>([]);
   const [form, setForm] = useState({
     id: '',
+    shopId: '',
     name: '',
     brand: '',
     price: 15000000,
@@ -49,6 +53,14 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
     arRotationOffset: 0
   });
 
+  // Load the seller's shops for the "đăng bán tại" selector.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    shopApi.mine().then((shops) => { if (!cancelled) setMyShops(shops); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   useEffect(() => {
     if (editWatchId) {
       setIsEditMode(true);
@@ -60,6 +72,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
           setForm((prev) => ({
             ...prev,
             id: found.id,
+            shopId: found.shopId || prev.shopId,
             name: found.name,
             brand: found.brand,
             price: found.price || 15000000,
@@ -89,9 +102,9 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
       return () => { cancelled = true; };
     } else {
       setIsEditMode(false);
-      setForm((prev) => ({ ...prev, id: '' }));
+      setForm((prev) => ({ ...prev, id: '', shopId: shopId || user?.shopId || '' }));
     }
-  }, [editWatchId]);
+  }, [editWatchId, shopId, user?.shopId]);
 
   const handleSpecChange = (key: string, value: string) => {
     setForm((prev) => ({
@@ -137,8 +150,8 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
       toast.error('Vui lòng nhập Tên và Hãng sản xuất');
       return;
     }
-    if (!user?.shopId) {
-      toast.error('Không xác định được cửa hàng của bạn');
+    if (!form.shopId) {
+      toast.error('Vui lòng chọn cửa hàng đăng bán');
       return;
     }
 
@@ -148,7 +161,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
       price: Number(form.price),
       originalPrice: Number(form.originalPrice),
       description: form.description,
-      shopId: user.shopId,
+      shopId: form.shopId,
       model: form.hasAR ? form.model : '',
       image: form.image,
       gallery: form.gallery && form.gallery.length ? form.gallery : [form.image],
@@ -219,6 +232,27 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: Sho
           </h3>
 
           <div className="grid sm:grid-cols-2 gap-4 text-xs">
+            {/* Target shop */}
+            <div className="sm:col-span-2">
+              <label className="block text-gray-500 font-bold mb-1">Cửa hàng đăng bán *</label>
+              {isEditMode || myShops.length <= 1 ? (
+                <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] px-3.5 py-2.5 font-semibold text-[#17140F]">
+                  <Store className="h-4 w-4 text-[#B8924A]" />
+                  {myShops.find((s) => s.id === form.shopId)?.name || 'Cửa hàng của bạn'}
+                </div>
+              ) : (
+                <select
+                  value={form.shopId}
+                  onChange={(e) => setForm({ ...form, shopId: e.target.value })}
+                  className="w-full rounded-xl border border-[#e5e0d8] bg-white px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
+                >
+                  {myShops.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}{s.id === user?.shopId ? ' (chính)' : ''}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
             {/* Name */}
             <div className="sm:col-span-2">
               <label className="block text-gray-500 font-bold mb-1">Tên đồng hồ *</label>

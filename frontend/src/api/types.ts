@@ -45,6 +45,8 @@ export interface Watch {
 
 export interface Shop {
   id: string;
+  /** User id of the seller who owns this shop. */
+  ownerId?: string | null;
   name: string;
   phone?: string;
   email?: string;
