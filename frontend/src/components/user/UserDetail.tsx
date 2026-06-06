@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, ClipboardList, BookOpen } from 'lucide-react';
-import { getDbWatches, getDbFavorites, toggleFavorite, getShopForWatch } from '../../utils/mockData';
+import { watchApi, shopApi, favoriteApi, ApiError } from '../../api';
+import type { Watch, Shop } from '../../api';
+import { useSession } from '../../auth/session';
+import { useLoginPrompt } from '../../auth/loginPrompt';
 
 import ProductGallery from './detail/ProductGallery';
 import ProductSummary from './detail/ProductSummary';
@@ -29,20 +32,46 @@ interface UserDetailProps {
  * State (watch, shop, favorites, popups) lives here; children are pure.
  */
 export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, onSelectShop }: UserDetailProps) {
-  const [watch, setWatch] = useState<any>(null);
-  const [allWatches, setAllWatches] = useState<any[]>([]);
-  const [shop, setShop] = useState<any>(null);
+  const user = useSession((s) => s.user);
+  const showLogin = useLoginPrompt((s) => s.show);
+
+  const [watch, setWatch] = useState<Watch | null>(null);
+  const [allWatches, setAllWatches] = useState<Watch[]>([]);
+  const [shop, setShop] = useState<Shop | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [info, setInfo] = useState<null | 'specs' | 'story'>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const list = getDbWatches();
-    setAllWatches(list);
-    const found = list.find((w) => w.id === watchId);
-    setWatch(found || null);
-    setShop(getShopForWatch(watchId));
-    setIsFavorited(getDbFavorites().includes(watchId));
+    let cancelled = false;
+    setLoading(true);
+    setWatch(null);
+    Promise.all([watchApi.get(watchId), watchApi.list(), shopApi.list()])
+      .then(([found, list, shops]) => {
+        if (cancelled) return;
+        setAllWatches(list);
+        setWatch(found || null);
+        setShop(found ? shops.find((s) => s.id === found.shopId) || null : null);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWatch(null);
+        setShop(null);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [watchId]);
+
+  // Resolve favorite state for signed-in users only.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setIsFavorited(false); return; }
+    favoriteApi
+      .list()
+      .then((ids) => { if (!cancelled) setIsFavorited(ids.includes(watchId)); })
+      .catch(() => { if (!cancelled) setIsFavorited(false); });
+    return () => { cancelled = true; };
+  }, [watchId, user]);
 
   // Similar watches: same brand first, then fill with other models.
   const similar = useMemo(() => {
@@ -53,11 +82,19 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
     return [...sameBrand, ...rest].slice(0, 8);
   }, [allWatches, watch]);
 
-  if (!watch) {
+  if (loading || !watch) {
     return <div className="py-20 text-center font-display text-lg text-navy">Đang tải chi tiết đồng hồ...</div>;
   }
 
-  const handleFavorite = () => setIsFavorited(toggleFavorite(watch.id));
+  const handleFavorite = async () => {
+    if (!user) { showLogin('login'); return; }
+    try {
+      const fav = await favoriteApi.toggle(watch.id);
+      setIsFavorited(fav);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) showLogin('login');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-cream font-sans text-navy">

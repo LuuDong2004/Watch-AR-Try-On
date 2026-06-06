@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Circle, Store, Users, Package, Sparkles, Send, ClipboardList, ShieldCheck, type LucideIcon } from 'lucide-react';
-import { getDbLeads, getDbWatches } from '../../utils/mockData';
+import { watchApi, leadApi, shopApi, userApi } from '../../api';
+import type { Watch, Lead } from '../../api';
 
 interface AdminDashboardProps {
   onNavigateToShops: () => void;
@@ -8,19 +9,47 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }: AdminDashboardProps) {
-  const [watches, setWatches] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [shopCount, setShopCount] = useState(0);
+  const [userCount, setUserCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setWatches(getDbWatches());
-    setLeads(getDbLeads());
+    let cancelled = false;
+    (async () => {
+      try {
+        const [w, l, s] = await Promise.all([watchApi.list(), leadApi.list(), shopApi.list()]);
+        if (cancelled) return;
+        setWatches(w);
+        setLeads(l);
+        setShopCount(s.length);
+        try {
+          const u = await userApi.list();
+          if (!cancelled) setUserCount(u.length);
+        } catch {
+          /* users endpoint optional */
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const totalShops = 3;
-  const totalUsers = 120;
+  const totalShops = shopCount;
+  const totalUsers = userCount;
   const totalWatches = watches.length;
-  const totalTryons = leads.filter((l) => l.hasTriedOn).length + 342; // global simulated tryons
+  const totalTryons = leads.filter((l) => l.hasTriedOn).length;
   const totalLeads = leads.length;
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-gray-500">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">

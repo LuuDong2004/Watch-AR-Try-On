@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Package, ShieldCheck, AlertTriangle, Check, X } from 'lucide-react';
-import { getDbWatches } from '../../utils/mockData';
+import { watchApi } from '../../api';
+import type { Watch } from '../../api';
+import { toast } from '../../store/useToast';
 
 export default function AdminAudit() {
-  const [watches, setWatches] = useState<any[]>([]);
-  const [selectedWatch, setSelectedWatch] = useState<any>(null);
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [selectedWatch, setSelectedWatch] = useState<Watch | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Simulated audit calibration checks
   const [scale, setScale] = useState(1.15);
@@ -13,33 +16,39 @@ export default function AdminAudit() {
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
-    const list = getDbWatches();
-    setWatches(list);
-    if (list.length > 0) {
-      setSelectedWatch(list[0]);
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await watchApi.list();
+        if (cancelled) return;
+        setWatches(list);
+        if (list.length > 0) setSelectedWatch(list[0]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
-  const handleSelect = (w: any) => {
+  const handleSelect = (w: Watch) => {
     setSelectedWatch(w);
-    setScale(w.arConfig?.arScale || 1.0);
-    setPosY(w.arConfig?.arPositionY || 0);
-    setPosX(w.arConfig?.arPositionX || 0);
-    setRotation(w.arConfig?.arRotationOffset || 0);
+    setScale(1.0);
+    setPosY(0);
+    setPosX(0);
+    setRotation(0);
   };
 
   const handleApprove = () => {
-    alert(`Đã PHÊ DUYỆT model 3D cho đồng hồ ${selectedWatch.name} chính thức hoạt động trên toàn hệ thống!`);
+    toast.success(`Đã PHÊ DUYỆT model 3D cho đồng hồ ${selectedWatch?.name} — chính thức hoạt động trên toàn hệ thống!`);
   };
 
-  const handleReject = () => {
-    const reason = prompt('Nhập lý do từ chối kiểm duyệt (Gửi phản hồi cho shop):');
-    if (reason) {
-      alert(`Đã TỪ CHỐI kiểm duyệt. Lý do: "${reason}". Phản hồi đã được chuyển đến shop.`);
-    }
+  const handleReject = async () => {
+    if (!(await toast.confirm('Mẫu sẽ bị từ chối và phản hồi được gửi về cho shop.', { title: 'Từ chối kiểm duyệt?', confirmText: 'Từ chối', danger: true }))) return;
+    toast.error('Đã TỪ CHỐI kiểm duyệt. Phản hồi đã được chuyển đến shop.');
   };
 
-  if (!selectedWatch) return <div className="p-8 text-center text-xs">Đang tải danh sách chờ duyệt...</div>;
+  if (loading) return <div className="p-8 text-center text-xs">Đang tải…</div>;
+  if (!selectedWatch) return <div className="p-8 text-center text-xs text-gray-500">Chưa có mẫu nào chờ kiểm duyệt.</div>;
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">

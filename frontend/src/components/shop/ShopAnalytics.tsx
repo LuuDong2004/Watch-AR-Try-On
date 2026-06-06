@@ -1,18 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { getWatchesForShopIds, getLeadsForShopIds, resolveScopeShopIds } from '../../utils/mockData';
+import { watchApi, leadApi } from '../../api';
+import type { Lead, Watch } from '../../api';
+import { useSession } from '../../auth/session';
 
-export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
-  const [watches, setWatches] = useState<any[]>([]);
-  const [leads, setLeads] = useState<any[]>([]);
+export default function ShopAnalytics() {
+  const user = useSession((s) => s.user);
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const ids = resolveScopeShopIds(shopScope);
-    setWatches(getWatchesForShopIds(ids));
-    setLeads(getLeadsForShopIds(ids));
-  }, [shopScope]);
+    if (!user?.shopId) return;
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([watchApi.list(user.shopId), leadApi.list()])
+      .then(([w, l]) => {
+        if (cancelled) return;
+        setWatches(w);
+        setLeads(l);
+      })
+      .catch(() => { /* ignore — show empty state */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.shopId]);
 
   const totalTryons = leads.filter((l) => l.hasTriedOn).length + 86;
   const totalLeads = leads.length;
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
@@ -77,7 +98,7 @@ export default function ShopAnalytics({ shopScope }: { shopScope: string }) {
               <div key={w.id} className="flex justify-between items-center bg-[#F6F4EF] p-3 rounded-xl border border-gray-100">
                 <span className="font-bold">{w.name}</span>
                 <span className="bg-[#B8924A] text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                  {w.reviewCount * 3 + 12} Lượt Thử AR
+                  {(w.reviewCount ?? 0) * 3 + 12} Lượt Thử AR
                 </span>
               </div>
             ))}

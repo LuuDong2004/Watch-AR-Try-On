@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../../store/useToast';
 
 export default function AdminSettings() {
   const [platformName, setPlatformName] = useState('TrueWrist AR Watch Studio');
@@ -7,7 +8,7 @@ export default function AdminSettings() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Đã lưu cấu hình hệ thống thành công!');
+    toast.success('Đã lưu cấu hình hệ thống thành công!');
   };
 
   return (

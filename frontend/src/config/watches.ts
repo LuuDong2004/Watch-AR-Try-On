@@ -44,6 +44,7 @@ export interface WatchConfig {
   accent: string;
 }
 
+// Single sample AR watch — the only model wired for the wrist try-on demo.
 export const WATCHES: WatchConfig[] = [
   {
     // Realistic PBR chronograph, authored by DGG for AR wrist try-on.
@@ -65,66 +66,6 @@ export const WATCHES: WatchConfig[] = [
     metal: '#d2d6db',
     dial: '#15171c',
     accent: '#c8a24a',
-  },
-  {
-    id: 'wrist',
-    name: 'Wrist Watch',
-    brand: 'Google Poly',
-    model: '/models/poly_wristwatch.glb',
-    // Modeled dial-normal along Z, strap along Y → rotate dial up to +Y.
-    autoOrient: false,
-    credit: 'Poly by Google — CC BY 3.0',
-    style: 'dive',
-    scale: 1.0,
-    offset: [0, 0.0, 0],
-    rotation: [-Math.PI / 2, 0, 0],
-    metal: '#cfd3d8',
-    dial: '#0b2a4a',
-    accent: '#d6c089',
-  },
-  {
-    id: 'classic',
-    name: 'Classic Watch',
-    brand: 'Google Poly',
-    model: '/models/poly_watch.glb',
-    // Modeled dial-normal along Z, strap along Y → rotate dial up to +Y.
-    autoOrient: false,
-    credit: 'Poly by Google — CC BY 3.0',
-    style: 'dress',
-    scale: 1.0,
-    offset: [0, 0.0, 0],
-    rotation: [-Math.PI / 2, 0, 0],
-    metal: '#d7c08a',
-    dial: '#0a0a0c',
-    accent: '#b8902f',
-  },
-  {
-    // Procedural fallback (no GLB) — bulky resin sport watch.
-    id: 'gshock',
-    name: 'Sport Shock',
-    brand: 'Procedural',
-    model: '',
-    style: 'g-shock',
-    scale: 1.0,
-    offset: [0, 0.02, 0],
-    rotation: [0, 0, 0],
-    metal: '#1c1c1f',
-    dial: '#101216',
-    accent: '#e7352b',
-  },
-  {
-    // Procedural fallback (no GLB) — smartwatch with rectangular screen.
-    id: 'smart',
-    name: 'Smart Ultra',
-    brand: 'Procedural',
-    model: '',
-    style: 'smart',
-    scale: 0.95,
-    offset: [0, 0.01, 0],
-    rotation: [0, 0, 0],
-    metal: '#b9a78c',
-    dial: '#050505',
-    accent: '#ff7a1a',
   },
 ];
 

@@ -1,39 +1,13 @@
 /**
- * Thin fetch wrapper for the TrueWrist Spring backend.
+ * Thin fetch wrapper around the TrueWrist backend.
  *
- * - Prepends VITE_API_URL.
- * - Attaches the stored JWT as a Bearer token.
- * - Parses JSON and turns the backend's {error, message} shape into ApiError.
+ * - Base URL comes from VITE_API_BASE_URL (e.g. http://localhost:8888).
+ * - A JWT is persisted in localStorage and attached as a Bearer token.
+ * - Errors throw {@link ApiError} carrying the backend message + status.
  */
 
-const BASE_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8081').replace(/\/$/, '');
-
-const TOKEN_KEY = 'truewrist-token';
-
-/** The OAuth backend redirects here; also where the bearer token lives. */
-export function getToken(): string | null {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function setToken(token: string): void {
-  try {
-    localStorage.setItem(TOKEN_KEY, token);
-  } catch {
-    /* ignore storage failures (private mode etc.) */
-  }
-}
-
-export function clearToken(): void {
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-  } catch {
-    /* ignore */
-  }
-}
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const TOKEN_KEY = 'tw_token';
 
 export class ApiError extends Error {
   status: number;
@@ -44,64 +18,86 @@ export class ApiError extends Error {
   }
 }
 
-export function apiUrl(path: string): string {
-  return path.startsWith('http') ? path : `${BASE_URL}${path}`;
-}
-
-interface ApiOptions extends Omit<RequestInit, 'body'> {
-  /** JSON body — serialized automatically. */
-  body?: unknown;
-  /** Skip attaching the bearer token (e.g. public login). */
-  anonymous?: boolean;
-}
-
-export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
-  const { body, anonymous, headers, ...rest } = opts;
-  const finalHeaders: Record<string, string> = { ...(headers as Record<string, string>) };
-
-  if (body !== undefined) {
-    finalHeaders['Content-Type'] = 'application/json';
-  }
-  if (!anonymous) {
-    const token = getToken();
-    if (token) {
-      finalHeaders['Authorization'] = `Bearer ${token}`;
-    }
-  }
-
-  let res: Response;
+export function getToken(): string | null {
   try {
-    res = await fetch(apiUrl(path), {
-      ...rest,
-      headers: finalHeaders,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  } catch {
-    throw new ApiError(0, 'Không thể kết nối máy chủ. Kiểm tra backend đang chạy ở cổng 8081.');
-  }
-
-  if (res.status === 204) {
-    return undefined as T;
-  }
-
-  const text = await res.text();
-  const data = text ? safeJson(text) : null;
-
-  if (!res.ok) {
-    const message =
-      (data && typeof data === 'object' && 'message' in data && typeof data.message === 'string'
-        ? data.message
-        : null) ?? `Lỗi máy chủ (${res.status}).`;
-    throw new ApiError(res.status, message);
-  }
-
-  return data as T;
-}
-
-function safeJson(text: string): unknown {
-  try {
-    return JSON.parse(text);
+    return localStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
 }
+
+export function setToken(token: string | null) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore quota / privacy-mode errors */
+  }
+}
+
+type Json = Record<string, unknown> | unknown[] | null;
+
+interface RequestOptions {
+  /** Attach the bearer token (default true). */
+  auth?: boolean;
+}
+
+async function parseError(res: Response): Promise<string> {
+  try {
+    const data = await res.json();
+    if (data && typeof data === 'object') {
+      const msg = (data as any).message ?? (data as any).error;
+      if (typeof msg === 'string' && msg) return msg;
+    }
+  } catch {
+    /* not json */
+  }
+  return res.statusText || `Lỗi ${res.status}`;
+}
+
+async function request<T>(
+  method: string,
+  path: string,
+  body?: Json | FormData,
+  opts: RequestOptions = {},
+): Promise<T> {
+  const { auth = true } = opts;
+  const headers: Record<string, string> = {};
+  const token = getToken();
+  if (auth && token) headers.Authorization = `Bearer ${token}`;
+
+  let payload: BodyInit | undefined;
+  if (body instanceof FormData) {
+    payload = body; // browser sets multipart boundary
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    payload = JSON.stringify(body);
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { method, headers, body: payload });
+  } catch (e) {
+    throw new ApiError(0, 'Không kết nối được máy chủ. Kiểm tra backend đang chạy?');
+  }
+
+  if (res.status === 401 && auth) {
+    // Token invalid/expired — clear it so the UI can redirect to login.
+    setToken(null);
+  }
+  if (!res.ok) {
+    throw new ApiError(res.status, await parseError(res));
+  }
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
+export const http = {
+  get: <T>(path: string, opts?: RequestOptions) => request<T>('GET', path, undefined, opts),
+  post: <T>(path: string, body?: Json, opts?: RequestOptions) => request<T>('POST', path, body, opts),
+  put: <T>(path: string, body?: Json, opts?: RequestOptions) => request<T>('PUT', path, body, opts),
+  patch: <T>(path: string, body?: Json, opts?: RequestOptions) => request<T>('PATCH', path, body, opts),
+  del: <T>(path: string, opts?: RequestOptions) => request<T>('DELETE', path, undefined, opts),
+  postForm: <T>(path: string, form: FormData, opts?: RequestOptions) => request<T>('POST', path, form, opts),
+};

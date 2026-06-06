@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.truewrist.backend.config.DotenvEnvironmentPostProcessor

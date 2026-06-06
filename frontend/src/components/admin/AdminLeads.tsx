@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { CalendarClock, Mail } from 'lucide-react';
-import { getDbLeads, Lead } from '../../utils/mockData';
+import { leadApi } from '../../api';
+import type { Lead } from '../../api';
 
 export default function AdminLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLeads(getDbLeads());
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await leadApi.list();
+        if (!cancelled) setLeads(list);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   const getStatusBadge = (status: Lead['status']) => {
@@ -47,7 +58,13 @@ export default function AdminLeads() {
               </tr>
             </thead>
             <tbody>
-              {leads.map((l) => (
+              {loading && (
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Đang tải…</td></tr>
+              )}
+              {!loading && leads.length === 0 && (
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Chưa có lead nào.</td></tr>
+              )}
+              {!loading && leads.map((l) => (
                 <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#17140F]">
                     <p>{l.name}</p>
@@ -66,7 +83,7 @@ export default function AdminLeads() {
                   </td>
                   <td className="py-3.5 px-4">{getStatusBadge(l.status)}</td>
                   <td className="py-3.5 px-4 text-right text-gray-400">
-                    {new Date(l.timestamp).toLocaleString('vi-VN')}
+                    {l.timestamp ? new Date(l.timestamp).toLocaleString('vi-VN') : '—'}
                   </td>
                 </tr>
               ))}

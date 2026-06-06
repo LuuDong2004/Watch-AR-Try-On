@@ -1,39 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Mail, X, Phone, Watch, MessageCircle, Trash2 } from 'lucide-react';
-import { getLeadsForShopIds, resolveScopeShopIds, updateLeadStatus, deleteDbLead, Lead } from '../../utils/mockData';
+import { leadApi, ApiError } from '../../api';
+import type { Lead } from '../../api';
+import { toast } from '../../store/useToast';
 
 interface ShopLeadsProps {
-  onStatusUpdated: () => void;
-  shopScope: string;
+  onStatusUpdated?: () => void;
 }
 
-export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps) {
+export default function ShopLeads({ onStatusUpdated }: ShopLeadsProps) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'responded' | 'booked' | 'closed'>('all');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const loadLeads = () => getLeadsForShopIds(resolveScopeShopIds(shopScope));
-
-  useEffect(() => {
-    setLeads(loadLeads());
-  }, [shopScope]);
-
-  const handleUpdateStatus = (id: string, newStatus: Lead['status']) => {
-    updateLeadStatus(id, newStatus);
-    const updated = loadLeads();
-    setLeads(updated);
-    if (selectedLead && selectedLead.id === id) {
-      setSelectedLead(updated.find((l) => l.id === id) || null);
-    }
-    onStatusUpdated();
+  const loadLeads = async () => {
+    const list = await leadApi.list();
+    setLeads(list);
+    return list;
   };
 
-  const handleDeleteLead = (id: string) => {
-    if (confirm('Xóa thông tin liên hệ này ra khỏi lịch sử của shop?')) {
-      deleteDbLead(id);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    leadApi.list()
+      .then((list) => { if (!cancelled) setLeads(list); })
+      .catch(() => { /* ignore — show empty state */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleUpdateStatus = async (id: string, newStatus: Lead['status']) => {
+    try {
+      await leadApi.updateStatus(id, newStatus);
+      const updated = await loadLeads();
+      if (selectedLead && selectedLead.id === id) {
+        setSelectedLead(updated.find((l) => l.id === id) || null);
+      }
+      onStatusUpdated?.();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    }
+  };
+
+  const handleDeleteLead = async (id: string) => {
+    if (!(await toast.confirm('Thông tin liên hệ này sẽ bị xóa khỏi lịch sử của shop.', { title: 'Xóa liên hệ này?', confirmText: 'Xóa', danger: true }))) return;
+    try {
+      await leadApi.remove(id);
       setSelectedLead(null);
-      setLeads(loadLeads());
-      onStatusUpdated();
+      await loadLeads();
+      onStatusUpdated?.();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
     }
   };
 
@@ -57,6 +75,14 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
       </span>
     );
   };
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto relative flex">
@@ -153,7 +179,7 @@ export default function ShopLeads({ onStatusUpdated, shopScope }: ShopLeadsProps
 
                       {/* Date */}
                       <td className="py-4 px-4 text-right text-gray-400">
-                        {new Date(l.timestamp).toLocaleDateString('vi-VN')}
+                        {l.timestamp ? new Date(l.timestamp).toLocaleDateString('vi-VN') : '—'}
                       </td>
                     </tr>
                   ))}

@@ -1,16 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Store } from 'lucide-react';
-import { getDbShowrooms, Showroom } from '../../utils/mockData';
+import { shopApi, ApiError } from '../../api';
+import type { Shop } from '../../api';
+import { toast } from '../../store/useToast';
 
 export default function AdminShops() {
-  const [showrooms, setShowrooms] = useState<Showroom[]>([]);
+  const [showrooms, setShowrooms] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const list = await shopApi.list();
+      setShowrooms(list);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setShowrooms(getDbShowrooms());
+    load();
   }, []);
 
-  const handleToggleStatus = (id: string, currentStatus: string) => {
-    alert(`Đã ${currentStatus === 'active' ? 'TẠM KHÓA' : 'MỞ KHÓA'} showroom này thành công!`);
+  const handleToggleStatus = async (shop: Shop) => {
+    const nextStatus: Shop['status'] = shop.status === 'active' ? 'archived' : 'active';
+    try {
+      await shopApi.update(shop.id, { ...shop, status: nextStatus });
+      await load();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    }
   };
 
   return (
@@ -34,7 +55,18 @@ export default function AdminShops() {
               </tr>
             </thead>
             <tbody>
-              {showrooms.map((room) => (
+              {loading && (
+                <tr><td colSpan={5} className="py-8 text-center text-gray-400">Đang tải…</td></tr>
+              )}
+              {!loading && error && (
+                <tr><td colSpan={5} className="py-8 text-center text-red-500">{error}</td></tr>
+              )}
+              {!loading && !error && showrooms.length === 0 && (
+                <tr><td colSpan={5} className="py-8 text-center text-gray-400">Chưa có showroom nào.</td></tr>
+              )}
+              {!loading && !error && showrooms.map((room) => {
+                const isActive = room.status !== 'archived';
+                return (
                 <tr key={room.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#17140F] flex items-center gap-2">
                     <span className="h-7 w-7 rounded-lg bg-[#17140F]/5 flex items-center justify-center text-[#17140F] flex-shrink-0">
@@ -45,20 +77,29 @@ export default function AdminShops() {
                   <td className="py-3.5 px-4 font-medium">{room.phone}</td>
                   <td className="py-3.5 px-4 text-gray-500 max-w-xs truncate">{room.address}</td>
                   <td className="py-3.5 text-center">
-                    <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-bold text-[9px]">
-                      Hoạt động
-                    </span>
+                    {isActive ? (
+                      <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-bold text-[9px]">
+                        Hoạt động
+                      </span>
+                    ) : (
+                      <span className="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-bold text-[9px]">
+                        Đã khóa
+                      </span>
+                    )}
                   </td>
                   <td className="py-3.5 text-right space-x-2">
                     <button
-                      onClick={() => handleToggleStatus(room.id, 'active')}
-                      className="border border-red-200 text-red-600 hover:bg-red-50 py-1 px-3 rounded-lg font-bold"
+                      onClick={() => handleToggleStatus(room)}
+                      className={isActive
+                        ? 'border border-red-200 text-red-600 hover:bg-red-50 py-1 px-3 rounded-lg font-bold'
+                        : 'border border-green-200 text-green-600 hover:bg-green-50 py-1 px-3 rounded-lg font-bold'}
                     >
-                      Tạm khóa
+                      {isActive ? 'Tạm khóa' : 'Mở khóa'}
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { MessageSquare, Store, Globe, Star, Check, Send } from 'lucide-react';
-import { getDbShops, addDbFeedback } from '../../utils/mockData';
+import { shopApi, feedbackApi, ApiError } from '../../api';
+import type { Shop } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
+import { toast } from '../../store/useToast';
 
 interface UserFeedbackProps {
   onBackToCatalog: () => void;
@@ -11,10 +13,11 @@ const SHOP_TOPICS = ['Thái độ phục vụ', 'Chất lượng sản phẩm', 
 const WEB_TOPICS = ['Trải nghiệm thử AR', 'Mô hình 3D', 'Tốc độ & hiệu năng', 'Giao diện & dễ dùng', 'Đề xuất tính năng', 'Khác'];
 
 export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
-  const [shops, setShops] = useState<any[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [target, setTarget] = useState<'shop' | 'website'>('shop');
   const [hoverRating, setHoverRating] = useState(0);
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     shopId: '',
     rating: 5,
@@ -25,9 +28,16 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
   });
 
   useEffect(() => {
-    const list = getDbShops();
-    setShops(list);
-    setForm((prev) => ({ ...prev, shopId: list[0]?.id || '' }));
+    let cancelled = false;
+    shopApi
+      .list()
+      .then((list) => {
+        if (cancelled) return;
+        setShops(list);
+        setForm((prev) => ({ ...prev, shopId: list[0]?.id || '' }));
+      })
+      .catch(() => { if (!cancelled) setShops([]); });
+    return () => { cancelled = true; };
   }, []);
 
   const switchTarget = (t: 'shop' | 'website') => {
@@ -37,28 +47,35 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
 
   const topics = target === 'shop' ? SHOP_TOPICS : WEB_TOPICS;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.message) {
-      alert('Vui lòng nhập họ tên và nội dung góp ý');
+      toast.error('Vui lòng nhập họ tên và nội dung góp ý');
       return;
     }
     if (target === 'shop' && !form.shopId) {
-      alert('Vui lòng chọn cửa hàng bạn muốn góp ý');
+      toast.error('Vui lòng chọn cửa hàng bạn muốn góp ý');
       return;
     }
     const shop = target === 'shop' ? shops.find((s) => s.id === form.shopId) : null;
-    addDbFeedback({
-      target,
-      shopId: shop?.id,
-      shopName: shop?.name,
-      rating: form.rating,
-      topic: form.topic,
-      message: form.message,
-      name: form.name,
-      contact: form.contact,
-    });
-    setSuccess(true);
+    setSubmitting(true);
+    try {
+      await feedbackApi.create({
+        target,
+        shopId: shop?.id,
+        shopName: shop?.name,
+        rating: form.rating,
+        topic: form.topic,
+        message: form.message,
+        name: form.name,
+        contact: form.contact,
+      });
+      setSuccess(true);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -195,9 +212,10 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
 
                 <button
                   type="submit"
-                  className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99] inline-flex items-center justify-center gap-2"
+                  disabled={submitting}
+                  className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99] inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Send className="h-4 w-4" /> Gửi góp ý
+                  <Send className="h-4 w-4" /> {submitting ? 'Đang gửi…' : 'Gửi góp ý'}
                 </button>
                 <p className="text-[10px] text-gray-400 text-center leading-snug">
                   Góp ý của bạn được bảo mật và chỉ dùng để cải thiện chất lượng dịch vụ.

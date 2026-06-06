@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Search, Star, ArrowLeft, ArrowRight } from 'lucide-react';
-import { getDbWatches } from '../../utils/mockData';
+import { watchApi } from '../../api';
+import type { Watch } from '../../api';
 
 interface UserCatalogProps {
   onSelectWatch: (id: string) => void;
@@ -8,8 +9,9 @@ interface UserCatalogProps {
 }
 
 export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProps) {
-  const [watches, setWatches] = useState<any[]>([]);
+  const [watches, setWatches] = useState<Watch[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedBrand, setSelectedBrand] = useState<string>('all');
   const [priceRange, setPriceRange] = useState<number>(350000000); // max price filter
   const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
@@ -22,12 +24,20 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
   const PAGE_SIZE = 6;
 
   useEffect(() => {
-    const list = getDbWatches();
-    setWatches(list);
-    
-    // Extract unique brands
-    const uniqueBrands = Array.from(new Set(list.map((w) => w.brand)));
-    setBrands(uniqueBrands);
+    let cancelled = false;
+    setLoading(true);
+    watchApi
+      .list()
+      .then((list) => {
+        if (cancelled) return;
+        setWatches(list);
+        // Extract unique brands
+        const uniqueBrands = Array.from(new Set(list.map((w) => w.brand)));
+        setBrands(uniqueBrands);
+      })
+      .catch(() => { if (!cancelled) setWatches([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const formatVND = (n: number) => {
@@ -66,7 +76,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
     .sort((a, b) => {
       if (sortBy === 'price-asc') return a.price - b.price;
       if (sortBy === 'price-desc') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
+      if (sortBy === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
       return 0; // default / featured
     });
 
@@ -260,7 +270,11 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
           </div>
 
           {/* Product Grid */}
-          {filteredWatches.length > 0 ? (
+          {loading ? (
+            <div className="bg-white rounded-2xl border border-[#e5e0d8] p-12 text-center shadow-sm text-sm text-[#8A8170]">
+              Đang tải…
+            </div>
+          ) : filteredWatches.length > 0 ? (
             <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {pagedWatches.map((w) => (

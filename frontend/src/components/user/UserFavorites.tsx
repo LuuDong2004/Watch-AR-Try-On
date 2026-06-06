@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Heart, Sparkles, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react';
-import { getDbFavorites, getDbWatches, toggleFavorite } from '../../utils/mockData';
+import { Heart, Sparkles, ArrowRight, ArrowLeft, Trash2, LogIn } from 'lucide-react';
+import { favoriteApi, watchApi, ApiError } from '../../api';
+import type { Watch } from '../../api';
+import { useSession } from '../../auth/session';
+import { useLoginPrompt } from '../../auth/loginPrompt';
 
 interface UserFavoritesProps {
   onSelectWatch: (id: string) => void;
@@ -13,23 +16,71 @@ const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
 export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog, onChanged }: UserFavoritesProps) {
-  const [items, setItems] = useState<any[]>([]);
+  const user = useSession((s) => s.user);
+  const showLogin = useLoginPrompt((s) => s.show);
 
-  const load = () => {
-    const favIds = getDbFavorites();
-    const watches = getDbWatches();
-    setItems(watches.filter((w) => favIds.includes(w.id)));
+  const [items, setItems] = useState<Watch[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [favIds, watches] = await Promise.all([favoriteApi.list(), watchApi.list()]);
+      setItems(watches.filter((w) => favIds.includes(w.id)));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) showLogin('login');
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
+    if (!user) { setItems([]); setLoading(false); return; }
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  const handleRemove = (id: string) => {
-    toggleFavorite(id); // currently favorited -> removes it
-    load();
-    onChanged?.();
+  const handleRemove = async (id: string) => {
+    try {
+      await favoriteApi.toggle(id); // currently favorited -> removes it
+      await load();
+      onChanged?.();
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) showLogin('login');
+    }
   };
+
+  // Anonymous visitors must sign in to use favourites.
+  if (!user) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <button
+            onClick={onBackToCatalog}
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-[#B8924A] transition mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" /> Tiếp tục khám phá
+          </button>
+          <div className="bg-white rounded-3xl border border-[#e5e0d8] p-12 text-center shadow-sm max-w-lg mx-auto">
+            <div className="h-16 w-16 mx-auto rounded-full bg-[#B8924A]/10 flex items-center justify-center text-[#B8924A] mb-4">
+              <Heart className="h-7 w-7" />
+            </div>
+            <h3 className="font-display font-bold text-base mb-1">Đăng nhập để dùng tính năng này</h3>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto mb-6">
+              Đăng nhập để lưu lại và xem những mẫu đồng hồ bạn yêu thích trên mọi thiết bị.
+            </p>
+            <button
+              onClick={() => showLogin('login')}
+              className="bg-[#17140F] text-white px-8 py-3 rounded-full font-bold text-sm hover:bg-black transition inline-flex items-center gap-2"
+            >
+              <LogIn className="h-4 w-4" /> Đăng nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
@@ -54,7 +105,11 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
           </p>
         </div>
 
-        {items.length > 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-3xl border border-[#e5e0d8] p-12 text-center shadow-sm max-w-lg mx-auto text-sm text-[#8A8170]">
+            Đang tải…
+          </div>
+        ) : items.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {items.map((w) => (
               <div
