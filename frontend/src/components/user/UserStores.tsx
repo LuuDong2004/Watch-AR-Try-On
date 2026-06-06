@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Store, Star, MapPin, User, Clock, Phone, Mail, MessageCircle, Globe, Check, Sparkles, ArrowLeft, ArrowRight, Search, X } from 'lucide-react';
-import { getDbShops, getDbWatches, addDbLead } from '../../utils/mockData';
+import { shopApi, watchApi, leadApi, ApiError } from '../../api';
+import type { Shop, Watch } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
+import { toast } from '../../store/useToast';
+import { mapDirectionsUrl } from '../../utils/maps';
+import MapPreview from '../MapPreview';
 
 interface UserStoresProps {
   onSelectWatch: (id: string) => void;
@@ -14,8 +18,9 @@ const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
 export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initialShopId }: UserStoresProps) {
-  const [shops, setShops] = useState<any[]>([]);
-  const [watches, setWatches] = useState<any[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [selectedId, setSelectedId] = useState<string | null>(initialShopId ?? null);
 
   // Directory filters & pagination
@@ -37,10 +42,24 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     time: '09:30',
     message: '',
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    setShops(getDbShops());
-    setWatches(getDbWatches());
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([shopApi.list(), watchApi.list()])
+      .then(([s, w]) => {
+        if (cancelled) return;
+        setShops(s);
+        setWatches(w);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setShops([]);
+        setWatches([]);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   // Open straight into a shop when linked from elsewhere (e.g. product detail).
@@ -77,35 +96,42 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     setContactOpen(true);
   };
 
-  const submitContact = (e: React.FormEvent) => {
+  const submitContact = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selected) return;
     if (!contactForm.name || !contactForm.phone) {
-      alert('Vui lòng điền họ tên và số điện thoại');
+      toast.error('Vui lòng điền họ tên và số điện thoại');
       return;
     }
     const chosen = watchesAt(selected.id).find((w) => w.id === contactForm.watchId);
-    addDbLead({
-      name: contactForm.name,
-      phone: contactForm.phone,
-      email: contactForm.email,
-      watchId: chosen?.id || '',
-      watchName: chosen?.name || 'Tư vấn chung',
-      watchBrand: chosen?.brand || selected.name,
-      shopId: selected.id,
-      shopName: selected.name,
-      type: contactForm.type,
-      date: contactForm.type === 'appointment' ? contactForm.date : undefined,
-      time: contactForm.type === 'appointment' ? contactForm.time : undefined,
-      message: contactForm.message,
-      channel: 'form',
-      hasTriedOn: false,
-    });
-    setContactSuccess(true);
+    setSubmitting(true);
+    try {
+      await leadApi.create({
+        name: contactForm.name,
+        phone: contactForm.phone,
+        email: contactForm.email,
+        watchId: chosen?.id || '',
+        watchName: chosen?.name || 'Tư vấn chung',
+        watchBrand: chosen?.brand || selected.name,
+        shopId: selected.id,
+        shopName: selected.name,
+        type: contactForm.type,
+        date: contactForm.type === 'appointment' ? contactForm.date : undefined,
+        time: contactForm.type === 'appointment' ? contactForm.time : undefined,
+        message: contactForm.message,
+        channel: 'form',
+        hasTriedOn: false,
+      });
+      setContactSuccess(true);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Region = the part after the last comma in the address ("Quận 1, TP. Hồ Chí Minh" -> "TP. Hồ Chí Minh").
-  const getRegion = (address: string) => {
+  const getRegion = (address?: string) => {
     if (!address) return 'Khác';
     const parts = address.split(',');
     return parts[parts.length - 1].trim() || address.trim();
@@ -170,21 +196,36 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
 
                 {/* Self-serve contact actions */}
                 <div className="flex flex-col gap-2 mt-5">
-                  <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="w-full bg-[#17140F] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition text-center shadow inline-flex items-center justify-center gap-1.5"><Phone className="h-4 w-4" /> Gọi shop</a>
+                  <a href={`tel:${(selected.phone || '').replace(/\s/g, '')}`} className="w-full bg-[#17140F] text-white py-2.5 rounded-xl font-bold text-xs hover:bg-black transition text-center shadow inline-flex items-center justify-center gap-1.5"><Phone className="h-4 w-4" /> Gọi shop</a>
                   <div className="grid grid-cols-2 gap-2">
                     <a href={selected.zalo} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Zalo</a>
                     <a href={selected.messenger} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><Globe className="h-4 w-4" /> Messenger</a>
                   </div>
                   <button onClick={() => openContact()} className="w-full bg-[#B8924A] hover:bg-[#a6803f] text-white py-2.5 rounded-xl font-bold text-xs transition text-center shadow inline-flex items-center justify-center gap-1.5"><Mail className="h-4 w-4" /> Gửi yêu cầu tư vấn</button>
+                  {mapDirectionsUrl(selected.mapUrl) && (
+                    <a
+                      href={mapDirectionsUrl(selected.mapUrl)!}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full border border-[#17140F] text-[#17140F] py-2.5 rounded-xl font-bold text-xs hover:bg-[#17140F] hover:text-white transition text-center inline-flex items-center justify-center gap-1.5"
+                    >
+                      <MapPin className="h-4 w-4" /> Chỉ đường tới cửa hàng
+                    </a>
+                  )}
                 </div>
+
+                {/* Map preview — only when the shop provided a map link */}
+                {selected.mapUrl && (
+                  <MapPreview mapUrl={selected.mapUrl} className="mt-4 rounded-2xl" />
+                )}
               </div>
 
               {/* Specialties */}
-              {selected.services?.length > 0 && (
+              {(selected.services?.length ?? 0) > 0 && (
                 <div className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
                   <h3 className="font-display font-bold text-sm mb-3 border-b border-[#e5e0d8] pb-2">Cam kết & dịch vụ</h3>
                   <ul className="space-y-2 text-xs text-gray-600">
-                    {selected.services.map((s: string, i: number) => (
+                    {(selected.services ?? []).map((s: string, i: number) => (
                       <li key={i} className="flex items-start gap-1.5"><span className="text-[#B8924A] font-bold mt-0.5"><Check className="h-4 w-4" /></span><span className="leading-relaxed">{s}</span></li>
                     ))}
                   </ul>
@@ -327,8 +368,8 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                       <TextArea required rows={3} value={contactForm.message} onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })} placeholder="Nhu cầu tư vấn cụ thể hoặc lịch ghé thăm..." />
                     </Field>
 
-                    <button type="submit" className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99]">
-                      Gửi yêu cầu
+                    <button type="submit" disabled={submitting} className="w-full bg-[#17140F] text-white py-3.5 rounded-xl font-bold hover:bg-black transition shadow-md active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed">
+                      {submitting ? 'Đang gửi…' : 'Gửi yêu cầu'}
                     </button>
                     <p className="text-[10px] text-gray-400 text-center leading-snug">
                       Bằng việc gửi, bạn đồng ý để shop liên hệ tư vấn. Thông tin được bảo mật.
@@ -387,7 +428,11 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
           </p>
         </div>
 
-        {filteredShops.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-3xl border border-[#e5e0d8] p-12 text-center shadow-sm text-sm text-[#8A8170]">
+            Đang tải…
+          </div>
+        ) : filteredShops.length === 0 ? (
           <div className="bg-white rounded-3xl border border-[#e5e0d8] p-12 text-center shadow-sm">
             <Store className="h-10 w-10 mx-auto text-gray-300" />
             <h3 className="font-display font-bold text-base mt-3 mb-1">Không tìm thấy cửa hàng phù hợp</h3>

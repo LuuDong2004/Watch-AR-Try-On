@@ -41,9 +41,6 @@ Thumbs.db
 .env.*.local
 !.env.example
 
-# Local-only prompt / scratch docs (may contain secrets)
-PROMPT_DEEPAR_INTEGRATION.md
-
 # Nested duplicate (legacy copy)
 /10Exe/
 

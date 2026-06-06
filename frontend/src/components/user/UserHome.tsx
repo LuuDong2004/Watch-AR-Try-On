@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight, Star, Wand2, UploadCloud, Lock, Check, Bell } from 'lucide-react';
 import Watch3DViewer from '../watch/Watch3DViewer';
-import { getDbWatches } from '../../utils/mockData';
+import { watchApi } from '../../api';
+import type { Watch } from '../../api';
 
 interface UserHomeProps {
   onSelectWatch: (id: string) => void;
@@ -13,10 +14,15 @@ const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
 export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHomeProps) {
-  const [watches, setWatches] = useState<any[]>([]);
+  const [watches, setWatches] = useState<Watch[]>([]);
 
   useEffect(() => {
-    setWatches(getDbWatches());
+    let cancelled = false;
+    watchApi
+      .list()
+      .then((list) => { if (!cancelled) setWatches(list); })
+      .catch(() => { if (!cancelled) setWatches([]); });
+    return () => { cancelled = true; };
   }, []);
 
   const featured = watches.find((w) => w.hasAR) || watches[0];

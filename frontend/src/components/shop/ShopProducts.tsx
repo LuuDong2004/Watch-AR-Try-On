@@ -1,26 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Store, Box, Check, Star, Package } from 'lucide-react';
-import { getWatchesForShopIds, resolveScopeShopIds, getDbShops, deleteDbWatch } from '../../utils/mockData';
+import { watchApi, shopApi, ApiError } from '../../api';
+import type { Watch } from '../../api';
+import { useSession } from '../../auth/session';
+import { toast } from '../../store/useToast';
 
 interface ShopProductsProps {
   onEditProduct: (id: string) => void;
   onNavigateToAddProduct: () => void;
-  shopScope: string;
 }
 
-export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, shopScope }: ShopProductsProps) {
-  const [watches, setWatches] = useState<any[]>([]);
+export default function ShopProducts({ onEditProduct, onNavigateToAddProduct }: ShopProductsProps) {
+  const user = useSession((s) => s.user);
+  const [watches, setWatches] = useState<Watch[]>([]);
   const [shopNames, setShopNames] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'draft' | 'pending'>('all');
+  const [loading, setLoading] = useState(true);
+
+  const loadWatches = useCallback(async () => {
+    if (!user?.shopId) return;
+    const list = await watchApi.list(user.shopId);
+    setWatches(list);
+  }, [user?.shopId]);
 
   useEffect(() => {
-    // Only the owner's stores within the active scope.
-    setWatches(getWatchesForShopIds(resolveScopeShopIds(shopScope)));
-    const map: Record<string, string> = {};
-    getDbShops().forEach((s) => { map[s.id] = s.name; });
-    setShopNames(map);
-  }, [shopScope]);
+    if (!user?.shopId) return;
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([watchApi.list(user.shopId), shopApi.list()])
+      .then(([list, shops]) => {
+        if (cancelled) return;
+        setWatches(list);
+        const map: Record<string, string> = {};
+        shops.forEach((s) => { map[s.id] = s.name; });
+        setShopNames(map);
+      })
+      .catch(() => { /* ignore — show empty state */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.shopId]);
 
   const formatVND = (n: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -30,10 +49,13 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
     }).format(n);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm('Bạn chắc chắn muốn xóa sản phẩm này khỏi hệ thống?')) {
-      deleteDbWatch(id);
-      setWatches(getWatchesForShopIds(resolveScopeShopIds(shopScope)));
+  const handleDelete = async (id: string) => {
+    if (!(await toast.confirm('Sản phẩm sẽ bị gỡ khỏi hệ thống và không thể khôi phục.', { title: 'Xóa sản phẩm này?', confirmText: 'Xóa', danger: true }))) return;
+    try {
+      await watchApi.remove(id);
+      await loadWatches();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
     }
   };
 
@@ -42,6 +64,14 @@ export default function ShopProducts({ onEditProduct, onNavigateToAddProduct, sh
     const matchesStatus = filterStatus === 'all' || (w.status || 'active') === filterStatus;
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">

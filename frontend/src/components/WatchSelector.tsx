@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { WATCHES } from '../config/watches';
 import { useARStore } from '../store/useARStore';
-import { getDbWatches } from '../utils/mockData';
+import { watchApi } from '../api';
 
 /** Luxury horizontal watch carousel pinned to the bottom of the screen.
  *  Only models flagged `hasAR` (a real, quality GLB) are offered for try-on. */
@@ -9,11 +10,22 @@ export function WatchSelector() {
   const selectWatch = useARStore((s) => s.selectWatch);
   const modelLoading = useARStore((s) => s.modelLoading);
 
-  // Catalogue photos (from the mock DB) keyed by watch id, for nice thumbnails.
-  const imageById: Record<string, string> = {};
-  try {
-    getDbWatches().forEach((w: any) => { if (w?.id) imageById[w.id] = w.image; });
-  } catch { /* DB not ready — fall back to swatch */ }
+  // Catalogue photos (from the backend) keyed by watch id, for nice thumbnails.
+  const [imageById, setImageById] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    watchApi
+      .list()
+      .then((list) => {
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        list.filter((w) => w.hasAR).forEach((w) => { if (w.id) map[w.id] = w.image; });
+        setImageById(map);
+      })
+      .catch(() => { /* backend not ready — fall back to swatch */ });
+    return () => { cancelled = true; };
+  }, []);
 
   const arWatches = WATCHES.filter((w) => w.hasAR);
   const active = arWatches.find((w) => w.id === selectedWatchId) ?? arWatches[0] ?? WATCHES[0];

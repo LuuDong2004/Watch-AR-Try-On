@@ -1,5 +1,6 @@
 import React from 'react';
 import { Zap, Crown, Check, Gift, Star, Building2, Boxes, Sparkles, MapPin, Headset } from 'lucide-react';
+import { toast } from '../../store/useToast';
 
 interface UserPricingProps {
   onBackToCatalog: () => void;
@@ -77,7 +78,7 @@ const PLANS: Plan[] = [
 
 export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   const handleChoose = (plan: Plan) => {
-    alert(`Cảm ơn bạn! Cổng thanh toán đang được hoàn thiện — bạn sẽ sớm có thể đăng ký gói ${plan.name} dành cho đối tác.`);
+    toast.info(`Cảm ơn bạn! Cổng thanh toán đang được hoàn thiện — bạn sẽ sớm có thể đăng ký gói ${plan.name} dành cho đối tác.`);
   };
 
   return (

@@ -1,10 +1,13 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx';
 import { detectMobile } from './utils/device.js';
 
-// Database & Role Switcher
-import { initDatabase, getDbFavorites, getLeadsForShopIds, getMyShopIds, resolveScopeShopIds, getShopForWatch } from './utils/mockData';
-import RoleSwitcher from './components/RoleSwitcher';
+// Real auth (JWT backend) + login overlay
+import { useSession, uiRoleFor } from './auth/session';
+import { useLoginPrompt } from './auth/loginPrompt';
+import LoginScreen from './components/auth/LoginScreen';
+import ToastHost from './components/ToastHost';
+import { setToken, watchApi, favoriteApi, leadApi } from './api';
 
 // User (Customer) Components
 import UserHeader from './components/user/UserHeader';
@@ -41,60 +44,125 @@ import AdminSettings from './components/admin/AdminSettings';
 const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'));
 
 export default function App() {
-  // Global Routing State
-  const [role, setRole] = useState('user');
-  const [page, setPage] = useState('home'); // active page within current role
+  // Auth session — role is derived from the signed-in user (no RoleSwitcher).
+  const user = useSession((s) => s.user);
+  const status = useSession((s) => s.status);
+  const initSession = useSession((s) => s.init);
+  const logout = useSession((s) => s.logout);
+  const loginOpen = useLoginPrompt((s) => s.open);
+  const showLogin = useLoginPrompt((s) => s.show);
+  const hideLogin = useLoginPrompt((s) => s.hide);
 
-  // Selection states
-  const [selectedWatchId, setSelectedWatchId] = useState('chrono');
-  const [selectedShopId, setSelectedShopId] = useState(null);
+  const role = uiRoleFor(user?.role); // 'user' (storefront/customer) | 'shop' | 'admin'
+
+  // Persist the active tab + selections so a page reload restores where the
+  // user was (instead of snapping back to the role's default landing page).
+  const [page, setPage] = useState(() => sessionStorage.getItem('tw_page') || 'home');
+  const [selectedWatchId, setSelectedWatchId] = useState(() => sessionStorage.getItem('tw_watch') || 'chrono');
+  const [selectedShopId, setSelectedShopId] = useState(() => sessionStorage.getItem('tw_shop') || null);
   const [editWatchId, setEditWatchId] = useState(null);
-  const [mode, setMode] = useState('none'); // overlay camera state
+  const [mode, setMode] = useState('none');
+  // Shop/admin users can preview the customer storefront ("view as user").
+  const [storefront, setStorefront] = useState(() => sessionStorage.getItem('tw_storefront') === '1');
 
-  // Shop manager: which of the owner's stores is in focus ('all' = every owned store)
-  const [shopScope, setShopScope] = useState('all');
+  useEffect(() => { sessionStorage.setItem('tw_page', page); }, [page]);
+  useEffect(() => { sessionStorage.setItem('tw_storefront', storefront ? '1' : '0'); }, [storefront]);
+  useEffect(() => { sessionStorage.setItem('tw_watch', selectedWatchId || ''); }, [selectedWatchId]);
+  useEffect(() => {
+    if (selectedShopId) sessionStorage.setItem('tw_shop', selectedShopId);
+    else sessionStorage.removeItem('tw_shop');
+  }, [selectedShopId]);
 
-  // DB Sync indicators for badge updates
+  // Badge counters (fetched from the backend).
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
 
-  // Initialize localStorage seed database on load
+  // Boot: capture an OAuth callback token, restore the session, handle AR deep link.
   useEffect(() => {
-    initDatabase();
-    
-    // Check deep linking for AR
     const params = new URLSearchParams(window.location.search);
-    const ar = params.get('ar');
-    if (ar === '1') setMode('ar');
-    if (ar) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('ar');
-      window.history.replaceState({}, '', url.toString());
+    const token = params.get('token');
+    const isCallback = window.location.pathname.includes('oauth-callback');
+    if (token && (isCallback || params.has('token'))) {
+      setToken(token);
     }
-  }, []);
+    initSession();
 
-  // Update dynamic badges on DB updates
+    if (params.get('ar') === '1') setMode('ar');
+
+    if (token || params.has('ar') || isCallback) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('token');
+      url.searchParams.delete('ar');
+      const cleanPath = isCallback ? '/' : url.pathname;
+      window.history.replaceState({}, '', cleanPath + url.search);
+    }
+  }, [initSession]);
+
+  // Reset to the role's default page only on an explicit auth change (login or
+  // logout) — NOT on the initial session restore after a reload, so the saved
+  // tab survives a refresh.
+  const prevStatus = useRef(status);
   useEffect(() => {
-    setFavoritesCount(getDbFavorites().length);
-    // Only count new leads for the stores this owner manages, within the active scope.
-    const scopedIds = resolveScopeShopIds(shopScope);
-    setNewLeadsCount(getLeadsForShopIds(scopedIds).filter((l) => l.status === 'new').length);
-  }, [dbUpdateTrigger, page, role, shopScope]);
+    const was = prevStatus.current;
+    prevStatus.current = status;
+    const loggedIn = was === 'anon' && status === 'authed';
+    const loggedOut = was === 'authed' && status === 'anon';
+    if (loggedIn) {
+      setPage(role === 'user' ? 'home' : 'dashboard');
+      setEditWatchId(null);
+      setSelectedShopId(null);
+      setStorefront(false);
+    } else if (loggedOut) {
+      setPage('home');
+      setEditWatchId(null);
+      setSelectedShopId(null);
+      setStorefront(false);
+    }
+  }, [status, role]);
 
-  // Scroll back to top whenever the user navigates to a new page.
+  // Refresh badge counters on data changes / navigation.
+  useEffect(() => {
+    let cancelled = false;
+    async function refresh() {
+      try {
+        if (user && role === 'user') {
+          const favs = await favoriteApi.list();
+          if (!cancelled) setFavoritesCount(favs.length);
+        } else if (!cancelled) setFavoritesCount(0);
+
+        if (user && (role === 'shop' || role === 'admin')) {
+          const leads = await leadApi.list();
+          if (!cancelled) setNewLeadsCount(leads.filter((l) => l.status === 'new').length);
+        } else if (!cancelled) setNewLeadsCount(0);
+      } catch {
+        /* ignore badge fetch errors */
+      }
+    }
+    refresh();
+    return () => { cancelled = true; };
+  }, [dbUpdateTrigger, page, role, user]);
+
+  // Scroll to top on navigation.
   useEffect(() => {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [page, role]);
 
-  const triggerDbUpdate = () => {
-    setDbUpdateTrigger((prev) => prev + 1);
-  };
+  const triggerDbUpdate = () => setDbUpdateTrigger((p) => p + 1);
 
   const handleTryOn = (watchId) => {
     setSelectedWatchId(watchId);
     setMode(detectMobile() ? 'ar' : 'qr');
   };
+
+  const handleLogout = () => {
+    logout();
+    setMode('none');
+  };
+
+  // Shop/admin: preview the customer storefront, and return to the dashboard.
+  const goStorefront = () => { setStorefront(true); setSelectedShopId(null); setPage('home'); };
+  const exitStorefront = () => { setStorefront(false); setPage('dashboard'); };
 
   const tryOnUrl = (() => {
     if (typeof window === 'undefined') return '';
@@ -103,37 +171,21 @@ export default function App() {
     return url.toString();
   })();
 
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-    // Set default page for the chosen role
-    if (newRole === 'user') setPage('home');
-    if (newRole === 'shop') setPage('dashboard');
-    if (newRole === 'admin') setPage('dashboard');
-    setSelectedWatchId('chrono');
-    setEditWatchId(null);
-  };
-
-  // Rendering based on Role & Page
+  // ---- Page renderers --------------------------------------------------------
   const renderUserPages = () => {
     switch (page) {
       case 'home':
         return (
           <UserHome
             onNavigate={(p) => setPage(p)}
-            onSelectWatch={(id) => {
-              setSelectedWatchId(id);
-              setPage('detail');
-            }}
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
           />
         );
       case 'catalog':
         return (
           <UserCatalog
-            onSelectWatch={(id) => {
-              setSelectedWatchId(id);
-              setPage('detail');
-            }}
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
           />
         );
@@ -142,10 +194,7 @@ export default function App() {
           <UserStores
             initialShopId={selectedShopId}
             onNavigate={(p) => setPage(p)}
-            onSelectWatch={(id) => {
-              setSelectedWatchId(id);
-              setPage('detail');
-            }}
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
           />
         );
@@ -156,10 +205,7 @@ export default function App() {
             onOpenAR={handleTryOn}
             onBack={() => setPage('catalog')}
             onSelectWatch={(id) => setSelectedWatchId(id)}
-            onSelectShop={(shopId) => {
-              setSelectedShopId(shopId);
-              setPage('stores');
-            }}
+            onSelectShop={(shopId) => { setSelectedShopId(shopId); setPage('stores'); }}
           />
         );
       case 'pricing':
@@ -169,10 +215,7 @@ export default function App() {
       case 'favorites':
         return (
           <UserFavorites
-            onSelectWatch={(id) => {
-              setSelectedWatchId(id);
-              setPage('detail');
-            }}
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
             onBackToCatalog={() => setPage('catalog')}
             onChanged={triggerDbUpdate}
@@ -181,15 +224,17 @@ export default function App() {
       case 'account':
         return (
           <UserAccount
-            onSelectWatch={(id) => {
-              setSelectedWatchId(id);
-              setPage('detail');
-            }}
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onBackToCatalog={() => setPage('catalog')}
           />
         );
       default:
-        return <UserCatalog onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }} onOpenAR={handleTryOn} />;
+        return (
+          <UserCatalog
+            onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
+            onOpenAR={handleTryOn}
+          />
+        );
     }
   };
 
@@ -198,7 +243,6 @@ export default function App() {
       case 'dashboard':
         return (
           <ShopDashboard
-            shopScope={shopScope}
             onNavigateToLeads={() => setPage('leads')}
             onNavigateToProducts={() => setPage('products')}
           />
@@ -206,41 +250,31 @@ export default function App() {
       case 'products':
         return (
           <ShopProducts
-            shopScope={shopScope}
-            onEditProduct={(id) => {
-              setEditWatchId(id);
-              setPage('add-product');
-            }}
-            onNavigateToAddProduct={() => {
-              setEditWatchId(null);
-              setPage('add-product');
-            }}
+            onEditProduct={(id) => { setEditWatchId(id); setPage('add-product'); }}
+            onNavigateToAddProduct={() => { setEditWatchId(null); setPage('add-product'); }}
           />
         );
       case 'add-product':
         return (
           <ShopAddProduct
             editWatchId={editWatchId}
-            shopScope={shopScope}
-            onSuccess={() => {
-              setEditWatchId(null);
-              setPage('products');
-              triggerDbUpdate();
-            }}
-            onCancel={() => {
-              setEditWatchId(null);
-              setPage('products');
-            }}
+            onSuccess={() => { setEditWatchId(null); setPage('products'); triggerDbUpdate(); }}
+            onCancel={() => { setEditWatchId(null); setPage('products'); }}
           />
         );
       case 'leads':
-        return <ShopLeads shopScope={shopScope} onStatusUpdated={triggerDbUpdate} />;
+        return <ShopLeads onStatusUpdated={triggerDbUpdate} />;
       case 'analytics':
-        return <ShopAnalytics shopScope={shopScope} />;
+        return <ShopAnalytics />;
       case 'settings':
         return <ShopSettings />;
       default:
-        return <ShopDashboard onNavigateToLeads={() => setPage('leads')} onNavigateToProducts={() => setPage('products')} />;
+        return (
+          <ShopDashboard
+            onNavigateToLeads={() => setPage('leads')}
+            onNavigateToProducts={() => setPage('products')}
+          />
+        );
     }
   };
 
@@ -266,67 +300,91 @@ export default function App() {
       case 'settings':
         return <AdminSettings />;
       default:
-        return <AdminDashboard onNavigateToShops={() => setPage('shops')} onNavigateToAudit={() => setPage('audit')} />;
+        return (
+          <AdminDashboard
+            onNavigateToShops={() => setPage('shops')}
+            onNavigateToAudit={() => setPage('audit')}
+          />
+        );
     }
   };
 
+  // ---- Render ----------------------------------------------------------------
+  if (status === 'loading') {
+    return (
+      <div className="h-full min-h-screen bg-[#F6F4EF] flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
+
   return (
     <div className="h-full bg-[#F6F4EF] text-[#17140F] select-none font-sans overflow-x-hidden">
-      {/* 1. Client-Side User Flow */}
-      {role === 'user' && (
+      {(role === 'user' || storefront) && (
         <div className="flex flex-col min-h-screen">
+          {storefront && role !== 'user' && (
+            <div className="flex items-center justify-center gap-3 bg-[#17140F] px-4 py-2 text-[11px] font-semibold text-white">
+              <span className="text-[#B8924A]">Đang xem giao diện khách hàng</span>
+              <button
+                onClick={exitStorefront}
+                className="rounded-lg border border-white/30 px-3 py-1 font-bold transition hover:bg-white/10"
+              >
+                ← Quay lại trang quản lý
+              </button>
+            </div>
+          )}
           <UserHeader
             currentPage={page}
-            onChangePage={(p) => {
-              setSelectedShopId(null);
-              setPage(p);
-            }}
+            onChangePage={(p) => { setSelectedShopId(null); setPage(p); }}
             favoritesCount={favoritesCount}
+            user={user}
+            onLogin={() => showLogin('login')}
+            onLogout={handleLogout}
+            onGoDashboard={exitStorefront}
           />
           <main className="flex-1">{renderUserPages()}</main>
-          <UserFooter
-            onChangePage={(p) => {
-              setSelectedShopId(null);
-              setPage(p);
-            }}
-          />
+          <UserFooter onChangePage={(p) => { setSelectedShopId(null); setPage(p); }} />
         </div>
       )}
 
-      {/* 2. Shop/Seller Flow */}
-      {role === 'shop' && (
+      {role === 'shop' && !storefront && (
         <div className="flex min-h-screen">
           <ShopSidebar
             currentPage={page}
             onChangePage={(p) => setPage(p)}
             newLeadsCount={newLeadsCount}
-            shopScope={shopScope}
-            onChangeScope={(s) => setShopScope(s)}
+            user={user}
+            onLogout={handleLogout}
+            onGoHome={goStorefront}
           />
           <main className="flex-1 h-screen overflow-y-auto flex">{renderShopPages()}</main>
         </div>
       )}
 
-      {/* 3. System Administrator Flow */}
-      {role === 'admin' && (
+      {role === 'admin' && !storefront && (
         <div className="flex min-h-screen">
           <AdminSidebar
             currentPage={page}
             onChangePage={(p) => setPage(p)}
-            pendingAuditsCount={1}
+            pendingAuditsCount={0}
+            user={user}
+            onLogout={handleLogout}
           />
           <main className="flex-1 h-screen overflow-y-auto flex">{renderAdminPages()}</main>
         </div>
       )}
 
-      {/* 4. Shared floating Role Switcher */}
-      <RoleSwitcher currentRole={role} onChangeRole={handleRoleChange} />
+      {/* Global toast notifications (top-right) */}
+      <ToastHost />
 
-      {/* 5. AR / QR Overlay triggers */}
+      {/* Login / register overlay */}
+      {loginOpen && <LoginScreen onClose={hideLogin} />}
+
+      {/* AR / QR overlays */}
       {mode === 'qr' && (
         <QRTryOnModal
           tryOnUrl={tryOnUrl}
-          watchName={selectedWatchId} // wait, QRTryOnModal takes a watchName string.
+          watchName={selectedWatchId}
           onClose={() => setMode('none')}
           onTryHere={() => setMode('ar')}
         />
@@ -338,11 +396,15 @@ export default function App() {
             watchName={selectedWatchId}
             watchId={selectedWatchId}
             onClose={() => setMode('none')}
-            onOpenContact={() => {
+            onOpenContact={async () => {
               setMode('none');
-              const shop = getShopForWatch(selectedWatchId);
-              setSelectedShopId(shop?.id || null);
-              setPage('stores');
+              try {
+                const w = await watchApi.get(selectedWatchId);
+                setSelectedShopId(w?.shopId || null);
+              } catch {
+                setSelectedShopId(null);
+              }
+              if (role === 'user') setPage('stores');
             }}
           />
         </Suspense>

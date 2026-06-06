@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal } from 'lucide-react';
-import { getDbWatches, saveDbWatch, getMyShops, resolveScopeShopIds } from '../../utils/mockData';
+import { Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal, Upload, X } from 'lucide-react';
+import { watchApi, uploadApi, ApiError } from '../../api';
+import type { Watch } from '../../api';
+import { useSession } from '../../auth/session';
+import { toast } from '../../store/useToast';
 
 interface ShopAddProductProps {
   editWatchId?: string | null;
   onSuccess: () => void;
   onCancel: () => void;
-  shopScope: string;
 }
 
-export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopScope }: ShopAddProductProps) {
+export default function ShopAddProduct({ editWatchId, onSuccess, onCancel }: ShopAddProductProps) {
+  const user = useSession((s) => s.user);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [myShops] = useState(() => getMyShops()); // stores this owner may post to
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [form, setForm] = useState({
     id: '',
     name: '',
     brand: '',
-    shopId: resolveScopeShopIds(shopScope)[0] || '',
     price: 15000000,
     originalPrice: 18000000,
     description: '',
@@ -37,7 +42,7 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
       'Chống nước': '100 m',
       'Bảo hành': '2 năm chính hãng'
     },
-    // AR Calibration values
+    // AR Calibration values (live preview only — not persisted by backend)
     arScale: 1.0,
     arPositionY: 0,
     arPositionX: 0,
@@ -47,47 +52,44 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
   useEffect(() => {
     if (editWatchId) {
       setIsEditMode(true);
-      const list = getDbWatches();
-      const found = list.find((w) => w.id === editWatchId);
-      if (found) {
-        setForm({
-          id: found.id,
-          name: found.name,
-          brand: found.brand,
-          price: found.price || 15000000,
-          originalPrice: found.originalPrice || 18000000,
-          description: found.description || '',
-          shopId: found.shopId || resolveScopeShopIds(shopScope)[0] || '',
-          model: found.model || '',
-          image: found.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=900',
-          gallery: found.gallery || [],
-          hasAR: found.hasAR ?? !!found.model,
-          metal: found.metal || '#cfd3d8',
-          dial: found.dial || '#0b2a4a',
-          accent: found.accent || '#B8924A',
-          specs: {
-            'Đường kính mặt': found.specs?.['Đường kính mặt'] || '41 mm',
-            'Độ dày vỏ': found.specs?.['Độ dày vỏ'] || '12 mm',
-            'Chất liệu vỏ': found.specs?.['Chất liệu vỏ'] || 'Thép không gỉ 316L',
-            'Chất liệu dây': found.specs?.['Chất liệu dây'] || 'Dây da cao cấp',
-            'Chất liệu kính': found.specs?.['Chất liệu kính'] || 'Sapphire chống xước',
-            'Bộ máy': found.specs?.['Bộ máy'] || 'Automatic (Thụy Sĩ)',
-            'Chống nước': found.specs?.['Chống nước'] || '100 m',
-            'Bảo hành': found.specs?.['Bảo hành'] || '2 năm chính hãng'
-          },
-          arScale: found.arConfig?.arScale || 1.0,
-          arPositionY: found.arConfig?.arPositionY || 0,
-          arPositionX: found.arConfig?.arPositionX || 0,
-          arRotationOffset: found.arConfig?.arRotationOffset || 0
-        });
-      }
+      let cancelled = false;
+      setLoading(true);
+      watchApi.get(editWatchId)
+        .then((found) => {
+          if (cancelled || !found) return;
+          setForm((prev) => ({
+            ...prev,
+            id: found.id,
+            name: found.name,
+            brand: found.brand,
+            price: found.price || 15000000,
+            originalPrice: found.originalPrice || 18000000,
+            description: found.description || '',
+            model: found.model || '',
+            image: found.image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=900',
+            gallery: found.gallery || [],
+            hasAR: found.hasAR ?? !!found.model,
+            metal: found.metal || '#cfd3d8',
+            dial: found.dial || '#0b2a4a',
+            accent: found.accent || '#B8924A',
+            specs: {
+              'Đường kính mặt': found.specs?.['Đường kính mặt'] || '41 mm',
+              'Độ dày vỏ': found.specs?.['Độ dày vỏ'] || '12 mm',
+              'Chất liệu vỏ': found.specs?.['Chất liệu vỏ'] || 'Thép không gỉ 316L',
+              'Chất liệu dây': found.specs?.['Chất liệu dây'] || 'Dây da cao cấp',
+              'Chất liệu kính': found.specs?.['Chất liệu kính'] || 'Sapphire chống xước',
+              'Bộ máy': found.specs?.['Bộ máy'] || 'Automatic (Thụy Sĩ)',
+              'Chống nước': found.specs?.['Chống nước'] || '100 m',
+              'Bảo hành': found.specs?.['Bảo hành'] || '2 năm chính hãng'
+            }
+          }));
+        })
+        .catch(() => { /* ignore — keep defaults */ })
+        .finally(() => { if (!cancelled) setLoading(false); });
+      return () => { cancelled = true; };
     } else {
       setIsEditMode(false);
-      // Create random ID for new watch
-      setForm((prev) => ({
-        ...prev,
-        id: `watch-${Date.now()}`
-      }));
+      setForm((prev) => ({ ...prev, id: '' }));
     }
   }, [editWatchId]);
 
@@ -101,44 +103,88 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleUploadMainImage = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const url = await uploadApi.image(file, 'watches');
+      setForm((prev) => ({ ...prev, image: url }));
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleUploadGallery = async (file: File) => {
+    setUploadingGallery(true);
+    try {
+      const url = await uploadApi.image(file, 'watches');
+      setForm((prev) => ({ ...prev, gallery: [...prev.gallery, url] }));
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  const handleRemoveGallery = (idx: number) => {
+    setForm((prev) => ({ ...prev, gallery: prev.gallery.filter((_, i) => i !== idx) }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.brand) {
-      alert('Vui lòng nhập Tên và Hãng sản xuất');
+      toast.error('Vui lòng nhập Tên và Hãng sản xuất');
+      return;
+    }
+    if (!user?.shopId) {
+      toast.error('Không xác định được cửa hàng của bạn');
       return;
     }
 
-    saveDbWatch({
-      id: form.id,
+    const payload: Partial<Watch> = {
       name: form.name,
       brand: form.brand,
       price: Number(form.price),
       originalPrice: Number(form.originalPrice),
       description: form.description,
-      shopId: form.shopId,
+      shopId: user.shopId,
       model: form.hasAR ? form.model : '',
       image: form.image,
       gallery: form.gallery && form.gallery.length ? form.gallery : [form.image],
       hasAR: form.hasAR,
-      style: 'steel-sport',
       metal: form.metal,
       dial: form.dial,
       accent: form.accent,
       specs: form.specs,
       rating: 4.8,
       reviewCount: 1,
-      status: 'active',
-      arConfig: {
-        arScale: Number(form.arScale),
-        arPositionY: Number(form.arPositionY),
-        arPositionX: Number(form.arPositionX),
-        arRotationOffset: Number(form.arRotationOffset)
-      }
-    });
+      status: 'active'
+    };
 
-    alert(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Đăng bán sản phẩm mới thành công!');
-    onSuccess();
+    setSaving(true);
+    try {
+      if (form.id) {
+        await watchApi.update(form.id, payload);
+      } else {
+        await watchApi.create(payload);
+      }
+      toast.success(isEditMode ? 'Cập nhật sản phẩm thành công!' : 'Đăng bán sản phẩm mới thành công!');
+      onSuccess();
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
@@ -199,36 +245,63 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
               />
             </div>
 
-            {/* Product photo URL */}
-            <div>
-              <label className="block text-gray-500 font-bold mb-1">Ảnh sản phẩm (URL) *</label>
+            {/* Product photo — upload or URL */}
+            <div className="sm:col-span-2">
+              <label className="block text-gray-500 font-bold mb-1">Ảnh sản phẩm *</label>
               <div className="flex gap-3 items-center">
                 <div className="h-12 w-12 rounded-lg overflow-hidden border border-[#e5e0d8] bg-[#F6F4EF] flex-shrink-0">
                   {form.image ? <img src={form.image} alt="" className="w-full h-full object-cover" /> : null}
                 </div>
+                <label className={`flex items-center gap-1.5 cursor-pointer border border-[#e5e0d8] bg-gray-50 hover:bg-gray-100 px-3 py-2.5 rounded-xl font-semibold text-gray-600 transition whitespace-nowrap ${uploadingImage ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Upload className="h-3.5 w-3.5 text-[#B8924A]" />
+                  {uploadingImage ? 'Đang tải lên…' : 'Tải ảnh lên'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingImage}
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadMainImage(f); e.target.value = ''; }}
+                  />
+                </label>
                 <input
                   type="text"
                   value={form.image}
                   onChange={(e) => setForm({ ...form, image: e.target.value })}
-                  placeholder="https://...jpg"
+                  placeholder="hoặc dán URL https://...jpg"
                   className="flex-1 rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition bg-gray-50 text-gray-600 font-mono text-[11px]"
                 />
               </div>
             </div>
 
-            {/* Store selector — only the owner's own stores */}
-            <div>
-              <label className="block text-gray-500 font-bold mb-1">Đăng vào cửa hàng *</label>
-              <select
-                value={form.shopId}
-                onChange={(e) => setForm({ ...form, shopId: e.target.value })}
-                className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition bg-white"
-              >
-                {myShops.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} · {s.address}</option>
+            {/* Gallery — upload multiple, or remove */}
+            <div className="sm:col-span-2">
+              <label className="block text-gray-500 font-bold mb-1">Thư viện ảnh (Gallery)</label>
+              <div className="flex flex-wrap gap-2 items-center">
+                {form.gallery.map((url, idx) => (
+                  <div key={idx} className="relative h-12 w-12 rounded-lg overflow-hidden border border-[#e5e0d8] bg-[#F6F4EF] flex-shrink-0 group">
+                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGallery(idx)}
+                      className="absolute top-0 right-0 bg-black/60 text-white rounded-bl p-0.5 hover:bg-red-600 transition"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
                 ))}
-              </select>
-              <p className="text-[10px] text-gray-400 mt-1">Bạn chỉ đăng được vào {myShops.length} cửa hàng do mình quản lý.</p>
+                <label className={`flex items-center gap-1.5 cursor-pointer border border-dashed border-[#e5e0d8] bg-gray-50 hover:bg-gray-100 px-3 py-2.5 rounded-xl font-semibold text-gray-600 transition whitespace-nowrap ${uploadingGallery ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <Upload className="h-3.5 w-3.5 text-[#B8924A]" />
+                  {uploadingGallery ? 'Đang tải lên…' : 'Thêm ảnh'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploadingGallery}
+                    className="hidden"
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadGallery(f); e.target.value = ''; }}
+                  />
+                </label>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1">Nếu để trống, ảnh sản phẩm chính sẽ được dùng làm gallery.</p>
             </div>
 
             {/* Product type: Thường (2D) vs AR (under development) */}
@@ -380,9 +453,10 @@ export default function ShopAddProduct({ editWatchId, onSuccess, onCancel, shopS
           <div className="pt-4 flex gap-2 justify-end border-t border-[#e5e0d8]">
             <button
               type="submit"
-              className="bg-[#17140F] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#B8924A]/30 active:scale-95"
+              disabled={saving || uploadingImage || uploadingGallery}
+              className="bg-[#17140F] text-white py-3 px-8 rounded-full font-bold text-xs hover:bg-black transition shadow border border-[#B8924A]/30 active:scale-95 disabled:opacity-50"
             >
-              {isEditMode ? 'Lưu Thay Đổi & Xuất Bản' : 'Đăng Bán & Duyệt Sản Phẩm'}
+              {saving ? 'Đang lưu…' : (isEditMode ? 'Lưu Thay Đổi & Xuất Bản' : 'Đăng Bán & Duyệt Sản Phẩm')}
             </button>
             <button
               type="button"

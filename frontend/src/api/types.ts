@@ -56,6 +56,8 @@ export interface Shop {
   hours?: string;
   manager?: string;
   image?: string;
+  /** Google Maps link (share/place URL) for directions to the shop. */
+  mapUrl?: string;
   services?: string[];
   rating?: number;
   reviewCount?: number;

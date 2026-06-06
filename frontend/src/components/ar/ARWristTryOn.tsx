@@ -13,8 +13,20 @@ import { CameraView } from '../CameraView';
 import { WatchSelector } from '../WatchSelector';
 import { useARStore } from '../../store/useARStore';
 import { captureComposite, shareOrDownload } from '../../ar/capture';
-import { addToCloset } from '../../utils/mockData';
+import { closetApi, uploadApi, ApiError } from '../../api';
+import { useSession } from '../../auth/session';
+import { useLoginPrompt } from '../../auth/loginPrompt';
 import '../../ar/ar-tryon.css';
+
+/** Read a Blob as a base64 data URL (the format uploadApi.dataUrl expects). */
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
 
 interface ARWristTryOnProps {
   watchName?: string;
@@ -212,6 +224,8 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [capturedUrl, setCapturedUrl] = useState<string | null>(null);
   const [savedToCloset, setSavedToCloset] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Skip the intro: go straight to requesting the camera when the overlay opens.
   useEffect(() => {
@@ -251,25 +265,29 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
     }
   };
 
-  const handleSaveToCloset = () => {
-    if (!capturedUrl || savedToCloset) return;
-    
-    // Convert Blob to dynamic persistent Base64 DataURL or mock URL
-    // For localstorage capacity in browser, base64 for full camera canvas might exceed 5MB quota,
-    // so we can use a elegant mock placeholder or a high-quality mockup from Unsplash that corresponds to the watch model,
-    // which looks absolutely premium and guarantees storage safety!
-    const mockWatchImages: Record<string, string> = {
-      chrono: 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&q=80&w=600',
-      wrist: 'https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?auto=format&fit=crop&q=80&w=600',
-      classic: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&q=80&w=600',
-      gshock: 'https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?auto=format&fit=crop&q=80&w=600',
-      smart: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&q=80&w=600'
-    };
+  const handleSaveToCloset = async () => {
+    if (!capturedBlob || savedToCloset || saving) return;
 
-    const savedImage = mockWatchImages[selectedWatchId] || mockWatchImages['chrono'];
-    addToCloset(selectedWatchId, savedImage);
-    setSavedToCloset(true);
-    alert('Đã lưu bức ảnh thử đồng hồ vào Tủ Đồ Ảo thành công!');
+    // Saving to the closet requires a signed-in customer.
+    if (!useSession.getState().user) {
+      setSaveError('Bạn cần đăng nhập để lưu ảnh vào tủ đồ ảo.');
+      useLoginPrompt.getState().show();
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    try {
+      // Upload the captured snapshot to MinIO, then save its URL to the closet.
+      const dataUrl = await blobToDataUrl(capturedBlob);
+      const url = await uploadApi.dataUrl(dataUrl, 'ar');
+      await closetApi.create(watchId ?? selectedWatchId, url);
+      setSavedToCloset(true);
+    } catch (err) {
+      setSaveError(err instanceof ApiError ? err.message : 'Lưu ảnh thất bại');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDownload = () => {
@@ -285,6 +303,8 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
     setCapturedBlob(null);
     setCapturedUrl(null);
     setSavedToCloset(false);
+    setSaving(false);
+    setSaveError(null);
   };
 
   return (
@@ -349,10 +369,10 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
               {/* Save */}
               <button
                 onClick={handleSaveToCloset}
-                disabled={savedToCloset}
+                disabled={savedToCloset || saving}
                 className={`py-3.5 rounded-xl transition shadow flex items-center justify-center gap-1.5 ${
-                  savedToCloset 
-                    ? 'bg-green-600/25 border border-green-500/20 text-green-400' 
+                  savedToCloset
+                    ? 'bg-green-600/25 border border-green-500/20 text-green-400'
                     : 'bg-[#B8924A] text-white hover:bg-[#a6803f] active:scale-95'
                 }`}
               >
@@ -361,6 +381,8 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                     <Check className="h-4 w-4" />
                     <span>Đã lưu tủ đồ</span>
                   </>
+                ) : saving ? (
+                  <span>Đang lưu...</span>
                 ) : (
                   <>
                     <Watch className="h-4 w-4" />
@@ -378,6 +400,10 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
                 <span>Tải ảnh xuống</span>
               </button>
             </div>
+
+            {saveError && (
+              <p className="text-center text-[11px] font-medium text-red-400">{saveError}</p>
+            )}
 
             {/* Direct Shop Contact */}
             <button

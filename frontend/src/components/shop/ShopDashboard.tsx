@@ -1,22 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CalendarCheck, Eye, Sparkles, Mail, CheckCircle2, Star } from 'lucide-react';
-import { getLeadsForShopIds, getWatchesForShopIds, resolveScopeShopIds, Lead } from '../../utils/mockData';
+import { watchApi, leadApi } from '../../api';
+import type { Lead, Watch } from '../../api';
+import { useSession } from '../../auth/session';
 
 interface ShopDashboardProps {
-  shopScope: string;
   onNavigateToLeads: () => void;
   onNavigateToProducts: () => void;
 }
 
-export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts, shopScope }: ShopDashboardProps) {
+export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts }: ShopDashboardProps) {
+  const user = useSession((s) => s.user);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [watches, setWatches] = useState<any[]>([]);
+  const [watches, setWatches] = useState<Watch[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const ids = resolveScopeShopIds(shopScope);
-    setLeads(getLeadsForShopIds(ids));
-    setWatches(getWatchesForShopIds(ids));
-  }, [shopScope]);
+    if (!user?.shopId) return;
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([watchApi.list(user.shopId), leadApi.list()])
+      .then(([w, l]) => {
+        if (cancelled) return;
+        setWatches(w);
+        setLeads(l);
+      })
+      .catch(() => { /* ignore — show empty state */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user?.shopId]);
 
   const formatVND = (n: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -34,6 +46,14 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
 
   const urgentLeads = leads.filter((l) => l.status === 'new').slice(0, 3);
   const topWatches = watches.slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="bg-[#F6F4EF] min-h-screen w-full flex items-center justify-center text-sm text-[#8A8170]">
+        Đang tải…
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
@@ -213,7 +233,7 @@ export default function ShopDashboard({ onNavigateToLeads, onNavigateToProducts,
                       Hoạt động
                     </span>
                   </td>
-                  <td className="py-3 text-right font-bold text-gray-700">+{Math.floor(w.reviewCount * 4.8)}</td>
+                  <td className="py-3 text-right font-bold text-gray-700">+{Math.floor((w.reviewCount ?? 0) * 4.8)}</td>
                 </tr>
               ))}
             </tbody>
