@@ -92,6 +92,7 @@ export interface Lead {
   hasTriedOn: boolean;
   triedOnImage?: string;
   userId?: string | null;
+  createdAt?: number;
 }
 
 export interface ClosetItem {
@@ -117,4 +118,31 @@ export interface Feedback {
   name: string;
   contact?: string;
   timestamp?: string;
+}
+
+export type SubscriptionPlanCode = 'TRIAL' | 'ESSENTIAL' | 'PREMIUM';
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED';
+
+export interface SubscriptionPlan {
+  code: SubscriptionPlanCode;
+  name: string;
+  description: string;
+  price: number;
+  durationDays: number;
+  maxShops: number;
+  maxProducts: number;
+  recommended: boolean;
+  features: string[];
+}
+
+export interface ShopSubscription {
+  id: string;
+  plan: SubscriptionPlanCode;
+  status: SubscriptionStatus;
+  registeredAt: number;
+  expiresAt: number;
+  daysRemaining: number;
+  autoRenew: boolean;
+  currentPlan: SubscriptionPlan;
+  plans: SubscriptionPlan[];
 }

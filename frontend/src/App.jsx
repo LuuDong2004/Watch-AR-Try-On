@@ -25,9 +25,9 @@ import UserAccount from './components/user/UserAccount';
 import ShopSidebar from './components/shop/ShopSidebar';
 import ShopDashboard from './components/shop/ShopDashboard';
 import ShopProducts from './components/shop/ShopProducts';
-import ShopAddProduct from './components/shop/ShopAddProduct';
 import ShopLeads from './components/shop/ShopLeads';
 import ShopAnalytics from './components/shop/ShopAnalytics';
+import ShopPlanManagement from './components/shop/ShopPlanManagement';
 import ShopSettings from './components/shop/ShopSettings';
 
 // Admin (System) Components
@@ -57,11 +57,12 @@ export default function App() {
 
   // Persist the active tab + selections so a page reload restores where the
   // user was (instead of snapping back to the role's default landing page).
-  const [page, setPage] = useState(() => sessionStorage.getItem('tw_page') || 'home');
+  const [page, setPage] = useState(() => {
+    const savedPage = sessionStorage.getItem('tw_page') || 'home';
+    return savedPage === 'add-product' ? 'products' : savedPage;
+  });
   const [selectedWatchId, setSelectedWatchId] = useState(() => sessionStorage.getItem('tw_watch') || 'chrono');
   const [selectedShopId, setSelectedShopId] = useState(() => sessionStorage.getItem('tw_shop') || null);
-  const [editWatchId, setEditWatchId] = useState(null);
-  const [addProductShopId, setAddProductShopId] = useState(null);
   const [mode, setMode] = useState('none');
   // Shop/admin users can preview the customer storefront ("view as user").
   const [storefront, setStorefront] = useState(() => sessionStorage.getItem('tw_storefront') === '1');
@@ -111,12 +112,10 @@ export default function App() {
     const loggedOut = was === 'authed' && status === 'anon';
     if (loggedIn) {
       setPage(role === 'user' ? 'home' : 'dashboard');
-      setEditWatchId(null);
       setSelectedShopId(null);
       setStorefront(false);
     } else if (loggedOut) {
       setPage('home');
-      setEditWatchId(null);
       setSelectedShopId(null);
       setStorefront(false);
     }
@@ -249,25 +248,13 @@ export default function App() {
           />
         );
       case 'products':
-        return (
-          <ShopProducts
-            onEditProduct={(id) => { setEditWatchId(id); setAddProductShopId(null); setPage('add-product'); }}
-            onNavigateToAddProduct={(shopId) => { setEditWatchId(null); setAddProductShopId(shopId); setPage('add-product'); }}
-          />
-        );
-      case 'add-product':
-        return (
-          <ShopAddProduct
-            editWatchId={editWatchId}
-            shopId={addProductShopId}
-            onSuccess={() => { setEditWatchId(null); setPage('products'); triggerDbUpdate(); }}
-            onCancel={() => { setEditWatchId(null); setPage('products'); }}
-          />
-        );
+        return <ShopProducts />;
       case 'leads':
         return <ShopLeads onStatusUpdated={triggerDbUpdate} />;
       case 'analytics':
         return <ShopAnalytics />;
+      case 'plans':
+        return <ShopPlanManagement />;
       case 'settings':
         return <ShopSettings />;
       default:
@@ -324,17 +311,6 @@ export default function App() {
     <div className="h-full bg-[#F6F4EF] text-[#17140F] select-none font-sans overflow-x-hidden">
       {(role === 'user' || storefront) && (
         <div className="flex flex-col min-h-screen">
-          {storefront && role !== 'user' && (
-            <div className="flex items-center justify-center gap-3 bg-[#17140F] px-4 py-2 text-[11px] font-semibold text-white">
-              <span className="text-[#B8924A]">Đang xem giao diện khách hàng</span>
-              <button
-                onClick={exitStorefront}
-                className="rounded-lg border border-white/30 px-3 py-1 font-bold transition hover:bg-white/10"
-              >
-                ← Quay lại trang quản lý
-              </button>
-            </div>
-          )}
           <UserHeader
             currentPage={page}
             onChangePage={(p) => { setSelectedShopId(null); setPage(p); }}

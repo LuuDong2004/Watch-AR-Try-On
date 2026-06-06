@@ -239,26 +239,63 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
               </div>
 
               {shopWatches.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-5">
+                <div className="grid sm:grid-cols-2 gap-6">
                   {shopWatches.map((w) => (
                     <div
                       key={w.id}
                       onClick={() => onSelectWatch(w.id)}
-                      className="group bg-white rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer flex flex-col"
+                      className="group bg-white rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
                     >
-                      <div className="relative h-44 overflow-hidden">
-                        <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                        {w.hasAR && <span className="absolute top-2 right-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1"><Sparkles className="h-4 w-4" /> AR</span>}
+                      <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-56 overflow-hidden border-b border-[#e5e0d8]">
+                        <img
+                          src={w.image}
+                          alt={w.name}
+                          loading="lazy"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+
+                        {w.hasAR ? (
+                          <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
+                            <Sparkles className="h-4 w-4" /> AR Try-On
+                          </span>
+                        ) : (
+                          <span className="absolute top-3 right-3 bg-white/85 backdrop-blur text-[#17140F] text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase">
+                            Ảnh 2D
+                          </span>
+                        )}
+
+                        <span className="absolute bottom-2 left-3 text-[10px] uppercase tracking-[0.15em] text-white/90 font-bold drop-shadow">
+                          {w.brand}
+                        </span>
                       </div>
-                      <div className="p-4 flex flex-col flex-1">
-                        <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
-                        <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#B8924A] transition">{w.name}</h3>
-                        <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
-                        <div className="mt-auto space-y-2">
+
+                      <div className="p-4 flex-1 flex flex-col">
+                        <h3 className="font-serif text-[#17140F] font-bold group-hover:text-[#B8924A] transition text-base mb-1 line-clamp-1">
+                          {w.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mb-3">
+                          <span className="text-[#B8924A]"><Star className="h-3.5 w-3.5 fill-current" /></span>
+                          <span className="text-xs font-bold">{w.rating}</span>
+                          <span className="text-xs text-gray-400">({w.reviewCount} đánh giá)</span>
+                        </div>
+
+                        <div className="mt-auto flex items-baseline gap-2 mb-4">
+                          <span className="text-[#17140F] font-bold text-sm sm:text-base">
+                            {formatVND(w.price)}
+                          </span>
+                          {w.originalPrice && (
+                            <span className="text-xs text-gray-400 line-through">
+                              {formatVND(w.originalPrice)}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
                           {w.hasAR ? (
-                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
+                            <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#B8924A]/30"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                           ) : (
-                            <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#17140F]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2.5 rounded-full hover:bg-[#F6F4EF] transition flex items-center justify-center gap-1.5 shadow-sm border border-[#17140F]/20">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
                           )}
                           <button onClick={(e) => { e.stopPropagation(); openContact(w.id); }} className="w-full border border-[#B8924A] text-[#B8924A] text-xs font-semibold py-2 rounded-full hover:bg-[#B8924A]/5 transition inline-flex items-center justify-center gap-1.5"><Mail className="h-3.5 w-3.5" /> Yêu cầu tư vấn</button>
                         </div>

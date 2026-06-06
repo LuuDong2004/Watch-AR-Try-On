@@ -12,6 +12,8 @@ import type {
   Lead,
   Role,
   Shop,
+  ShopSubscription,
+  SubscriptionPlanCode,
   User,
   Watch,
 } from './types';
@@ -108,6 +110,7 @@ function toLead(d: any): Lead {
     hasTriedOn: !!d.hasTriedOn,
     triedOnImage: d.triedOnImage,
     userId: d.userId ?? null,
+    createdAt: d.createdAt,
   };
 }
 
@@ -380,6 +383,17 @@ export const feedbackApi = {
   },
   async list(): Promise<Feedback[]> {
     return (await http.get<any[]>('/api/feedback')).map(toFeedback);
+  },
+};
+
+// --- Shop subscription ------------------------------------------------------
+
+export const subscriptionApi = {
+  async get(): Promise<ShopSubscription> {
+    return http.get<ShopSubscription>('/api/subscription');
+  },
+  async upgrade(plan: SubscriptionPlanCode): Promise<ShopSubscription> {
+    return http.post<ShopSubscription>('/api/subscription/upgrade', { plan });
   },
 };
 

@@ -7,6 +7,7 @@ import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Set;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class StorageService {
         this.cfg = props.storage();
     }
 
-    /** Uploads a multipart image into {@code folder/} and returns its public URL. */
+    /** Uploads a multipart image into {@code folder/yyyy/MM/dd/} and returns its public URL. */
     public String store(MultipartFile file, String folder) {
         requireEnabled();
         if (file == null || file.isEmpty()) {
@@ -114,14 +115,19 @@ public class StorageService {
      * Ignores URLs that don't point at our bucket (e.g. external Unsplash links).
      */
     public void deleteByUrl(String url) {
-        if (!cfg.enabled() || url == null) {
+        if (!isStoredUrl(url)) {
             return;
         }
         String prefix = publicBucketPrefix();
-        if (!url.startsWith(prefix)) {
-            return;
-        }
         String object = url.substring(prefix.length());
+        int queryIndex = object.indexOf('?');
+        if (queryIndex >= 0) {
+            object = object.substring(0, queryIndex);
+        }
+        int hashIndex = object.indexOf('#');
+        if (hashIndex >= 0) {
+            object = object.substring(0, hashIndex);
+        }
         try {
             client.removeObject(RemoveObjectArgs.builder()
                     .bucket(cfg.bucket())
@@ -132,6 +138,11 @@ public class StorageService {
         }
     }
 
+    /** Returns whether a URL points to an object managed by this app's MinIO bucket. */
+    public boolean isStoredUrl(String url) {
+        return cfg.enabled() && url != null && url.startsWith(publicBucketPrefix());
+    }
+
     private void requireEnabled() {
         if (!cfg.enabled()) {
             throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
@@ -140,8 +151,26 @@ public class StorageService {
     }
 
     private static String objectKey(String folder, String ext) {
-        String safeFolder = (folder == null || folder.isBlank()) ? "misc" : folder.replaceAll("[^a-zA-Z0-9/_-]", "");
-        return safeFolder + "/" + UUID.randomUUID().toString().replace("-", "") + ext;
+        LocalDate today = LocalDate.now();
+        return "%s/%04d/%02d/%02d/%s%s".formatted(
+                normalizeFolder(folder),
+                today.getYear(),
+                today.getMonthValue(),
+                today.getDayOfMonth(),
+                UUID.randomUUID().toString().replace("-", ""),
+                ext);
+    }
+
+    private static String normalizeFolder(String folder) {
+        if (folder == null || folder.isBlank()) {
+            return "misc";
+        }
+        String safeFolder = folder
+                .replace('\\', '/')
+                .replaceAll("[^a-zA-Z0-9/_-]", "")
+                .replaceAll("/+", "/")
+                .replaceAll("^/|/$", "");
+        return safeFolder.isBlank() ? "misc" : safeFolder;
     }
 
     private static String extensionFor(String contentType) {

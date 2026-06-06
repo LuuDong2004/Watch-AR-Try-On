@@ -4,12 +4,16 @@ import com.truewrist.backend.domain.AuthProvider;
 import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Role;
 import com.truewrist.backend.domain.Shop;
+import com.truewrist.backend.domain.ShopSubscription;
+import com.truewrist.backend.domain.SubscriptionPlan;
 import com.truewrist.backend.domain.User;
 import com.truewrist.backend.domain.UserStatus;
 import com.truewrist.backend.domain.Watch;
 import com.truewrist.backend.repository.ShopRepository;
+import com.truewrist.backend.repository.ShopSubscriptionRepository;
 import com.truewrist.backend.repository.UserRepository;
 import com.truewrist.backend.repository.WatchRepository;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +40,7 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final ShopRepository shopRepository;
     private final WatchRepository watchRepository;
+    private final ShopSubscriptionRepository subscriptionRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(
@@ -43,11 +48,13 @@ public class DataSeeder implements CommandLineRunner {
             UserRepository userRepository,
             ShopRepository shopRepository,
             WatchRepository watchRepository,
+            ShopSubscriptionRepository subscriptionRepository,
             PasswordEncoder passwordEncoder) {
         this.props = props;
         this.userRepository = userRepository;
         this.shopRepository = shopRepository;
         this.watchRepository = watchRepository;
+        this.subscriptionRepository = subscriptionRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -55,6 +62,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         // Idempotent migration: link shops created before ownerId existed.
         backfillShopOwnership();
+        ensureAventusMonthlySubscription();
 
         if (!props.seed().enabled()) {
             return;
@@ -68,6 +76,7 @@ public class DataSeeder implements CommandLineRunner {
         seedShops();
         seedUsers();
         seedWatches();
+        ensureAventusMonthlySubscription();
 
         log.info("Seed complete: {} users, {} shops, {} watches.",
                 userRepository.count(), shopRepository.count(), watchRepository.count());
@@ -104,6 +113,30 @@ public class DataSeeder implements CommandLineRunner {
         if (changed[0]) {
             log.info("Backfilled shop ownerId for legacy shops.");
         }
+    }
+
+    /**
+     * The seeded seller account represents the paid monthly package in demos.
+     * Keep it on the 30-day Essential plan instead of letting /api/subscription
+     * lazily create a trial subscription.
+     */
+    private void ensureAventusMonthlySubscription() {
+        userRepository.findById("u-shop-aventus").ifPresent(user -> {
+            long now = System.currentTimeMillis();
+            long expiresAt = now + Duration.ofDays(SubscriptionPlan.ESSENTIAL.getDurationDays()).toMillis();
+            ShopSubscription subscription = subscriptionRepository.findByUserId(user.getId())
+                    .orElseGet(() -> ShopSubscription.builder()
+                            .id("sub-aventus-monthly")
+                            .userId(user.getId())
+                            .build());
+
+            subscription.setPlan(SubscriptionPlan.ESSENTIAL);
+            subscription.setRegisteredAt(now);
+            subscription.setExpiresAt(expiresAt);
+            subscription.setUpdatedAt(now);
+            subscription.setAutoRenew(false);
+            subscriptionRepository.save(subscription);
+        });
     }
 
     private void seedShops() {
