@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal, Upload, X, Store } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, FileText, Image as ImageIcon, Check, Box, Construction, Settings2, Eye, Lightbulb, SlidersHorizontal, Upload, X, Store, Star, ArrowRight } from 'lucide-react';
 import { watchApi, shopApi, uploadApi, ApiError } from '../../api';
 import type { Watch, Shop } from '../../api';
 import { useSession } from '../../auth/session';
@@ -844,15 +844,31 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
               <h3 className="font-display text-sm font-bold border-b border-[#e5e0d8] pb-2 text-[#17140F] mb-4 flex items-center gap-2">
                 <Eye className="h-4 w-4 text-[#B8924A]" /> Xem trước thẻ sản phẩm
               </h3>
-              <div className="rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm bg-[#F6F4EF] mb-5">
-                <div className="h-48 bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] overflow-hidden">
-                  {form.image && <img src={form.image} alt="" className="w-full h-full object-cover" />}
+              <div className="mx-auto mb-5 flex w-full max-w-[320px] cursor-default flex-col overflow-hidden rounded-2xl border border-[#e5e0d8] bg-white shadow-sm">
+                <div className="relative h-44 overflow-hidden border-b border-[#e5e0d8] bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8]">
+                  {form.image && <img src={form.image} alt="" className="h-full w-full object-cover" />}
+                  {!form.image && (
+                    <div className="flex h-full items-center justify-center text-gray-300">
+                      <ImageIcon className="h-8 w-8" />
+                    </div>
+                  )}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+                  <span className="absolute right-3 top-3 rounded-full bg-white/85 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-[#17140F] shadow-md backdrop-blur">
+                    Anh 2D
+                  </span>
+                  <span className="absolute bottom-2 left-3 max-w-[85%] truncate text-[10px] font-bold uppercase tracking-[0.15em] text-white/90 drop-shadow">
+                    {form.brand || 'Thuong hieu'}
+                  </span>
                 </div>
-                <div className="p-4">
-                  <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{form.brand || 'Thương hiệu'}</p>
-                  <h4 className="font-display font-bold text-[#17140F] mt-0.5 mb-1">{form.name || 'Tên sản phẩm'}</h4>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-bold text-[#17140F]">
+                <div className="flex flex-1 flex-col p-4">
+                  <h4 className="mb-1 line-clamp-1 font-serif text-base font-bold text-[#17140F]">{form.name || 'Tên sản phẩm'}</h4>
+                  <div className="mb-3 flex items-center gap-1">
+                    <span className="text-[#B8924A]"><Star className="h-3.5 w-3.5 fill-current" /></span>
+                    <span className="text-xs font-bold">4.8</span>
+                    <span className="text-xs text-gray-400">(1 đánh giá)</span>
+                  </div>
+                  <div className="mb-4 mt-auto flex items-baseline gap-2">
+                    <span className="text-sm font-bold text-[#17140F] sm:text-base">
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(form.price) || 0)}
                     </span>
                     {Number(form.originalPrice) > Number(form.price) && (
@@ -861,7 +877,13 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                       </span>
                     )}
                   </div>
-                  <span className="inline-block mt-3 bg-white text-[#17140F] text-[9px] font-bold px-2 py-0.5 rounded-full border border-[#17140F]/15 uppercase tracking-widest">Ảnh 2D</span>
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-full border border-[#17140F]/20 bg-white py-2.5 text-xs font-semibold text-[#17140F] shadow-sm"
+                  >
+                    <span>Xem Chi Tiết</span> <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
               <div className="bg-[#F6F4EF] p-3.5 rounded-xl border border-[#e5e0d8] text-[10px] text-gray-500 leading-relaxed flex gap-2">

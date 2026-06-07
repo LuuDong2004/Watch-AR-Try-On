@@ -12,6 +12,7 @@ import ProductStory from './detail/ProductStory';
 import SimilarWatches from './detail/SimilarWatches';
 import CustomerReviews from './detail/CustomerReviews';
 import DetailModal from './detail/DetailModal';
+import ProductContactModal from './detail/ProductContactModal';
 
 interface UserDetailProps {
   watchId: string;
@@ -40,6 +41,7 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
   const [shop, setShop] = useState<Shop | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [info, setInfo] = useState<null | 'specs' | 'story'>(null);
+  const [contactOpen, setContactOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -117,6 +119,7 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
               isFavorited={isFavorited}
               onToggleFavorite={handleFavorite}
               onOpenAR={() => onOpenAR(watch.id)}
+              onOpenContact={() => setContactOpen(true)}
               onOpenShop={onSelectShop}
             />
           </div>
@@ -187,6 +190,13 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
       >
         <ProductStory watch={watch} />
       </DetailModal>
+
+      <ProductContactModal
+        open={contactOpen}
+        watch={watch}
+        shop={shop}
+        onClose={() => setContactOpen(false)}
+      />
     </div>
   );
 }

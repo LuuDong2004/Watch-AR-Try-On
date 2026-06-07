@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, ShieldCheck, Truck, Lock, Star, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, Clock, MapPin, Phone, ShieldCheck, Store, Truck, Lock, Star, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
 import { formatVND, discountPct, referenceNo } from './format';
 
 interface ProductSummaryProps {
@@ -8,6 +8,7 @@ interface ProductSummaryProps {
   isFavorited: boolean;
   onToggleFavorite: () => void;
   onOpenAR: () => void;
+  onOpenContact: () => void;
   onOpenShop?: (shopId: string) => void;
 }
 
@@ -24,6 +25,7 @@ export default function ProductSummary({
   isFavorited,
   onToggleFavorite,
   onOpenAR,
+  onOpenContact,
   onOpenShop,
 }: ProductSummaryProps) {
   const off = discountPct(watch);
@@ -109,7 +111,7 @@ export default function ProductSummary({
         {/* Contact + Save always share a single line */}
         <div className="flex gap-3">
           <button
-            onClick={goToShop}
+            onClick={onOpenContact}
             className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl py-3.5 text-sm font-bold transition active:scale-[0.99] ${
               watch.hasAR
                 ? 'border border-navy/20 text-navy hover:border-navy hover:bg-navy hover:text-white'
@@ -139,6 +141,55 @@ export default function ProductSummary({
           </button>
         </div>
       </div>
+
+      {shop && (
+        <div className="rounded-2xl border border-[#e9e3d8] bg-white p-4 shadow-luxe-sm">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-champagne/10 text-champagne">
+              <Store className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Bán bởi</p>
+              <button
+                type="button"
+                onClick={goToShop}
+                className="mt-0.5 line-clamp-1 text-left font-display text-sm font-bold text-navy transition hover:text-champagne"
+              >
+                {shop.name}
+              </button>
+              <div className="mt-2 space-y-1.5 text-[11px] font-medium leading-4 text-gray-500">
+                {shop.address && (
+                  <p className="flex gap-1.5">
+                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                    <span className="line-clamp-2">{shop.address}</span>
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {shop.phone && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Phone className="h-3.5 w-3.5 text-champagne" /> {shop.phone}
+                    </span>
+                  )}
+                  {shop.hours && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-champagne" /> {shop.hours}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {onOpenShop && (
+                <button
+                  type="button"
+                  onClick={goToShop}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-champagne transition hover:gap-1.5"
+                >
+                  Xem shop <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
