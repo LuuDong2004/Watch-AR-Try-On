@@ -7,7 +7,9 @@ import { useSession, uiRoleFor } from './auth/session';
 import { useLoginPrompt } from './auth/loginPrompt';
 import LoginScreen from './components/auth/LoginScreen';
 import ToastHost from './components/ToastHost';
+import AppErrorPage from './components/AppErrorPage.jsx';
 import { setToken, watchApi, favoriteApi, leadApi } from './api';
+import { normalizePath, parseAppRoute, routePathForState } from './utils/router.js';
 
 // User (Customer) Components
 import UserHeader from './components/user/UserHeader';
@@ -44,6 +46,7 @@ import AdminSettings from './components/admin/AdminSettings';
 const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'));
 
 export default function App() {
+  const initialRoute = useRef(parseAppRoute(window.location.pathname)).current;
   // Auth session — role is derived from the signed-in user (no RoleSwitcher).
   const user = useSession((s) => s.user);
   const status = useSession((s) => s.status);
@@ -57,15 +60,17 @@ export default function App() {
 
   // Persist the active tab + selections so a page reload restores where the
   // user was (instead of snapping back to the role's default landing page).
+  const [routeError, setRouteError] = useState(initialRoute.errorStatus || null);
   const [page, setPage] = useState(() => {
+    if (initialRoute.page) return initialRoute.page;
     const savedPage = sessionStorage.getItem('tw_page') || 'home';
     return savedPage === 'add-product' ? 'products' : savedPage;
   });
-  const [selectedWatchId, setSelectedWatchId] = useState(() => sessionStorage.getItem('tw_watch') || 'chrono');
-  const [selectedShopId, setSelectedShopId] = useState(() => sessionStorage.getItem('tw_shop') || null);
+  const [selectedWatchId, setSelectedWatchId] = useState(() => initialRoute.watchId || sessionStorage.getItem('tw_watch') || 'chrono');
+  const [selectedShopId, setSelectedShopId] = useState(() => initialRoute.shopId || sessionStorage.getItem('tw_shop') || null);
   const [mode, setMode] = useState('none');
   // Shop/admin users can preview the customer storefront ("view as user").
-  const [storefront, setStorefront] = useState(() => sessionStorage.getItem('tw_storefront') === '1');
+  const [storefront, setStorefront] = useState(() => initialRoute.area === 'user' || sessionStorage.getItem('tw_storefront') === '1');
 
   useEffect(() => { sessionStorage.setItem('tw_page', page); }, [page]);
   useEffect(() => { sessionStorage.setItem('tw_storefront', storefront ? '1' : '0'); }, [storefront]);
@@ -74,6 +79,31 @@ export default function App() {
     if (selectedShopId) sessionStorage.setItem('tw_shop', selectedShopId);
     else sessionStorage.removeItem('tw_shop');
   }, [selectedShopId]);
+
+  useEffect(() => {
+    const applyRoute = () => {
+      const route = parseAppRoute(window.location.pathname);
+      setRouteError(route.errorStatus || null);
+      if (route.errorStatus) return;
+
+      if (route.page) setPage(route.page);
+      if (route.watchId) setSelectedWatchId(route.watchId);
+      setSelectedShopId(route.shopId || null);
+      setStorefront(route.area === 'user');
+    };
+
+    window.addEventListener('popstate', applyRoute);
+    return () => window.removeEventListener('popstate', applyRoute);
+  }, []);
+
+  useEffect(() => {
+    if (routeError || status === 'loading') return;
+    const area = role === 'user' || storefront ? 'user' : role;
+    const nextPath = routePathForState({ area, page, watchId: selectedWatchId, shopId: selectedShopId });
+    if (normalizePath(window.location.pathname) !== nextPath) {
+      window.history.pushState({}, '', nextPath);
+    }
+  }, [page, role, routeError, selectedShopId, selectedWatchId, status, storefront]);
 
   // Badge counters (fetched from the backend).
   const [favoritesCount, setFavoritesCount] = useState(0);
@@ -158,6 +188,18 @@ export default function App() {
   const handleLogout = () => {
     logout();
     setMode('none');
+  };
+
+  const handleGoHomeFromError = () => {
+    setRouteError(null);
+    setSelectedShopId(null);
+    setStorefront(role !== 'user');
+    setPage('home');
+    window.history.pushState({}, '', '/');
+  };
+
+  const handleRetryFromError = () => {
+    window.location.reload();
   };
 
   // Shop/admin: preview the customer storefront, and return to the dashboard.
@@ -299,6 +341,19 @@ export default function App() {
   };
 
   // ---- Render ----------------------------------------------------------------
+  if (routeError) {
+    return (
+      <>
+        <AppErrorPage
+          statusCode={routeError}
+          onGoHome={handleGoHomeFromError}
+          onRetry={handleRetryFromError}
+        />
+        <ToastHost />
+      </>
+    );
+  }
+
   if (status === 'loading') {
     return (
       <div className="h-full min-h-screen bg-[#F6F4EF] flex items-center justify-center text-sm text-[#8A8170]">

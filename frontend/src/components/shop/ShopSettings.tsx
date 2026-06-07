@@ -8,6 +8,7 @@ import type { Shop } from '../../api';
 import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 import { mapDirectionsUrl } from '../../utils/maps';
+import { IMAGE_FILE_ACCEPT, validateImageFile } from '../../utils/uploads';
 import MapPreview from '../MapPreview';
 import ImageAdjustModal from './ImageAdjustModal';
 
@@ -84,6 +85,14 @@ export default function ShopSettings() {
   const openEditor = (room: Shop) => setEditingRoom({ ...room });
   const openCreate = () => setEditingRoom(emptyShop());
   const closeEditor = () => { setEditingRoom(null); setPendingFile(null); };
+  const handlePickCoverFile = (file: File) => {
+    const error = validateImageFile(file);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    setPendingFile(file);
+  };
 
   // Crop confirmed → upload the framed JPEG to MinIO and store its URL.
   const handleCroppedUpload = async (blob: Blob) => {
@@ -309,7 +318,7 @@ export default function ShopSettings() {
           saving={saving}
           uploading={uploading}
           deleting={deleting}
-          onPickFile={(f) => setPendingFile(f)}
+          onPickFile={handlePickCoverFile}
           onClearImage={clearImage}
           onSave={handleSave}
           onDelete={() => handleDelete(editingRoom.id)}
@@ -322,6 +331,7 @@ export default function ShopSettings() {
         <ImageAdjustModal
           file={pendingFile}
           aspect={16 / 9}
+          title="Can chinh anh bia"
           busy={uploading}
           onCancel={() => setPendingFile(null)}
           onConfirm={handleCroppedUpload}
@@ -424,7 +434,7 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
                     {uploading ? 'Đang tải…' : 'Tải ảnh lên'}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept={IMAGE_FILE_ACCEPT}
                       disabled={uploading}
                       className="hidden"
                       onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = ''; }}

@@ -4,6 +4,8 @@ import { watchApi, shopApi, uploadApi, ApiError } from '../../api';
 import type { Watch, Shop } from '../../api';
 import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
+import { IMAGE_FILE_ACCEPT, MAX_IMAGE_BYTES, validateImageFile } from '../../utils/uploads';
+import ImageAdjustModal from './ImageAdjustModal';
 
 const WATCH_BRANDS = [
   'Rolex',
@@ -19,7 +21,6 @@ const WATCH_BRANDS = [
 ];
 const OTHER_BRAND_VALUE = '__other__';
 const CUSTOM_BRANDS_STORAGE_KEY = 'tw_custom_watch_brands';
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_PRODUCT_IMAGES = 10;
 
 type ProductField = 'shopId' | 'name' | 'brand' | 'image' | 'price' | 'originalPrice' | 'model';
@@ -39,6 +40,7 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageAdjustTarget, setImageAdjustTarget] = useState<{ file: File; replaceUrl?: string | null } | null>(null);
   const [myShops, setMyShops] = useState<Shop[]>([]);
   const [errors, setErrors] = useState<ProductErrors>({});
   const [usesCustomBrand, setUsesCustomBrand] = useState(false);
@@ -213,13 +215,17 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
       return;
     }
 
-    const validFiles = files.filter((file) => file.type.startsWith('image/') && file.size <= MAX_IMAGE_SIZE);
+    const validFiles = files.filter((file) => !validateImageFile(file, MAX_IMAGE_BYTES));
     if (validFiles.length !== files.length) {
       toast.error('Chỉ nhận file ảnh có dung lượng tối đa 10 MB.');
     }
     if (validFiles.length === 0) return;
 
     const filesToUpload = validFiles.slice(0, availableSlots);
+    if (filesToUpload.length === 1 && !form.image) {
+      setImageAdjustTarget({ file: filesToUpload[0] });
+      return;
+    }
     if (validFiles.length > availableSlots) {
       toast.error(`Chỉ có thể thêm ${availableSlots} ảnh để không vượt quá ${MAX_PRODUCT_IMAGES} ảnh.`);
     }
@@ -257,6 +263,67 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
       } else {
         toast.success(`Đã tải lên ${uploadedUrls.length} ảnh.`);
       }
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const applyUploadedProductImage = (uploadedUrl: string, replaceUrl?: string | null) => {
+    setForm((prev) => {
+      const currentImages = Array.from(new Set([prev.image, ...prev.gallery].filter(Boolean)));
+      const nextImages = replaceUrl
+        ? currentImages.map((url) => (url === replaceUrl ? uploadedUrl : url))
+        : [uploadedUrl, ...currentImages];
+      const dedupedImages = Array.from(new Set(nextImages)).slice(0, MAX_PRODUCT_IMAGES);
+      const nextMainImage = replaceUrl
+        ? (prev.image === replaceUrl ? uploadedUrl : prev.image || uploadedUrl)
+        : uploadedUrl;
+
+      return {
+        ...prev,
+        image: nextMainImage,
+        gallery: [nextMainImage, ...dedupedImages.filter((url) => url !== nextMainImage)].slice(0, MAX_PRODUCT_IMAGES),
+      };
+    });
+    clearError('image');
+  };
+
+  const handleCroppedProductImageUpload = async (blob: Blob) => {
+    if (!imageAdjustTarget) return;
+    const replaceUrl = imageAdjustTarget.replaceUrl;
+    setUploadingImage(true);
+    try {
+      const file = new File([blob], 'watch-product-image.jpg', { type: 'image/jpeg' });
+      const url = await uploadApi.image(file, 'watches');
+      applyUploadedProductImage(url, replaceUrl);
+      setImageAdjustTarget(null);
+      toast.success(replaceUrl ? 'Da cap nhat anh san pham.' : 'Da tai anh dai dien len.');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Tai anh that bai');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleAdjustUploadedImage = async (url: string) => {
+    setUploadingImage(true);
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) {
+        throw new Error('download-failed');
+      }
+      const blob = await response.blob();
+      const type = blob.type || 'image/jpeg';
+      const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
+      const file = new File([blob], `watch-product-image.${ext}`, { type });
+      const error = validateImageFile(file, MAX_IMAGE_BYTES);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      setImageAdjustTarget({ file, replaceUrl: url });
+    } catch {
+      toast.error('Khong the mo anh nay de can chinh. Hay tai lai anh tu may cua ban.');
     } finally {
       setUploadingImage(false);
     }
@@ -551,6 +618,15 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleAdjustUploadedImage(url)}
+                            aria-label={`Can chinh anh ${index + 1}`}
+                            disabled={uploadingImage}
+                            className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[#17140F] shadow transition hover:bg-white disabled:opacity-50"
+                          >
+                            <SlidersHorizontal className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                         <button
                           type="button"
@@ -581,7 +657,7 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                       </span>
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={IMAGE_FILE_ACCEPT}
                         multiple
                         disabled={uploadingImage}
                         className="hidden"
@@ -920,6 +996,17 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
           )}
         </div>
       </form>
+      {imageAdjustTarget && (
+        <ImageAdjustModal
+          file={imageAdjustTarget.file}
+          aspect={1}
+          outputWidth={1200}
+          title="Can chinh anh dai dien san pham"
+          busy={uploadingImage}
+          onCancel={() => setImageAdjustTarget(null)}
+          onConfirm={handleCroppedProductImageUpload}
+        />
+      )}
     </div>
   );
 }
