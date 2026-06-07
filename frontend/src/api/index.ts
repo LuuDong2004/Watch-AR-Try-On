@@ -6,6 +6,7 @@
  * mock helpers.
  */
 import { http, setToken, getToken as getTokenSafe } from './client';
+import { validateImageFile } from '../utils/uploads';
 import type {
   ClosetItem,
   Feedback,
@@ -402,6 +403,10 @@ export const subscriptionApi = {
 export const uploadApi = {
   /** Upload a watch/shop image file; returns its public URL. */
   async image(file: File, folder = 'watches'): Promise<string> {
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      throw new ApiError(400, validationError);
+    }
     const form = new FormData();
     form.append('file', file);
     form.append('folder', folder);

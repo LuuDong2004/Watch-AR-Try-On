@@ -6,9 +6,10 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.RemoveObjectArgs;
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -26,8 +27,12 @@ public class StorageService {
 
     private static final Logger log = LoggerFactory.getLogger(StorageService.class);
 
-    private static final Set<String> ALLOWED_TYPES =
-            Set.of("image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif");
+    private static final Set<String> ALLOWED_TYPES = Set.of("image/png", "image/jpeg", "image/webp");
+    private static final Set<String> ALLOWED_FOLDERS = Set.of("watches", "shops", "ar");
+    private static final Map<String, String> EXTENSIONS_BY_TYPE = Map.of(
+            "image/png", ".png",
+            "image/jpeg", ".jpg",
+            "image/webp", ".webp");
     private static final long MAX_BYTES = 15L * 1024 * 1024; // 15 MB
 
     private final MinioClient client;
@@ -42,27 +47,27 @@ public class StorageService {
     public String store(MultipartFile file, String folder) {
         requireEnabled();
         if (file == null || file.isEmpty()) {
-            throw ApiException.badRequest("File rỗng.");
+            throw ApiException.badRequest("File rong.");
         }
         if (file.getSize() > MAX_BYTES) {
-            throw ApiException.badRequest("Ảnh vượt quá 15MB.");
+            throw ApiException.badRequest("Anh vuot qua 15MB.");
         }
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_TYPES.contains(contentType.toLowerCase())) {
-            throw ApiException.badRequest("Chỉ chấp nhận ảnh PNG/JPEG/WebP/GIF.");
-        }
+
+        byte[] bytes = readBytes(file);
+        String contentType = validateImageContentType(file.getContentType(), bytes);
         String object = objectKey(folder, extensionFor(contentType));
-        try (InputStream in = file.getInputStream()) {
+
+        try {
             client.putObject(PutObjectArgs.builder()
                     .bucket(cfg.bucket())
                     .object(object)
-                    .stream(in, file.getSize(), -1)
+                    .stream(new ByteArrayInputStream(bytes), bytes.length, -1)
                     .contentType(contentType)
                     .build());
         } catch (Exception e) {
             log.error("MinIO upload failed: {}", e.getMessage());
             throw new ApiException(org.springframework.http.HttpStatus.BAD_GATEWAY,
-                    "Lưu ảnh thất bại: " + e.getMessage());
+                    "Luu anh that bai: " + e.getMessage());
         }
         return publicUrl(object);
     }
@@ -74,27 +79,36 @@ public class StorageService {
     public String storeDataUrl(String dataUrl, String folder) {
         requireEnabled();
         if (dataUrl == null || !dataUrl.startsWith("data:")) {
-            throw ApiException.badRequest("Dữ liệu ảnh không hợp lệ.");
+            throw ApiException.badRequest("Du lieu anh khong hop le.");
         }
         int comma = dataUrl.indexOf(',');
         int semi = dataUrl.indexOf(';');
         if (comma < 0 || semi < 0 || semi > comma) {
-            throw ApiException.badRequest("Định dạng data URL không hợp lệ.");
+            throw ApiException.badRequest("Dinh dang data URL khong hop le.");
         }
-        String contentType = dataUrl.substring(5, semi).toLowerCase();
-        if (!ALLOWED_TYPES.contains(contentType)) {
-            throw ApiException.badRequest("Chỉ chấp nhận ảnh PNG/JPEG/WebP/GIF.");
+
+        String contentType = dataUrl.substring(5, semi).toLowerCase(Locale.ROOT);
+        String metadata = dataUrl.substring(5, comma).toLowerCase(Locale.ROOT);
+        if (!metadata.contains(";base64")) {
+            throw ApiException.badRequest("Data URL phai dung dinh dang base64.");
         }
+
         byte[] bytes;
         try {
             bytes = Base64.getDecoder().decode(dataUrl.substring(comma + 1));
         } catch (IllegalArgumentException e) {
-            throw ApiException.badRequest("Base64 ảnh không hợp lệ.");
+            throw ApiException.badRequest("Base64 anh khong hop le.");
+        }
+        if (bytes.length == 0) {
+            throw ApiException.badRequest("File anh dang rong.");
         }
         if (bytes.length > MAX_BYTES) {
-            throw ApiException.badRequest("Ảnh vượt quá 15MB.");
+            throw ApiException.badRequest("Anh vuot qua 15MB.");
         }
+
+        contentType = validateImageContentType(contentType, bytes);
         String object = objectKey(folder, extensionFor(contentType));
+
         try {
             client.putObject(PutObjectArgs.builder()
                     .bucket(cfg.bucket())
@@ -105,7 +119,7 @@ public class StorageService {
         } catch (Exception e) {
             log.error("MinIO data-url upload failed: {}", e.getMessage());
             throw new ApiException(org.springframework.http.HttpStatus.BAD_GATEWAY,
-                    "Lưu ảnh thất bại: " + e.getMessage());
+                    "Luu anh that bai: " + e.getMessage());
         }
         return publicUrl(object);
     }
@@ -146,14 +160,14 @@ public class StorageService {
     private void requireEnabled() {
         if (!cfg.enabled()) {
             throw new ApiException(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
-                    "Lưu trữ ảnh chưa được bật (app.storage.enabled=false).");
+                    "Luu tru anh chua duoc bat (app.storage.enabled=false).");
         }
     }
 
     private static String objectKey(String folder, String ext) {
         LocalDate today = LocalDate.now();
         return "%s/%04d/%02d/%02d/%s%s".formatted(
-                normalizeFolder(folder),
+                validateFolder(folder),
                 today.getYear(),
                 today.getMonthValue(),
                 today.getDayOfMonth(),
@@ -161,25 +175,85 @@ public class StorageService {
                 ext);
     }
 
-    private static String normalizeFolder(String folder) {
+    private static String validateFolder(String folder) {
         if (folder == null || folder.isBlank()) {
-            return "misc";
+            return "watches";
         }
         String safeFolder = folder
                 .replace('\\', '/')
                 .replaceAll("[^a-zA-Z0-9/_-]", "")
                 .replaceAll("/+", "/")
                 .replaceAll("^/|/$", "");
-        return safeFolder.isBlank() ? "misc" : safeFolder;
+        if (!ALLOWED_FOLDERS.contains(safeFolder)) {
+            throw ApiException.badRequest("Thu muc upload khong hop le.");
+        }
+        return safeFolder;
     }
 
     private static String extensionFor(String contentType) {
-        return switch (contentType) {
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            case "image/gif" -> ".gif";
-            default -> ".jpg";
-        };
+        return EXTENSIONS_BY_TYPE.getOrDefault(contentType, ".jpg");
+    }
+
+    private static byte[] readBytes(MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (Exception e) {
+            throw ApiException.badRequest("Khong doc duoc file anh.");
+        }
+    }
+
+    private static String validateImageContentType(String declaredContentType, byte[] bytes) {
+        String declared = normalizeContentType(declaredContentType);
+        if (declared == null || !ALLOWED_TYPES.contains(declared)) {
+            throw ApiException.badRequest("Chi chap nhan anh JPG, PNG hoac WebP.");
+        }
+
+        String detected = detectImageContentType(bytes);
+        if (detected == null || !detected.equals(declared)) {
+            throw ApiException.badRequest("Noi dung file khong khop dinh dang anh da khai bao.");
+        }
+        return detected;
+    }
+
+    private static String normalizeContentType(String contentType) {
+        if (contentType == null) {
+            return null;
+        }
+        String normalized = contentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+        return "image/jpg".equals(normalized) ? "image/jpeg" : normalized;
+    }
+
+    private static String detectImageContentType(byte[] bytes) {
+        if (bytes == null || bytes.length < 4) {
+            return null;
+        }
+        if (startsWith(bytes, 0xFF, 0xD8, 0xFF)) {
+            return "image/jpeg";
+        }
+        if (startsWith(bytes, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)) {
+            return "image/png";
+        }
+        if (bytes.length >= 12
+                && startsWith(bytes, 0x52, 0x49, 0x46, 0x46)
+                && bytes[8] == 0x57
+                && bytes[9] == 0x45
+                && bytes[10] == 0x42
+                && bytes[11] == 0x50) {
+            return "image/webp";
+        }
+        return null;
+    }
+
+    private static boolean startsWith(byte[] bytes, int... signature) {
+        if (bytes.length < signature.length) {
+            return false;
+        }
+        for (int i = 0; i < signature.length; i++) {
+            if ((bytes[i] & 0xFF) != signature[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String publicUrl(String object) {
