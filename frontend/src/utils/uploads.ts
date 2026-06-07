@@ -9,13 +9,13 @@ export function validateImageFile(file: File, maxBytes = MAX_IMAGE_BYTES): strin
   const type = file.type.toLowerCase();
 
   if (!type || !ALLOWED_IMAGE_TYPES.has(type) || !ALLOWED_IMAGE_EXTENSIONS.test(file.name)) {
-    return 'Chi nhan anh JPG, PNG hoac WebP.';
+    return 'Chỉ nhận ảnh JPG, PNG hoặc WebP.';
   }
   if (file.size <= 0) {
-    return 'File anh dang rong.';
+    return 'File ảnh đang rỗng.';
   }
   if (file.size > maxBytes) {
-    return `Anh khong duoc vuot qua ${Math.round(maxBytes / 1024 / 1024)} MB.`;
+    return `Ảnh không được vượt quá ${Math.round(maxBytes / 1024 / 1024)} MB.`;
   }
 
   return null;

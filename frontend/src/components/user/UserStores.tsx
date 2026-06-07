@@ -5,6 +5,7 @@ import type { Shop, Watch } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
 import { toast } from '../../store/useToast';
 import { mapDirectionsUrl } from '../../utils/maps';
+import { isPublicShop, publicWatches } from '../../utils/publicListings';
 import { detectRegion } from '../../utils/region';
 import MapPreview from '../MapPreview';
 
@@ -18,6 +19,9 @@ interface UserStoresProps {
 const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
+const STORES_PER_PAGE = 6;
+const SHOP_PRODUCTS_PER_PAGE = 6;
+
 export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initialShopId }: UserStoresProps) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [watches, setWatches] = useState<Watch[]>([]);
@@ -28,7 +32,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState('all');
   const [page, setPage] = useState(1);
-  const PER_PAGE = 6;
+  const [shopProductPage, setShopProductPage] = useState(1);
 
   // In-store consultation popup
   const [contactOpen, setContactOpen] = useState(false);
@@ -51,8 +55,9 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     Promise.all([shopApi.list(), watchApi.list()])
       .then(([s, w]) => {
         if (cancelled) return;
-        setShops(s);
-        setWatches(w);
+        const activeShops = s.filter(isPublicShop);
+        setShops(activeShops);
+        setWatches(publicWatches(w, activeShops));
       })
       .catch(() => {
         if (cancelled) return;
@@ -72,6 +77,10 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
   useEffect(() => {
     setPage(1);
   }, [search, region]);
+
+  useEffect(() => {
+    setShopProductPage(1);
+  }, [selectedId]);
 
   const watchesAt = (shopId: string) => watches.filter((w) => w.shopId === shopId);
   const selected = shops.find((s) => s.id === selectedId) || null;
@@ -142,13 +151,19 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     return matchesSearch && matchesRegion;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredShops.length / PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filteredShops.length / STORES_PER_PAGE));
   const safePage = Math.min(page, totalPages);
-  const pagedShops = filteredShops.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
+  const pagedShops = filteredShops.slice((safePage - 1) * STORES_PER_PAGE, safePage * STORES_PER_PAGE);
 
   // -------------------------------------------------- SHOP DETAIL VIEW
   if (selected) {
     const shopWatches = watchesAt(selected.id);
+    const shopProductTotalPages = Math.max(1, Math.ceil(shopWatches.length / SHOP_PRODUCTS_PER_PAGE));
+    const safeShopProductPage = Math.min(shopProductPage, shopProductTotalPages);
+    const pagedShopWatches = shopWatches.slice(
+      (safeShopProductPage - 1) * SHOP_PRODUCTS_PER_PAGE,
+      safeShopProductPage * SHOP_PRODUCTS_PER_PAGE,
+    );
     return (
       <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
         <div className="max-w-6xl mx-auto px-4">
@@ -239,21 +254,22 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
               </div>
 
               {shopWatches.length > 0 ? (
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {shopWatches.map((w) => (
-                    <div
-                      key={w.id}
-                      onClick={() => onSelectWatch(w.id)}
-                      className="group bg-white rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
-                    >
-                      <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-56 overflow-hidden border-b border-[#e5e0d8]">
-                        <img
-                          src={w.image}
-                          alt={w.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                <>
+                  <div className="grid sm:grid-cols-2 gap-6">
+                    {pagedShopWatches.map((w) => (
+                      <div
+                        key={w.id}
+                        onClick={() => onSelectWatch(w.id)}
+                        className="group bg-white rounded-2xl border border-[#e5e0d8] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col cursor-pointer"
+                      >
+                        <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-56 overflow-hidden border-b border-[#e5e0d8]">
+                          <img
+                            src={w.image}
+                            alt={w.name}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
 
                         {w.hasAR ? (
                           <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
@@ -303,6 +319,40 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                     </div>
                   ))}
                 </div>
+                {shopProductTotalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setShopProductPage((p) => Math.max(1, p - 1))}
+                      disabled={safeShopProductPage === 1}
+                      className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#17140F] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#17140F]"
+                      aria-label="Trang sản phẩm trước"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    {Array.from({ length: shopProductTotalPages }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setShopProductPage(i + 1)}
+                        className={`h-9 min-w-9 px-3 flex items-center justify-center rounded-full text-sm font-semibold transition border ${
+                          safeShopProductPage === i + 1
+                            ? 'bg-[#17140F] text-white border-[#17140F]'
+                            : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShopProductPage((p) => Math.min(shopProductTotalPages, p + 1))}
+                      disabled={safeShopProductPage === shopProductTotalPages}
+                      className="h-9 w-9 flex items-center justify-center rounded-full border border-[#e5e0d8] bg-white text-[#17140F] hover:border-[#B8924A] hover:text-[#B8924A] transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-[#e5e0d8] disabled:hover:text-[#17140F]"
+                      aria-label="Trang sản phẩm sau"
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                </>
               ) : (
                 <div className="bg-white rounded-2xl border border-[#e5e0d8] p-10 text-center text-sm text-gray-500">Shop chưa đăng sản phẩm nào.</div>
               )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Store } from 'lucide-react';
+import { Lock, Store, Trash2, Unlock } from 'lucide-react';
 import { shopApi, ApiError } from '../../api';
 import type { Shop } from '../../api';
 import { toast } from '../../store/useToast';
@@ -8,9 +8,11 @@ export default function AdminShops() {
   const [showrooms, setShowrooms] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
     try {
+      setError(null);
       const list = await shopApi.list();
       setShowrooms(list);
     } catch (err) {
@@ -27,10 +29,32 @@ export default function AdminShops() {
   const handleToggleStatus = async (shop: Shop) => {
     const nextStatus: Shop['status'] = shop.status === 'active' ? 'archived' : 'active';
     try {
+      setSavingId(shop.id);
       await shopApi.update(shop.id, { ...shop, status: nextStatus });
       await load();
+      toast.success(nextStatus === 'archived' ? 'Đã khóa cửa hàng.' : 'Đã mở khóa cửa hàng.');
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleDelete = async (shop: Shop) => {
+    const ok = await toast.confirm(
+      `Cửa hàng "${shop.name}" và toàn bộ sản phẩm thuộc cửa hàng này sẽ bị xóa.`,
+      { title: 'Xóa cửa hàng?', confirmText: 'Xóa', danger: true },
+    );
+    if (!ok) return;
+    try {
+      setSavingId(shop.id);
+      await shopApi.remove(shop.id);
+      await load();
+      toast.success('Đã xóa cửa hàng.');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -87,15 +111,29 @@ export default function AdminShops() {
                       </span>
                     )}
                   </td>
-                  <td className="py-3.5 text-right space-x-2">
-                    <button
-                      onClick={() => handleToggleStatus(room)}
-                      className={isActive
-                        ? 'border border-red-200 text-red-600 hover:bg-red-50 py-1 px-3 rounded-lg font-bold'
-                        : 'border border-green-200 text-green-600 hover:bg-green-50 py-1 px-3 rounded-lg font-bold'}
-                    >
-                      {isActive ? 'Tạm khóa' : 'Mở khóa'}
-                    </button>
+                  <td className="py-3.5 text-right">
+                    <div className="inline-flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => handleToggleStatus(room)}
+                        disabled={savingId === room.id}
+                        title={isActive ? 'Khóa cửa hàng' : 'Mở khóa cửa hàng'}
+                        aria-label={isActive ? 'Khóa cửa hàng' : 'Mở khóa cửa hàng'}
+                        className={isActive
+                          ? 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50'
+                          : 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 text-green-600 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50'}
+                      >
+                        {isActive ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(room)}
+                        disabled={savingId === room.id}
+                        title="Xóa cửa hàng"
+                        aria-label="Xóa cửa hàng"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 );

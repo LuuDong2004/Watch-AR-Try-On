@@ -297,9 +297,9 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
       const url = await uploadApi.image(file, 'watches');
       applyUploadedProductImage(url, replaceUrl);
       setImageAdjustTarget(null);
-      toast.success(replaceUrl ? 'Da cap nhat anh san pham.' : 'Da tai anh dai dien len.');
+      toast.success(replaceUrl ? 'Đã cập nhật ảnh sản phẩm.' : 'Đã tải ảnh đại diện lên.');
     } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Tai anh that bai');
+      toast.error(err instanceof ApiError ? err.message : 'Tải ảnh thất bại');
     } finally {
       setUploadingImage(false);
     }
@@ -323,7 +323,7 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
       }
       setImageAdjustTarget({ file, replaceUrl: url });
     } catch {
-      toast.error('Khong the mo anh nay de can chinh. Hay tai lai anh tu may cua ban.');
+      toast.error('Không thể mở ảnh này để căn chỉnh. Hãy tải lại ảnh từ máy của bạn.');
     } finally {
       setUploadingImage(false);
     }
@@ -621,7 +621,7 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                           <button
                             type="button"
                             onClick={() => void handleAdjustUploadedImage(url)}
-                            aria-label={`Can chinh anh ${index + 1}`}
+                            aria-label={`Căn chỉnh ảnh ${index + 1}`}
                             disabled={uploadingImage}
                             className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-[#17140F] shadow transition hover:bg-white disabled:opacity-50"
                           >
@@ -1023,7 +1023,7 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
           file={imageAdjustTarget.file}
           aspect={1}
           outputWidth={1200}
-          title="Can chinh anh dai dien san pham"
+          title="Căn chỉnh ảnh đại diện sản phẩm"
           busy={uploadingImage}
           onCancel={() => setImageAdjustTarget(null)}
           onConfirm={handleCroppedProductImageUpload}

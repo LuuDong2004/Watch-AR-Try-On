@@ -54,7 +54,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
           <button
             type="button"
             onClick={() => setActive('live3d')}
-            title="Xem mo hinh 3D 360"
+            title="Xem mô hình 3D 360"
             className={`relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-navy text-white transition ${
               active === 'live3d'
                 ? 'ring-2 ring-champagne ring-offset-2 ring-offset-cream'
@@ -79,7 +79,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
                 ? 'ring-2 ring-champagne ring-offset-2 ring-offset-cream'
                 : 'opacity-60 hover:opacity-100'
             }`}
-            aria-label={`Xem anh ${idx + 1}`}
+            aria-label={`Xem ảnh ${idx + 1}`}
           >
             <img src={src} alt="" className="h-full w-full object-cover" />
           </button>
@@ -92,7 +92,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f6f4ef] to-[#ece6da]">
               <Watch3DViewer modelUrl={watch.model} variant={watch.variant} height={520} />
               <span className="pointer-events-none absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-navy/70 px-3.5 py-1.5 text-[10px] font-medium text-white">
-                <MousePointer className="h-3.5 w-3.5" /> Nhan va keo de xoay 360
+                <MousePointer className="h-3.5 w-3.5" /> Nhấn và kéo để xoay 360
               </span>
             </div>
           ) : (
@@ -100,7 +100,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
               type="button"
               className="relative h-full w-full cursor-pointer text-left"
               onClick={() => currentPhoto && setLightbox(true)}
-              aria-label="Mo anh san pham"
+              aria-label="Mở ảnh sản phẩm"
             >
               <img
                 src={currentPhoto}
@@ -127,7 +127,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
               setLightbox(false);
             }}
             className="absolute right-5 top-5 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-            aria-label="Dong"
+            aria-label="Đóng"
           >
             <X className="h-5 w-5" />
           </button>
@@ -141,7 +141,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
                   nudgePhoto(-1);
                 }}
                 className="absolute left-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 md:left-8"
-                aria-label="Anh truoc"
+                aria-label="Ảnh trước"
               >
                 <ChevronLeft className="h-6 w-6" />
               </button>
@@ -152,7 +152,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
                   nudgePhoto(1);
                 }}
                 className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 md:right-8"
-                aria-label="Anh tiep theo"
+                aria-label="Ảnh tiếp theo"
               >
                 <ChevronRight className="h-6 w-6" />
               </button>
@@ -176,7 +176,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
                     className={`h-12 w-12 shrink-0 overflow-hidden rounded-full border transition ${
                       currentIndex === idx ? 'border-champagne opacity-100' : 'border-white/20 opacity-60 hover:opacity-100'
                     }`}
-                    aria-label={`Xem anh ${idx + 1}`}
+                    aria-label={`Xem ảnh ${idx + 1}`}
                   >
                     <img src={src} alt="" className="h-full w-full object-cover" />
                   </button>

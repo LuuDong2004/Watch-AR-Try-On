@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Sparkles, ArrowRight, Star, Wand2, UploadCloud, Lock, Check, Bell } from 'lucide-react';
 import Watch3DViewer from '../watch/Watch3DViewer';
-import { watchApi } from '../../api';
+import { shopApi, watchApi } from '../../api';
 import type { Watch } from '../../api';
+import { publicWatches } from '../../utils/publicListings';
 
 interface UserHomeProps {
   onSelectWatch: (id: string) => void;
@@ -18,9 +19,8 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
 
   useEffect(() => {
     let cancelled = false;
-    watchApi
-      .list()
-      .then((list) => { if (!cancelled) setWatches(list); })
+    Promise.all([watchApi.list(), shopApi.list()])
+      .then(([list, shops]) => { if (!cancelled) setWatches(publicWatches(list, shops)); })
       .catch(() => { if (!cancelled) setWatches([]); });
     return () => { cancelled = true; };
   }, []);

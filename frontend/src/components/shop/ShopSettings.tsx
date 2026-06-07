@@ -331,7 +331,7 @@ export default function ShopSettings() {
         <ImageAdjustModal
           file={pendingFile}
           aspect={16 / 9}
-          title="Can chinh anh bia"
+          title="Căn chỉnh ảnh bìa"
           busy={uploading}
           onCancel={() => setPendingFile(null)}
           onConfirm={handleCroppedUpload}

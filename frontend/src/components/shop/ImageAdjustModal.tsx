@@ -23,10 +23,10 @@ export default function ImageAdjustModal({
   file,
   aspect = 16 / 9,
   outputWidth = 1280,
-  title = 'Can chinh anh',
-  helpText = 'Keo de di chuyen, dung thanh truot de phong to',
-  confirmText = 'Chot va dung anh nay',
-  busyText = 'Dang tai len...',
+  title = 'Căn chỉnh ảnh',
+  helpText = 'Kéo để di chuyển, dùng thanh trượt để phóng to',
+  confirmText = 'Chốt và dùng ảnh này',
+  busyText = 'Đang tải lên...',
   busy = false,
   onCancel,
   onConfirm,
@@ -130,7 +130,7 @@ export default function ImageAdjustModal({
       <div className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="font-display text-base font-bold text-[#17140F]">{title}</h3>
-          <button onClick={onCancel} aria-label="Dong" className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+          <button onClick={onCancel} aria-label="Đóng" className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -198,7 +198,7 @@ export default function ImageAdjustModal({
             disabled={busy}
             className="flex-1 rounded-xl border border-[#e5e0d8] py-3 font-semibold text-gray-500 transition hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50"
           >
-            Huy
+            Hủy
           </button>
         </div>
       </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { LogOut, Store, Calendar, Heart, Camera, LogIn } from 'lucide-react';
-import { leadApi, favoriteApi, watchApi, closetApi, ApiError } from '../../api';
+import { leadApi, favoriteApi, shopApi, watchApi, closetApi, ApiError } from '../../api';
 import type { Lead, Watch, ClosetItem } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
+import { publicWatches } from '../../utils/publicListings';
 
 interface UserAccountProps {
   onSelectWatch: (id: string) => void;
@@ -25,11 +26,11 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
     if (!user) { setLeads([]); setFavorites([]); setCaptures([]); setLoading(false); return; }
     let cancelled = false;
     setLoading(true);
-    Promise.all([leadApi.mine(), favoriteApi.list(), watchApi.list(), closetApi.list()])
-      .then(([myLeads, favIds, watches, closet]) => {
+    Promise.all([leadApi.mine(), favoriteApi.list(), watchApi.list(), shopApi.list(), closetApi.list()])
+      .then(([myLeads, favIds, watches, shops, closet]) => {
         if (cancelled) return;
         setLeads(myLeads);
-        setFavorites(watches.filter((w) => favIds.includes(w.id)));
+        setFavorites(publicWatches(watches, shops).filter((w) => favIds.includes(w.id)));
         setCaptures(closet);
       })
       .catch((err) => {

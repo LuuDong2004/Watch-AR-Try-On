@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Heart, Sparkles, ArrowRight, ArrowLeft, Trash2, LogIn } from 'lucide-react';
-import { favoriteApi, watchApi, ApiError } from '../../api';
+import { favoriteApi, shopApi, watchApi, ApiError } from '../../api';
 import type { Watch } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
+import { publicWatches } from '../../utils/publicListings';
 
 interface UserFavoritesProps {
   onSelectWatch: (id: string) => void;
@@ -25,8 +26,8 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
   const load = async () => {
     setLoading(true);
     try {
-      const [favIds, watches] = await Promise.all([favoriteApi.list(), watchApi.list()]);
-      setItems(watches.filter((w) => favIds.includes(w.id)));
+      const [favIds, watches, shops] = await Promise.all([favoriteApi.list(), watchApi.list(), shopApi.list()]);
+      setItems(publicWatches(watches, shops).filter((w) => favIds.includes(w.id)));
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) showLogin('login');
       setItems([]);

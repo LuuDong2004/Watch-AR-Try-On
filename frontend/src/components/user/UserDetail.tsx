@@ -13,6 +13,7 @@ import SimilarWatches from './detail/SimilarWatches';
 import CustomerReviews from './detail/CustomerReviews';
 import DetailModal from './detail/DetailModal';
 import ProductContactModal from './detail/ProductContactModal';
+import { isPublicShop, isPublicWatch, publicWatches } from '../../utils/publicListings';
 
 interface UserDetailProps {
   watchId: string;
@@ -51,9 +52,11 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
     Promise.all([watchApi.get(watchId), watchApi.list(), shopApi.list()])
       .then(([found, list, shops]) => {
         if (cancelled) return;
-        setAllWatches(list);
-        setWatch(found || null);
-        setShop(found ? shops.find((s) => s.id === found.shopId) || null : null);
+        const foundShop = found ? shops.find((s) => s.id === found.shopId && isPublicShop(s)) || null : null;
+        const visibleWatch = found && foundShop && isPublicWatch(found) ? found : null;
+        setAllWatches(publicWatches(list, shops));
+        setWatch(visibleWatch);
+        setShop(visibleWatch ? foundShop : null);
       })
       .catch(() => {
         if (cancelled) return;

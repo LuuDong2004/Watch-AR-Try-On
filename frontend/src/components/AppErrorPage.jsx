@@ -3,20 +3,20 @@ import { AlertTriangle, Home, RefreshCw, SearchX, ServerCrash } from 'lucide-rea
 const ERROR_COPY = {
   404: {
     eyebrow: '404',
-    title: 'Khong tim thay trang',
-    message: 'Duong dan nay khong ton tai hoac da duoc di chuyen.',
+    title: 'Không tìm thấy trang',
+    message: 'Đường dẫn này không tồn tại hoặc đã được di chuyển.',
     icon: SearchX,
   },
   500: {
     eyebrow: '500',
-    title: 'Co loi he thong',
-    message: 'May chu gap loi khi xu ly yeu cau. Ban co the thu lai sau it phut.',
+    title: 'Có lỗi hệ thống',
+    message: 'Máy chủ gặp lỗi khi xử lý yêu cầu. Bạn có thể thử lại sau ít phút.',
     icon: ServerCrash,
   },
   503: {
     eyebrow: '503',
-    title: 'Dich vu tam thoi gian doan',
-    message: 'He thong dang bao tri hoac qua tai. Vui long thu lai sau.',
+    title: 'Dịch vụ tạm thời gián đoạn',
+    message: 'Hệ thống đang bảo trì hoặc quá tải. Vui lòng thử lại sau.',
     icon: AlertTriangle,
   },
 };
@@ -46,7 +46,7 @@ export default function AppErrorPage({ statusCode = 404, onGoHome, onRetry }) {
               onClick={onGoHome}
               className="inline-flex items-center gap-2 rounded-full bg-[#17140F] px-5 py-3 text-xs font-bold text-white transition hover:bg-black active:scale-[0.98]"
             >
-              <Home className="h-4 w-4" /> Ve trang chu
+              <Home className="h-4 w-4" /> Về trang chủ
             </button>
             {statusCode !== 404 && (
               <button
@@ -54,7 +54,7 @@ export default function AppErrorPage({ statusCode = 404, onGoHome, onRetry }) {
                 onClick={onRetry}
                 className="inline-flex items-center gap-2 rounded-full border border-[#d8d1c5] bg-white px-5 py-3 text-xs font-bold text-[#17140F] transition hover:border-[#B8924A] active:scale-[0.98]"
               >
-                <RefreshCw className="h-4 w-4" /> Thu lai
+                <RefreshCw className="h-4 w-4" /> Thử lại
               </button>
             )}
           </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User as UserIcon } from 'lucide-react';
+import { Lock, ShieldCheck, Store, Unlock, User as UserIcon } from 'lucide-react';
 import { userApi, ApiError } from '../../api';
 import type { User } from '../../api';
 import { toast } from '../../store/useToast';
@@ -10,13 +10,21 @@ const ROLE_LABELS: Record<User['role'], string> = {
   admin: 'Quản trị viên',
 };
 
+const nextRoleFor = (role: User['role']): User['role'] | null => {
+  if (role === 'customer') return 'shop';
+  if (role === 'shop') return 'admin';
+  return null;
+};
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
     try {
+      setError(null);
       const list = await userApi.list();
       setUsers(list);
     } catch (err) {
@@ -33,10 +41,39 @@ export default function AdminUsers() {
   const handleToggleBlock = async (u: User) => {
     const nextStatus: User['status'] = u.status === 'locked' ? 'active' : 'locked';
     try {
+      setSavingId(u.id);
       await userApi.update(u.id, { ...u, status: nextStatus });
       await load();
+      toast.success(nextStatus === 'locked' ? 'Đã khóa tài khoản.' : 'Đã mở khóa tài khoản.');
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handlePromote = async (u: User) => {
+    const nextRole = nextRoleFor(u.role);
+    if (!nextRole) {
+      toast.info('Tài khoản này đã là quản trị viên.');
+      return;
+    }
+
+    const ok = await toast.confirm(
+      `Nâng quyền ${u.name} thành ${ROLE_LABELS[nextRole]}?`,
+      { title: 'Xác nhận nâng quyền', confirmText: 'Nâng quyền' },
+    );
+    if (!ok) return;
+
+    try {
+      setSavingId(u.id);
+      await userApi.update(u.id, { ...u, role: nextRole });
+      await load();
+      toast.success(`Đã nâng quyền ${u.name} thành ${ROLE_LABELS[nextRole]}.`);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -76,6 +113,7 @@ export default function AdminUsers() {
               )}
               {!loading && !error && users.map((u) => {
                 const isActive = u.status !== 'locked';
+                const promoteRole = nextRoleFor(u.role);
                 return (
                 <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#17140F] flex items-center gap-2">
@@ -104,14 +142,30 @@ export default function AdminUsers() {
                   </td>
                   <td className="py-3.5 text-right text-gray-400">{formatDate(u.createdAt)}</td>
                   <td className="py-3.5 text-right">
-                    <button
-                      onClick={() => handleToggleBlock(u)}
-                      className={isActive
-                        ? 'border border-red-200 text-red-600 hover:bg-red-50 py-1 px-3 rounded-lg font-bold'
-                        : 'border border-green-200 text-green-600 hover:bg-green-50 py-1 px-3 rounded-lg font-bold'}
-                    >
-                      {isActive ? 'Khóa nick' : 'Mở khóa'}
-                    </button>
+                    <div className="inline-flex items-center justify-end gap-2">
+                      {promoteRole && (
+                        <button
+                          onClick={() => handlePromote(u)}
+                          disabled={savingId === u.id}
+                          title={`Nâng lên ${ROLE_LABELS[promoteRole]}`}
+                          aria-label={`Nâng lên ${ROLE_LABELS[promoteRole]}`}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#B8924A]/30 text-[#B8924A] hover:bg-[#B8924A]/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {promoteRole === 'shop' ? <Store className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleToggleBlock(u)}
+                        disabled={savingId === u.id}
+                        title={isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        aria-label={isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                        className={isActive
+                          ? 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50'
+                          : 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 text-green-600 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50'}
+                      >
+                        {isActive ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 );

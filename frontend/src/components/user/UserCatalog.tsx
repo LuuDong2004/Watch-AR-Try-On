@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Search, Star, ArrowLeft, ArrowRight } from 'lucide-react';
-import { watchApi } from '../../api';
+import { shopApi, watchApi } from '../../api';
 import type { Watch } from '../../api';
+import { publicWatches } from '../../utils/publicListings';
 
 interface UserCatalogProps {
   onSelectWatch: (id: string) => void;
@@ -26,13 +27,13 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    watchApi
-      .list()
-      .then((list) => {
+    Promise.all([watchApi.list(), shopApi.list()])
+      .then(([list, shops]) => {
         if (cancelled) return;
-        setWatches(list);
+        const visibleWatches = publicWatches(list, shops);
+        setWatches(visibleWatches);
         // Extract unique brands
-        const uniqueBrands = Array.from(new Set(list.map((w) => w.brand)));
+        const uniqueBrands = Array.from(new Set(visibleWatches.map((w) => w.brand)));
         setBrands(uniqueBrands);
       })
       .catch(() => { if (!cancelled) setWatches([]); })
