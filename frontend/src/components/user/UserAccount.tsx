@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Store, Calendar, Heart, Camera, LogIn } from 'lucide-react';
+import { LogOut, Store, Calendar, Heart, Camera, LogIn, Globe, ShieldCheck, BadgeCheck, Hash, CheckCircle2 } from 'lucide-react';
 import { leadApi, favoriteApi, shopApi, watchApi, closetApi, ApiError } from '../../api';
 import type { Lead, Watch, ClosetItem } from '../../api';
 import { useSession } from '../../auth/session';
@@ -99,6 +99,22 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
     .join('')
     .toUpperCase();
 
+  const MEMBERSHIP_LABELS: Record<string, string> = {
+    customer: 'Thành viên TrueWrist',
+    shop: 'Đối tác Showroom',
+    admin: 'Quản trị viên',
+  };
+  const PROVIDER_LABELS: Record<string, string> = {
+    local: 'Email & Mật khẩu',
+    google: 'Tài khoản Google',
+  };
+  const membership = MEMBERSHIP_LABELS[user.role] || 'Thành viên TrueWrist';
+  const providerLabel = PROVIDER_LABELS[user.provider || ''] || 'Email & Mật khẩu';
+  const isActive = user.status !== 'locked';
+  const joinDate = user.createdAt
+    ? new Date(user.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '—';
+
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans py-8">
       <div className="max-w-6xl mx-auto px-4">
@@ -107,33 +123,82 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
           {/* Left Panel: Profile summary card (4 cols) */}
           <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
             <div className="flex flex-col items-center text-center border-b border-[#e5e0d8] pb-6 mb-6">
-              <div className="h-20 w-20 rounded-full bg-[#17140F] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A] mb-4">
-                {initials}
+              <div className="relative mb-4">
+                <div className="h-20 w-20 rounded-full bg-[#17140F] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A]">
+                  {initials}
+                </div>
+                <span
+                  className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-2 border-white flex items-center justify-center ${
+                    isActive ? 'bg-green-500' : 'bg-gray-400'
+                  }`}
+                  title={isActive ? 'Đang hoạt động' : 'Đã khóa'}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                </span>
               </div>
               <h2 className="font-serif text-lg font-bold">{user.name}</h2>
-              <p className="text-xs text-[#B8924A] font-medium mb-1">Thành viên TrueWrist</p>
+              <span className="inline-flex items-center gap-1 mt-1 mb-2 bg-[#B8924A]/10 text-[#B8924A] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                {user.role === 'admin' ? <ShieldCheck className="h-3 w-3" /> : user.role === 'shop' ? <Store className="h-3 w-3" /> : <BadgeCheck className="h-3 w-3" />}
+                {membership}
+              </span>
               <p className="text-[11px] text-gray-400">{user.email}</p>
             </div>
 
-            <div className="space-y-3.5 text-xs text-[#17140F]/90">
-              <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
-                <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Lịch sử liên hệ</span>
-                <span className="font-bold text-[#B8924A]">{leads.length} yêu cầu</span>
+            {/* Account details */}
+            <div className="mb-6">
+              <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-2.5">Thông tin tài khoản</p>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 text-xs">
+                  <span className="h-8 w-8 rounded-lg bg-[#F6F4EF] flex items-center justify-center text-[#B8924A] flex-shrink-0">
+                    <Calendar className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Ngày tham gia</p>
+                    <p className="font-semibold text-[#17140F]">{joinDate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs">
+                  <span className="h-8 w-8 rounded-lg bg-[#F6F4EF] flex items-center justify-center text-[#B8924A] flex-shrink-0">
+                    <Globe className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Phương thức đăng nhập</p>
+                    <p className="font-semibold text-[#17140F]">{providerLabel}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 text-xs">
+                  <span className="h-8 w-8 rounded-lg bg-[#F6F4EF] flex items-center justify-center text-[#B8924A] flex-shrink-0">
+                    <Hash className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Mã thành viên</p>
+                    <p className="font-mono text-[11px] font-semibold text-[#17140F] truncate">{user.id}</p>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
-                <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Ảnh thử AR</span>
-                <span className="font-bold text-[#B8924A]">{captures.length} ảnh</span>
+            </div>
+
+            {/* Activity stats */}
+            <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-2.5">Hoạt động</p>
+            <div className="grid grid-cols-3 gap-2 text-center mb-6">
+              <div className="bg-[#F6F4EF] p-3 rounded-xl border border-gray-50">
+                <p className="font-display text-lg font-bold text-[#B8924A] leading-none">{leads.length}</p>
+                <p className="text-[8px] uppercase tracking-wider text-gray-400 font-bold mt-1">Liên hệ</p>
               </div>
-              <div className="flex justify-between items-center bg-[#F6F4EF] p-2.5 rounded-xl border border-gray-50">
-                <span className="text-gray-400 font-bold uppercase tracking-wider text-[9px]">Đồng hồ yêu thích</span>
-                <span className="font-bold text-[#B8924A]">{favorites.length} sản phẩm</span>
+              <div className="bg-[#F6F4EF] p-3 rounded-xl border border-gray-50">
+                <p className="font-display text-lg font-bold text-[#B8924A] leading-none">{captures.length}</p>
+                <p className="text-[8px] uppercase tracking-wider text-gray-400 font-bold mt-1">Ảnh AR</p>
+              </div>
+              <div className="bg-[#F6F4EF] p-3 rounded-xl border border-gray-50">
+                <p className="font-display text-lg font-bold text-[#B8924A] leading-none">{favorites.length}</p>
+                <p className="text-[8px] uppercase tracking-wider text-gray-400 font-bold mt-1">Yêu thích</p>
               </div>
             </div>
 
             {/* Logout button */}
             <button
               onClick={() => logout()}
-              className="w-full mt-6 border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+              className="w-full border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
               <LogOut className="h-4 w-4" /> <span>Đăng xuất</span>
             </button>

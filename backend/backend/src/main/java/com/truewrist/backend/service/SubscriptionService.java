@@ -2,12 +2,19 @@ package com.truewrist.backend.service;
 
 import com.truewrist.backend.domain.ShopSubscription;
 import com.truewrist.backend.domain.SubscriptionPlan;
+import com.truewrist.backend.dto.SubscriptionDtos.AdminPlanOverview;
 import com.truewrist.backend.dto.SubscriptionDtos.SubscriptionResponse;
 import com.truewrist.backend.exception.ApiException;
 import com.truewrist.backend.repository.ShopSubscriptionRepository;
+import com.truewrist.backend.repository.ShopSubscriptionRepository.PlanSubscriberCount;
 import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.util.Ids;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +62,21 @@ public class SubscriptionService {
         subscription.setUpdatedAt(now);
         subscription.setAutoRenew(false);
         return SubscriptionResponse.from(subscriptionRepository.save(subscription), now);
+    }
+
+    /** Real plan catalogue with active-subscriber counts for the admin overview. */
+    @Transactional(readOnly = true)
+    public List<AdminPlanOverview> adminOverview() {
+        long now = System.currentTimeMillis();
+        Map<SubscriptionPlan, Long> counts = subscriptionRepository.countActiveByPlan(now).stream()
+                .collect(Collectors.toMap(
+                        PlanSubscriberCount::getPlan,
+                        PlanSubscriberCount::getTotal,
+                        Long::sum,
+                        () -> new EnumMap<>(SubscriptionPlan.class)));
+        return Arrays.stream(SubscriptionPlan.values())
+                .map(plan -> AdminPlanOverview.from(plan, counts.getOrDefault(plan, 0L)))
+                .toList();
     }
 
     private ShopSubscription createTrial(String userId, long now) {

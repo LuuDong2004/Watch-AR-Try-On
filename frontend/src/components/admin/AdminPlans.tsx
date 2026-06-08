@@ -1,100 +1,126 @@
-import React, { useState } from 'react';
-import { Zap, Crown, Building2, Users, CircleDollarSign, TrendingUp, Pencil, X, Check, Star } from 'lucide-react';
-
-interface Plan {
-  id: string;
-  name: string;
-  tagline: string;
-  price: number; // VND / month, 0 = free
-  subscribers: number;
-  active: boolean;
-  popular: boolean;
-  Icon: typeof Zap;
-  box: string;
-  features: string[];
-}
-
-const INITIAL_PLANS: Plan[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    tagline: 'Thoải mái khám phá, không cần trả phí',
-    price: 0,
-    subscribers: 1280,
-    active: true,
-    popular: false,
-    Icon: Zap,
-    box: 'bg-[#17140F]/5 text-[#17140F]',
-    features: ['Duyệt bộ sưu tập + bộ lọc', 'Xem 3D 360°', 'Thử AR 5 lượt/ngày', 'Lưu yêu thích ≤ 10 mẫu'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    tagline: 'Cho tín đồ đồng hồ không bỏ lỡ mẫu nào',
-    price: 49000,
-    subscribers: 342,
-    active: true,
-    popular: true,
-    Icon: Crown,
-    box: 'bg-[#B8924A]/15 text-[#B8924A]',
-    features: ['Tất cả tính năng Free +', 'Thử AR không giới hạn', 'Lưu yêu thích không giới hạn', 'Cảnh báo giảm giá', 'Badge "Pro"'],
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    tagline: 'Cho chủ shop & đại lý đồng hồ',
-    price: 199000,
-    subscribers: 28,
-    active: true,
-    popular: false,
-    Icon: Building2,
-    box: 'bg-[#17140F] text-white',
-    features: ['Tất cả tính năng Pro +', 'Đăng bán không giới hạn', 'Dashboard phân tích', 'Quản lý nhiều cửa hàng', 'Badge "Đã xác minh"'],
-  },
-];
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Crown,
+  Sparkles,
+  Zap,
+  Users,
+  CircleDollarSign,
+  TrendingUp,
+  Star,
+  Check,
+  RefreshCw,
+  type LucideIcon,
+} from 'lucide-react';
+import { subscriptionApi, ApiError } from '../../api';
+import type { AdminPlanOverview, SubscriptionPlanCode } from '../../api';
 
 const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
+const formatLimit = (n: number) => (n < 0 ? 'Không giới hạn' : n.toLocaleString('vi-VN'));
+
+const PLAN_ICON: Record<SubscriptionPlanCode, LucideIcon> = {
+  TRIAL: Sparkles,
+  ESSENTIAL: Zap,
+  PREMIUM: Crown,
+};
+
+const PLAN_BOX: Record<SubscriptionPlanCode, string> = {
+  TRIAL: 'bg-[#17140F]/5 text-[#17140F]',
+  ESSENTIAL: 'bg-[#B8924A]/15 text-[#B8924A]',
+  PREMIUM: 'bg-[#17140F] text-white',
+};
+
+/** Normalise a plan's cycle price to a ~monthly figure so plans with different
+ * durations (14 / 30 / 365 ngày) contribute comparably to the MRR estimate. */
+const monthlyEquivalent = (price: number, durationDays: number) =>
+  durationDays > 0 ? Math.round((price * 30) / durationDays) : 0;
+
 export default function AdminPlans() {
-  const [plans, setPlans] = useState<Plan[]>(INITIAL_PLANS);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Plan | null>(null);
+  const [plans, setPlans] = useState<AdminPlanOverview[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalSubs = plans.reduce((s, p) => s + p.subscribers, 0);
-  const mrr = plans.reduce((s, p) => s + p.price * p.subscribers, 0);
-  const paidSubs = plans.filter((p) => p.price > 0).reduce((s, p) => s + p.subscribers, 0);
-  const paidRate = totalSubs ? Math.round((paidSubs / totalSubs) * 100) : 0;
-
-  const openEdit = (plan: Plan) => {
-    setDraft({ ...plan });
-    setEditingId(plan.id);
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const list = await subscriptionApi.adminOverview();
+      setPlans(list);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Không thể tải dữ liệu gói dịch vụ.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const saveEdit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!draft) return;
-    setPlans((prev) => prev.map((p) => (p.id === draft.id ? { ...draft, price: Number(draft.price) || 0 } : p)));
-    setEditingId(null);
-    setDraft(null);
-  };
+  useEffect(() => {
+    void loadData();
+  }, []);
 
-  const toggleActive = (id: string) => {
-    setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, active: !p.active } : p)));
-  };
+  const { totalSubs, mrr, paidSubs, paidRate } = useMemo(() => {
+    const total = plans.reduce((s, p) => s + p.subscribers, 0);
+    const monthlyRevenue = plans.reduce(
+      (s, p) => s + monthlyEquivalent(p.price, p.durationDays) * p.subscribers,
+      0,
+    );
+    const paid = plans.filter((p) => p.price > 0).reduce((s, p) => s + p.subscribers, 0);
+    return {
+      totalSubs: total,
+      mrr: monthlyRevenue,
+      paidSubs: paid,
+      paidRate: total ? Math.round((paid / total) * 100) : 0,
+    };
+  }, [plans]);
 
   const metrics = [
-    { label: 'Tổng người đăng ký', val: totalSubs.toLocaleString('vi-VN'), sub: `${plans.length} gói đang vận hành`, Icon: Users, color: 'text-blue-600' },
-    { label: 'Doanh thu định kỳ (MRR)', val: formatVND(mrr), sub: 'Ước tính theo số đăng ký', Icon: CircleDollarSign, color: 'text-[#B8924A]' },
-    { label: 'Tỷ lệ trả phí', val: `${paidRate}%`, sub: `${paidSubs.toLocaleString('vi-VN')} người dùng trả phí`, Icon: TrendingUp, color: 'text-green-600' },
+    {
+      label: 'Tổng người đăng ký',
+      val: totalSubs.toLocaleString('vi-VN'),
+      sub: `${plans.length} gói đang vận hành`,
+      Icon: Users,
+      color: 'text-blue-600',
+    },
+    {
+      label: 'Doanh thu định kỳ (MRR)',
+      val: formatVND(mrr),
+      sub: 'Ước tính quy đổi theo tháng',
+      Icon: CircleDollarSign,
+      color: 'text-[#B8924A]',
+    },
+    {
+      label: 'Tỷ lệ trả phí',
+      val: `${paidRate}%`,
+      sub: `${paidSubs.toLocaleString('vi-VN')} người dùng trả phí`,
+      Icon: TrendingUp,
+      color: 'text-green-600',
+    },
   ];
 
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans p-6 md:p-8 w-full overflow-y-auto">
-      <header className="mb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Gói Dịch Vụ</h1>
-        <p className="text-xs text-gray-500 mt-1">Cấu hình giá, tính năng và trạng thái mở bán của các gói Free / Pro / Business</p>
+      <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#17140F]">Quản Lý Gói Dịch Vụ</h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Theo dõi danh mục gói và số người đăng ký thực tế trên TrueWrist
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadData()}
+          className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-[#e5e0d8] bg-white px-4 py-2.5 text-xs font-bold text-[#17140F] shadow-sm transition hover:border-[#B8924A] hover:text-[#9A7434]"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-[#B8924A]' : ''}`} />
+          Làm mới
+        </button>
       </header>
+
+      {error && (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-xs font-semibold text-red-600">
+          {error}
+        </div>
+      )}
 
       {/* Metric cards */}
       <section className="grid sm:grid-cols-3 gap-6 mb-8">
@@ -102,7 +128,7 @@ export default function AdminPlans() {
           <div key={i} className="bg-white rounded-2xl p-5 border border-[#e5e0d8] shadow-sm flex items-center justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-1">{m.label}</p>
-              <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">{m.val}</h3>
+              <h3 className="text-xl md:text-2xl font-bold text-[#17140F] mb-1">{loading ? '—' : m.val}</h3>
               <p className="text-[10px] text-gray-500 font-semibold">{m.sub}</p>
             </div>
             <div className={`h-12 w-12 rounded-xl bg-[#F6F4EF] flex items-center justify-center border border-gray-100 ${m.color}`}>
@@ -115,171 +141,115 @@ export default function AdminPlans() {
       {/* Plans table */}
       <section className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
         <h3 className="font-display text-sm font-bold mb-4 border-b border-[#e5e0d8] pb-3">Danh sách gói</h3>
-        <div className="overflow-x-auto text-xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[9px] bg-gray-50/50">
-                <th className="py-3 px-4">Gói</th>
-                <th className="py-3 px-4">Giá / tháng</th>
-                <th className="py-3 px-4 text-center">Người đăng ký</th>
-                <th className="py-3 px-4 text-center">Tỷ trọng</th>
-                <th className="py-3 px-4 text-right">Doanh thu/tháng</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-                <th className="py-3 px-4 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {plans.map((p) => {
-                const share = totalSubs ? Math.round((p.subscribers / totalSubs) * 100) : 0;
-                return (
-                  <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <span className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${p.box}`}>
-                          <p.Icon className="h-4 w-4" />
-                        </span>
-                        <div>
-                          <p className="font-display font-bold text-sm text-[#17140F] flex items-center gap-1.5">
-                            {p.name}
-                            {p.popular && (
-                              <span className="inline-flex items-center gap-1 bg-[#B8924A] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"><Star className="h-2.5 w-2.5 fill-current" /> Phổ biến</span>
-                            )}
-                          </p>
-                          <p className="text-[10px] text-gray-400 max-w-[220px] truncate">{p.tagline}</p>
+
+        {loading && <p className="py-12 text-center text-gray-400 text-xs">Đang tải…</p>}
+        {!loading && !error && plans.length === 0 && (
+          <p className="py-12 text-center text-gray-400 text-xs">Chưa có gói dịch vụ nào.</p>
+        )}
+
+        {!loading && plans.length > 0 && (
+          <div className="overflow-x-auto text-xs">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 text-gray-400 uppercase tracking-wider text-[9px] bg-gray-50/50">
+                  <th className="py-3 px-4">Gói</th>
+                  <th className="py-3 px-4">Giá / chu kỳ</th>
+                  <th className="py-3 px-4 text-center">Người đăng ký</th>
+                  <th className="py-3 px-4 text-center">Tỷ trọng</th>
+                  <th className="py-3 px-4 text-right">Doanh thu/tháng</th>
+                  <th className="py-3 px-4 text-center">Giới hạn</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plans.map((p) => {
+                  const Icon = PLAN_ICON[p.code];
+                  const share = totalSubs ? Math.round((p.subscribers / totalSubs) * 100) : 0;
+                  const monthlyRevenue = monthlyEquivalent(p.price, p.durationDays) * p.subscribers;
+                  return (
+                    <tr key={p.code} className="border-b border-gray-50 hover:bg-gray-50/50 transition align-top">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <span className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${PLAN_BOX[p.code]}`}>
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <div>
+                            <p className="font-display font-bold text-sm text-[#17140F] flex items-center gap-1.5">
+                              {p.name}
+                              {p.recommended && (
+                                <span className="inline-flex items-center gap-1 bg-[#B8924A] text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                                  <Star className="h-2.5 w-2.5 fill-current" /> Đề xuất
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[10px] text-gray-400 max-w-[240px] truncate">{p.description}</p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-[#17140F]">{p.price === 0 ? 'Miễn phí' : formatVND(p.price)}</td>
-                    <td className="py-3.5 px-4 text-center font-semibold text-gray-700">{p.subscribers.toLocaleString('vi-VN')}</td>
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden min-w-[60px]">
-                          <div className="h-full bg-[#B8924A]" style={{ width: `${share}%` }} />
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-bold text-[#17140F]">{p.price === 0 ? 'Miễn phí' : formatVND(p.price)}</span>
+                        <span className="block text-[10px] text-gray-400">{p.durationDays} ngày</span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-semibold text-gray-700">
+                        {p.subscribers.toLocaleString('vi-VN')}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden min-w-[60px]">
+                            <div className="h-full bg-[#B8924A]" style={{ width: `${share}%` }} />
+                          </div>
+                          <span className="text-[10px] font-semibold text-gray-500 w-8 text-right">{share}%</span>
                         </div>
-                        <span className="text-[10px] font-semibold text-gray-500 w-8 text-right">{share}%</span>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-bold text-[#B8924A]">{p.price === 0 ? '—' : formatVND(p.price * p.subscribers)}</td>
-                    <td className="py-3.5 px-4 text-center">
-                      <button
-                        onClick={() => toggleActive(p.id)}
-                        className={`inline-flex items-center h-5 w-9 rounded-full transition relative ${p.active ? 'bg-green-500' : 'bg-gray-300'}`}
-                        title={p.active ? 'Đang mở bán' : 'Đã tạm ẩn'}
-                      >
-                        <span className={`h-4 w-4 bg-white rounded-full shadow absolute top-0.5 transition ${p.active ? 'left-[18px]' : 'left-0.5'}`} />
-                      </button>
-                      <p className={`text-[9px] font-bold mt-1 ${p.active ? 'text-green-600' : 'text-gray-400'}`}>{p.active ? 'Mở bán' : 'Tạm ẩn'}</p>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="inline-flex items-center gap-1.5 bg-[#17140F] text-white hover:bg-black py-1.5 px-3 rounded-lg font-bold"
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-bold text-[#B8924A]">
+                        {monthlyRevenue === 0 ? '—' : formatVND(monthlyRevenue)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-[11px] text-gray-600">
+                        <span className="font-semibold">{formatLimit(p.maxShops)}</span> cửa hàng
+                        <span className="block text-gray-400">{formatLimit(p.maxProducts)} sản phẩm</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
-      {/* Edit modal */}
-      {editingId && draft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditingId(null)} />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-[#e5e0d8] overflow-hidden max-h-[90vh] overflow-y-auto animate-slide-up">
-            <form onSubmit={saveEdit}>
-              <div className="bg-[#17140F] text-white px-6 py-5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className={`h-10 w-10 rounded-xl flex items-center justify-center ${draft.box}`}><draft.Icon className="h-5 w-5" /></span>
+      {/* Plan feature breakdown */}
+      {!loading && plans.length > 0 && (
+        <section className="mt-6 grid gap-5 lg:grid-cols-3">
+          {plans.map((p) => {
+            const Icon = PLAN_ICON[p.code];
+            return (
+              <article key={p.code} className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className={`h-10 w-10 rounded-xl flex items-center justify-center ${PLAN_BOX[p.code]}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
                   <div>
-                    <h2 className="font-display text-lg font-bold">Chỉnh sửa gói {draft.name}</h2>
-                    <p className="text-[11px] text-gray-400">Thay đổi sẽ áp dụng cho gói hiển thị ngoài trang giá</p>
+                    <p className="font-display font-bold text-sm text-[#17140F]">{p.name}</p>
+                    <p className="text-[10px] text-gray-400">
+                      {p.price === 0 ? 'Miễn phí' : `${formatVND(p.price)} / ${p.durationDays} ngày`}
+                    </p>
                   </div>
                 </div>
-                <button type="button" onClick={() => setEditingId(null)} className="text-gray-400 hover:text-white transition" aria-label="Đóng"><X className="h-5 w-5" /></button>
-              </div>
-
-              <div className="p-6 space-y-4 text-xs">
-                <div>
-                  <label className="block text-gray-500 font-bold mb-1">Tên gói</label>
-                  <input
-                    type="text"
-                    value={draft.name}
-                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-500 font-bold mb-1">Mô tả ngắn</label>
-                  <input
-                    type="text"
-                    value={draft.tagline}
-                    onChange={(e) => setDraft({ ...draft, tagline: e.target.value })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-500 font-bold mb-1">Giá / tháng (VND)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1000}
-                    value={draft.price}
-                    onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-[#e5e0d8] px-3.5 py-2.5 focus:outline-none focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/20 transition"
-                  />
-                  <p className="text-[10px] text-gray-400 mt-1">Đặt 0 để gói miễn phí.</p>
-                </div>
-
-                {/* Feature list (read-only preview) */}
-                <div>
-                  <label className="block text-gray-500 font-bold mb-1.5">Tính năng nổi bật</label>
-                  <ul className="space-y-1.5 bg-[#F6F4EF] rounded-xl border border-gray-100 p-3">
-                    {draft.features.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2 text-gray-600"><Check className="h-3.5 w-3.5 text-[#B8924A] flex-shrink-0" /> {f}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Toggles */}
-                <div className="flex items-center justify-between rounded-xl border border-[#e5e0d8] px-3.5 py-2.5">
-                  <span className="font-bold text-gray-600">Đang mở bán</span>
-                  <button
-                    type="button"
-                    onClick={() => setDraft({ ...draft, active: !draft.active })}
-                    className={`inline-flex items-center h-5 w-9 rounded-full transition relative ${draft.active ? 'bg-green-500' : 'bg-gray-300'}`}
-                  >
-                    <span className={`h-4 w-4 bg-white rounded-full shadow absolute top-0.5 transition ${draft.active ? 'left-[18px]' : 'left-0.5'}`} />
-                  </button>
-                </div>
-                <div className="flex items-center justify-between rounded-xl border border-[#e5e0d8] px-3.5 py-2.5">
-                  <span className="font-bold text-gray-600">Đánh dấu "Phổ biến nhất"</span>
-                  <button
-                    type="button"
-                    onClick={() => setDraft({ ...draft, popular: !draft.popular })}
-                    className={`inline-flex items-center h-5 w-9 rounded-full transition relative ${draft.popular ? 'bg-[#B8924A]' : 'bg-gray-300'}`}
-                  >
-                    <span className={`h-4 w-4 bg-white rounded-full shadow absolute top-0.5 transition ${draft.popular ? 'left-[18px]' : 'left-0.5'}`} />
-                  </button>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button type="submit" className="flex-1 bg-[#17140F] text-white py-3 rounded-xl font-bold hover:bg-black transition shadow active:scale-[0.99]">
-                    Lưu thay đổi
-                  </button>
-                  <button type="button" onClick={() => setEditingId(null)} className="flex-1 border border-[#e5e0d8] text-gray-500 py-3 rounded-xl font-semibold hover:bg-gray-50 transition">
-                    Huỷ
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+                <ul className="space-y-1.5 text-[11px]">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-600">
+                      <Check className="h-3.5 w-3.5 text-[#B8924A] flex-shrink-0 mt-0.5" /> {f}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            );
+          })}
+        </section>
       )}
+
+      <p className="mt-6 text-[10px] text-gray-400">
+        Danh mục gói được cấu hình ở phía máy chủ. Số liệu người đăng ký phản ánh các gói còn hiệu lực.
+      </p>
     </div>
   );
 }

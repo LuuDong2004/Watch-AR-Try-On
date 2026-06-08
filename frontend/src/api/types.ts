@@ -146,3 +146,17 @@ export interface ShopSubscription {
   currentPlan: SubscriptionPlan;
   plans: SubscriptionPlan[];
 }
+
+/** Admin plan overview: plan definition plus its real active-subscriber count. */
+export interface AdminPlanOverview {
+  code: SubscriptionPlanCode;
+  name: string;
+  description: string;
+  price: number;
+  durationDays: number;
+  maxShops: number;
+  maxProducts: number;
+  recommended: boolean;
+  subscribers: number;
+  features: string[];
+}

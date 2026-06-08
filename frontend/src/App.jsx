@@ -38,7 +38,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import AdminShops from './components/admin/AdminShops';
 import AdminAudit from './components/admin/AdminAudit';
 import AdminUsers from './components/admin/AdminUsers';
-import AdminLeads from './components/admin/AdminLeads';
+import AdminFeedback from './components/admin/AdminFeedback';
 import AdminPlans from './components/admin/AdminPlans';
 import AdminSettings from './components/admin/AdminSettings';
 
@@ -324,8 +324,8 @@ export default function App() {
         return <AdminAudit />;
       case 'users':
         return <AdminUsers />;
-      case 'leads':
-        return <AdminLeads />;
+      case 'feedback':
+        return <AdminFeedback />;
       case 'plans':
         return <AdminPlans />;
       case 'settings':

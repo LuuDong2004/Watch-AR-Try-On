@@ -1,10 +1,12 @@
 package com.truewrist.backend.web;
 
+import com.truewrist.backend.dto.SubscriptionDtos.AdminPlanOverview;
 import com.truewrist.backend.dto.SubscriptionDtos.SubscriptionResponse;
 import com.truewrist.backend.dto.SubscriptionDtos.UpgradeRequest;
 import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.service.SubscriptionService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,5 +36,12 @@ public class SubscriptionController {
             @Valid @RequestBody UpgradeRequest request,
             @AuthenticationPrincipal AppUserPrincipal actor) {
         return subscriptionService.upgrade(actor, request.plan());
+    }
+
+    /** Admin overview: real plan catalogue with active-subscriber counts. */
+    @GetMapping("/admin/overview")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AdminPlanOverview> adminOverview() {
+        return subscriptionService.adminOverview();
     }
 }

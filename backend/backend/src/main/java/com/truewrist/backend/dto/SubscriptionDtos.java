@@ -70,4 +70,32 @@ public final class SubscriptionDtos {
     }
 
     public record UpgradeRequest(@NotNull SubscriptionPlan plan) {}
+
+    /** Plan definition plus its real active-subscriber count, for the admin overview. */
+    public record AdminPlanOverview(
+            SubscriptionPlan code,
+            String name,
+            String description,
+            long price,
+            int durationDays,
+            int maxShops,
+            int maxProducts,
+            boolean recommended,
+            long subscribers,
+            List<String> features) {
+
+        public static AdminPlanOverview from(SubscriptionPlan plan, long subscribers) {
+            return new AdminPlanOverview(
+                    plan,
+                    plan.getDisplayName(),
+                    plan.getDescription(),
+                    plan.getPrice(),
+                    plan.getDurationDays(),
+                    plan.getMaxShops(),
+                    plan.getMaxProducts(),
+                    plan.isRecommended(),
+                    subscribers,
+                    plan.getFeatures());
+        }
+    }
 }

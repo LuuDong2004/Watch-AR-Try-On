@@ -5,9 +5,10 @@
  * types (see ./types). Components call these instead of the old localStorage
  * mock helpers.
  */
-import { http, setToken, getToken as getTokenSafe } from './client';
+import { http, setToken, getToken as getTokenSafe, ApiError } from './client';
 import { validateImageFile } from '../utils/uploads';
 import type {
+  AdminPlanOverview,
   ClosetItem,
   Feedback,
   Lead,
@@ -395,6 +396,10 @@ export const subscriptionApi = {
   },
   async upgrade(plan: SubscriptionPlanCode): Promise<ShopSubscription> {
     return http.post<ShopSubscription>('/api/subscription/upgrade', { plan });
+  },
+  /** Admin: real plan catalogue with active-subscriber counts. */
+  async adminOverview(): Promise<AdminPlanOverview[]> {
+    return http.get<AdminPlanOverview[]>('/api/subscription/admin/overview');
   },
 };
 
