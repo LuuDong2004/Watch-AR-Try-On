@@ -69,7 +69,9 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         // Public auth + OAuth2 endpoints
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers(
+                                "/api/auth/login", "/api/auth/register",
+                                "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         // A seller's own shops require auth (must come before the public wildcard)
                         .requestMatchers(HttpMethod.GET, "/api/shops/mine").authenticated()

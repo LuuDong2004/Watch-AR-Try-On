@@ -20,4 +20,12 @@ public final class AuthDtos {
 
     /** Returned on successful login/register; token is the bearer JWT. */
     public record AuthResponse(String token, UserDtos.UserResponse user) {}
+
+    /** Request a password-reset email for the given account. */
+    public record ForgotPasswordRequest(@NotBlank @Email String email) {}
+
+    /** Complete a password reset using the token from the emailed link. */
+    public record ResetPasswordRequest(
+            @NotBlank String token,
+            @NotBlank @Size(min = 6, message = "Mật khẩu tối thiểu 6 ký tự") String newPassword) {}
 }

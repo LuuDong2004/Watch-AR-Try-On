@@ -4,9 +4,35 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Binds the {@code app.*} block in application.yml. */
 @ConfigurationProperties(prefix = "app")
-public record AppProperties(Jwt jwt, Cors cors, OAuth2 oauth2, Seed seed, Storage storage) {
+public record AppProperties(
+        Jwt jwt,
+        Cors cors,
+        OAuth2 oauth2,
+        Seed seed,
+        Storage storage,
+        Mail mail,
+        Frontend frontend,
+        PasswordReset passwordReset) {
 
     public record Jwt(String secret, long expirationMs) {}
+
+    /** Outgoing email settings. When {@code enabled} is false, reset links are
+     *  logged instead of emailed (handy for local dev without SMTP). */
+    public record Mail(String from, boolean enabled) {}
+
+    /** Where the SPA lives, used to build links in emails (e.g. reset password). */
+    public record Frontend(String baseUrl) {
+        public String resolvedBaseUrl() {
+            String base = (baseUrl == null || baseUrl.isBlank()) ? "http://localhost:5555" : baseUrl;
+            return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        }
+    }
+
+    public record PasswordReset(long tokenTtlMinutes) {
+        public long ttlMinutesOrDefault() {
+            return tokenTtlMinutes <= 0 ? 60 : tokenTtlMinutes;
+        }
+    }
 
     public record Cors(String allowedOrigins) {
         public String[] origins() {

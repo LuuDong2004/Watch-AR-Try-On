@@ -17,6 +17,20 @@ spring:
         format_sql: false
     show-sql: false
 
+  # SMTP for outgoing email (password reset). Leave MAIL_HOST blank and
+  # MAIL_ENABLED=false to run without a real mail server (links are logged).
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
   security:
     oauth2:
       client:
@@ -56,6 +70,17 @@ app:
   seed:
     # Seed demo users/shops/watches on startup if the DB is empty.
     enabled: ${SEED_ENABLED:true}
+  mail:
+    # Sender address for system emails.
+    from: ${MAIL_FROM:TrueWrist <no-reply@truewrist.vn>}
+    # Set true once SMTP is configured; otherwise reset links are only logged.
+    enabled: ${MAIL_ENABLED:false}
+  frontend:
+    # Base URL of the SPA — reset-password links point here.
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5555}
+  password-reset:
+    # How long a reset link stays valid, in minutes.
+    token-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:60}
   storage:
     # MinIO / S3-compatible object storage for uploaded images.
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
