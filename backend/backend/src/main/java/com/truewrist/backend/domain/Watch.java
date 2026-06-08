@@ -102,6 +102,17 @@ public class Watch {
     @Builder.Default
     private ListingStatus status = ListingStatus.ACTIVE;
 
+    /** AR/3D moderation state. Only APPROVED watches expose "Thử AR" publicly.
+     *  Nullable column so legacy rows upgrade cleanly (treated as PENDING). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ar_review_status", length = 16)
+    @Builder.Default
+    private ArReviewStatus arReviewStatus = ArReviewStatus.PENDING;
+
+    /** Optional reviewer feedback shown to the seller when AR is rejected. */
+    @Column(name = "ar_review_note", length = 500)
+    private String arReviewNote;
+
     @Column(name = "shop_id", nullable = false, length = 64)
     private String shopId;
 

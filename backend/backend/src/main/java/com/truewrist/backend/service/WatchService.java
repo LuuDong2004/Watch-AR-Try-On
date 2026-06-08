@@ -1,5 +1,8 @@
 package com.truewrist.backend.service;
 
+import com.truewrist.backend.domain.ArReviewStatus;
+import com.truewrist.backend.domain.ListingStatus;
+import com.truewrist.backend.domain.Shop;
 import com.truewrist.backend.domain.Watch;
 import com.truewrist.backend.dto.WatchDtos.WatchRequest;
 import com.truewrist.backend.exception.ApiException;
@@ -12,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.stereotype.Service;
@@ -46,6 +50,33 @@ public class WatchService {
     public Watch findById(String id) {
         return watchRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy đồng hồ."));
+    }
+
+    /** AR-enabled watches for the admin moderation queue (pending first). */
+    public List<Watch> findArModels() {
+        List<Watch> watches = new ArrayList<>(watchRepository.findAll().stream()
+                .filter(Watch::isHasAR)
+                .toList());
+        watches.sort(Comparator
+                .comparingInt((Watch w) -> effectiveStatus(w) == ArReviewStatus.PENDING ? 0 : 1)
+                .thenComparing(Comparator.comparingLong(Watch::getCreatedAt).reversed()));
+        return watches;
+    }
+
+    /** Admin approves/rejects a watch's AR model. */
+    @Transactional
+    public Watch reviewAr(String id, ArReviewStatus status, String note) {
+        Watch watch = findById(id);
+        if (!watch.isHasAR()) {
+            throw ApiException.badRequest("Đồng hồ này chưa bật AR nên không cần kiểm duyệt.");
+        }
+        watch.setArReviewStatus(status);
+        watch.setArReviewNote(status == ArReviewStatus.REJECTED ? note : null);
+        return watchRepository.save(watch);
+    }
+
+    private static ArReviewStatus effectiveStatus(Watch w) {
+        return w.getArReviewStatus() == null ? ArReviewStatus.PENDING : w.getArReviewStatus();
     }
 
     @Transactional
@@ -86,6 +117,8 @@ public class WatchService {
         Watch watch = findById(id);
         assertCanManage(watch.getShopId(), actor);
         Set<String> oldAssets = assetUrls(watch);
+        boolean oldHasAr = watch.isHasAR();
+        String oldModelUrl = watch.getModelUrl();
         List<String> gallery = resolveGallery(req.image(), req.galleryOrEmpty());
         watch.setName(req.name());
         watch.setBrand(req.brand());
@@ -105,6 +138,12 @@ public class WatchService {
         watch.setRating(req.ratingOrZero());
         watch.setReviewCount(req.reviewCountOrZero());
         watch.setStatus(req.statusOrActive());
+        // A new/changed AR model must be re-moderated before it goes public again.
+        boolean newHasAr = req.hasArOrDefault();
+        if (newHasAr && (!oldHasAr || !Objects.equals(oldModelUrl, req.modelUrl()))) {
+            watch.setArReviewStatus(ArReviewStatus.PENDING);
+            watch.setArReviewNote(null);
+        }
         // shopId is not reassignable here; admins move stock by recreating it.
         Watch saved = watchRepository.save(watch);
         oldAssets.removeAll(assetUrls(saved));
@@ -194,18 +233,17 @@ public class WatchService {
             return;
         }
 
-        if (watchShopId.equals(actor.getShopId())) {
-            return;
+        Shop shop = shopRepository.findById(watchShopId).orElse(null);
+        boolean ownsShop = shop != null
+                && (watchShopId.equals(actor.getShopId()) || actor.getId().equals(shop.getOwnerId()));
+        if (!ownsShop) {
+            throw ApiException.forbidden("Bạn chỉ có thể quản lý đồng hồ của cửa hàng mình.");
         }
-
-        boolean ownsShop = shopRepository.findById(watchShopId)
-                .map(shop -> actor.getId().equals(shop.getOwnerId()))
-                .orElse(false);
-        if (ownsShop) {
-            return;
+        // A locked shop is frozen: the owner cannot add/edit/remove its products.
+        if (shop.getStatus() == ListingStatus.LOCKED) {
+            throw ApiException.forbidden(
+                    "Cửa hàng đang bị khóa nên không thể thao tác sản phẩm. Vui lòng liên hệ quản trị viên.");
         }
-
-        throw ApiException.forbidden("Bạn chỉ có thể quản lý đồng hồ của cửa hàng mình.");
     }
 
     private boolean isAdmin(AppUserPrincipal actor) {

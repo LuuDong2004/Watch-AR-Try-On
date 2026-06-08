@@ -1,5 +1,6 @@
 package com.truewrist.backend.web;
 
+import com.truewrist.backend.dto.WatchDtos.ArReviewRequest;
 import com.truewrist.backend.dto.WatchDtos.WatchRequest;
 import com.truewrist.backend.dto.WatchDtos.WatchResponse;
 import com.truewrist.backend.security.AppUserPrincipal;
@@ -39,6 +40,22 @@ public class WatchController {
     @GetMapping("/{id}")
     public WatchResponse get(@PathVariable String id) {
         return WatchResponse.from(watchService.findById(id));
+    }
+
+    /** Admin moderation queue: all AR-enabled watches (pending first). */
+    @GetMapping("/ar-moderation")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<WatchResponse> arModeration() {
+        return watchService.findArModels().stream().map(WatchResponse::from).toList();
+    }
+
+    /** Admin approves/rejects a watch's AR/3D model. */
+    @PostMapping("/{id}/ar-review")
+    @PreAuthorize("hasRole('ADMIN')")
+    public WatchResponse reviewAr(
+            @PathVariable String id,
+            @Valid @RequestBody ArReviewRequest req) {
+        return WatchResponse.from(watchService.reviewAr(id, req.status(), req.note()));
     }
 
     @PostMapping

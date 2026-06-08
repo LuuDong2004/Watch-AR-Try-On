@@ -1,8 +1,10 @@
 package com.truewrist.backend.dto;
 
+import com.truewrist.backend.domain.ArReviewStatus;
 import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Watch;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
@@ -35,18 +37,28 @@ public final class WatchDtos {
             double rating,
             int reviewCount,
             ListingStatus status,
+            ArReviewStatus arReviewStatus,
+            String arReviewNote,
             String shopId,
             long createdAt) {
 
         public static WatchResponse from(Watch w) {
+            ArReviewStatus arStatus = w.getArReviewStatus() == null
+                    ? ArReviewStatus.PENDING
+                    : w.getArReviewStatus();
             return new WatchResponse(
                     w.getId(), w.getName(), w.getBrand(), w.getPrice(), w.getOriginalPrice(),
                     w.getDescription(), w.getSpecs(), w.getImage(), w.getGallery(),
                     w.getModelUrl(), w.isHasAR(), w.getArWatchId(), w.getVariant(),
                     w.getMetal(), w.getDial(), w.getAccent(), w.getRating(), w.getReviewCount(),
-                    w.getStatus(), w.getShopId(), w.getCreatedAt());
+                    w.getStatus(), arStatus, w.getArReviewNote(), w.getShopId(), w.getCreatedAt());
         }
     }
+
+    /** Admin moderation decision for a watch's AR/3D model. */
+    public record ArReviewRequest(
+            @NotNull ArReviewStatus status,
+            String note) {}
 
     public record WatchRequest(
             @NotBlank String name,
