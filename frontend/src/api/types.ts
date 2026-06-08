@@ -6,6 +6,8 @@
 
 export type Role = 'admin' | 'shop' | 'customer';
 export type UserStatus = 'active' | 'locked';
+/** AR/3D moderation state. Only 'approved' watches expose the "Thử AR" try-on. */
+export type ArReviewStatus = 'pending' | 'approved' | 'rejected';
 
 export interface User {
   id: string;
@@ -15,6 +17,8 @@ export interface User {
   shopId?: string | null;
   status: UserStatus;
   provider?: string;
+  /** Profile picture URL; null/undefined = show initials. */
+  avatar?: string | null;
   createdAt?: number;
 }
 
@@ -38,7 +42,11 @@ export interface Watch {
   accent?: string;
   rating?: number;
   reviewCount?: number;
-  status?: 'active' | 'archived';
+  status?: 'active' | 'locked';
+  /** AR/3D moderation state (admin-controlled). */
+  arReviewStatus?: ArReviewStatus;
+  /** Reviewer feedback shown to the seller when AR is rejected. */
+  arReviewNote?: string | null;
   shopId: string;
   createdAt?: number;
 }
@@ -64,7 +72,9 @@ export interface Shop {
   rating?: number;
   reviewCount?: number;
   since?: string;
-  status?: 'active' | 'archived';
+  status?: 'active' | 'locked';
+  /** Reason shown to the owner when an admin locks the shop. */
+  lockReason?: string | null;
   createdAt?: number;
 }
 
@@ -120,7 +130,9 @@ export interface Feedback {
   timestamp?: string;
 }
 
-export type SubscriptionPlanCode = 'TRIAL' | 'ESSENTIAL' | 'PREMIUM';
+/** Plan codes are now editable catalogue keys (TRIAL/ESSENTIAL/PREMIUM are the
+ *  seeded defaults; admins can add custom ones), so this is just a string. */
+export type SubscriptionPlanCode = string;
 export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED';
 
 export interface SubscriptionPlan {
@@ -132,6 +144,8 @@ export interface SubscriptionPlan {
   maxShops: number;
   maxProducts: number;
   recommended: boolean;
+  /** Display + upgrade/downgrade rank (higher = more premium). */
+  sortOrder: number;
   features: string[];
 }
 
@@ -157,6 +171,37 @@ export interface AdminPlanOverview {
   maxShops: number;
   maxProducts: number;
   recommended: boolean;
+  trial: boolean;
+  sortOrder: number;
   subscribers: number;
   features: string[];
+}
+
+/** Admin payload to create/update a plan (code is server-assigned on create). */
+export interface PlanInput {
+  name: string;
+  description?: string;
+  price: number;
+  durationDays: number;
+  maxShops: number;
+  maxProducts: number;
+  recommended: boolean;
+  sortOrder?: number;
+  features: string[];
+}
+
+/** A seller currently on a paid plan, for the admin subscriber table. */
+export interface AdminSubscriberRow {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  shopId?: string | null;
+  shopName?: string | null;
+  planCode: string;
+  planName: string;
+  price: number;
+  status: SubscriptionStatus;
+  registeredAt: number;
+  expiresAt: number;
+  daysRemaining: number;
 }

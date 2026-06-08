@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Lock } from 'lucide-react';
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx';
 import { detectMobile } from './utils/device.js';
 
@@ -6,9 +7,10 @@ import { detectMobile } from './utils/device.js';
 import { useSession, uiRoleFor } from './auth/session';
 import { useLoginPrompt } from './auth/loginPrompt';
 import LoginScreen from './components/auth/LoginScreen';
+import ResetPasswordScreen from './components/auth/ResetPasswordScreen';
 import ToastHost from './components/ToastHost';
 import AppErrorPage from './components/AppErrorPage.jsx';
-import { setToken, watchApi, favoriteApi, leadApi } from './api';
+import { setToken, watchApi, favoriteApi, leadApi, shopApi } from './api';
 import { normalizePath, parseAppRoute, routePathForState } from './utils/router.js';
 
 // User (Customer) Components
@@ -69,6 +71,7 @@ export default function App() {
   const [selectedWatchId, setSelectedWatchId] = useState(() => initialRoute.watchId || sessionStorage.getItem('tw_watch') || 'chrono');
   const [selectedShopId, setSelectedShopId] = useState(() => initialRoute.shopId || sessionStorage.getItem('tw_shop') || null);
   const [mode, setMode] = useState('none');
+  const [resetToken, setResetToken] = useState(null);
   // Shop/admin users can preview the customer storefront ("view as user").
   const [storefront, setStorefront] = useState(() => initialRoute.area === 'user' || sessionStorage.getItem('tw_storefront') === '1');
 
@@ -108,6 +111,7 @@ export default function App() {
   // Badge counters (fetched from the backend).
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
+  const [lockedShops, setLockedShops] = useState([]);
   const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
 
   // Boot: capture an OAuth callback token, restore the session, handle AR deep link.
@@ -115,18 +119,22 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const isCallback = window.location.pathname.includes('oauth-callback');
-    if (token && (isCallback || params.has('token'))) {
+    const isReset = window.location.pathname.includes('reset-password');
+    if (isReset && token) {
+      // Password-reset link — open the reset overlay (this is NOT an auth token).
+      setResetToken(token);
+    } else if (token && (isCallback || params.has('token'))) {
       setToken(token);
     }
     initSession();
 
     if (params.get('ar') === '1') setMode('ar');
 
-    if (token || params.has('ar') || isCallback) {
+    if (token || params.has('ar') || isCallback || isReset) {
       const url = new URL(window.location.href);
       url.searchParams.delete('token');
       url.searchParams.delete('ar');
-      const cleanPath = isCallback ? '/' : url.pathname;
+      const cleanPath = (isCallback || isReset) ? '/' : url.pathname;
       window.history.replaceState({}, '', cleanPath + url.search);
     }
   }, [initSession]);
@@ -165,6 +173,11 @@ export default function App() {
           const leads = await leadApi.list();
           if (!cancelled) setNewLeadsCount(leads.filter((l) => l.status === 'new').length);
         } else if (!cancelled) setNewLeadsCount(0);
+
+        if (user && role === 'shop') {
+          const shops = await shopApi.mine();
+          if (!cancelled) setLockedShops(shops.filter((s) => s.status === 'locked'));
+        } else if (!cancelled) setLockedShops([]);
       } catch {
         /* ignore badge fetch errors */
       }
@@ -390,7 +403,27 @@ export default function App() {
             onLogout={handleLogout}
             onGoHome={goStorefront}
           />
-          <main className="flex-1 h-screen overflow-y-auto flex">{renderShopPages()}</main>
+          <main className="flex-1 h-screen overflow-y-auto flex flex-col">
+            {lockedShops.length > 0 && (
+              <div className="border-b border-red-200 bg-red-50 px-6 py-3">
+                <div className="flex items-start gap-3">
+                  <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+                  <p className="text-xs leading-5 text-red-700">
+                    <span className="font-bold">
+                      {lockedShops.length === 1
+                        ? `Cửa hàng "${lockedShops[0].name}" đã bị khóa bởi quản trị viên.`
+                        : `${lockedShops.length} cửa hàng của bạn đã bị khóa bởi quản trị viên.`}
+                    </span>{' '}
+                    {lockedShops.length === 1 && lockedShops[0].lockReason && (
+                      <span>Lý do: <span className="font-semibold">{lockedShops[0].lockReason}</span>. </span>
+                    )}
+                    Cửa hàng và sản phẩm sẽ không hiển thị với khách hàng cho đến khi được mở khóa. Vui lòng liên hệ hỗ trợ nếu cần.
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-1 min-h-0">{renderShopPages()}</div>
+          </main>
         </div>
       )}
 
@@ -402,6 +435,7 @@ export default function App() {
             pendingAuditsCount={0}
             user={user}
             onLogout={handleLogout}
+            onGoHome={goStorefront}
           />
           <main className="flex-1 h-screen overflow-y-auto flex">{renderAdminPages()}</main>
         </div>
@@ -412,6 +446,15 @@ export default function App() {
 
       {/* Login / register overlay */}
       {loginOpen && <LoginScreen onClose={hideLogin} />}
+
+      {/* Password reset overlay (from the emailed link) */}
+      {resetToken && (
+        <ResetPasswordScreen
+          token={resetToken}
+          onClose={() => setResetToken(null)}
+          onLoginClick={() => { setResetToken(null); showLogin('login'); }}
+        />
+      )}
 
       {/* AR / QR overlays */}
       {mode === 'qr' && (

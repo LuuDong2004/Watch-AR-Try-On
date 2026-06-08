@@ -9,9 +9,11 @@ import { http, setToken, getToken as getTokenSafe, ApiError } from './client';
 import { validateImageFile } from '../utils/uploads';
 import type {
   AdminPlanOverview,
+  AdminSubscriberRow,
   ClosetItem,
   Feedback,
   Lead,
+  PlanInput,
   Role,
   Shop,
   ShopSubscription,
@@ -36,6 +38,7 @@ function toUser(d: any): User {
     shopId: d.shopId ?? null,
     status: lower(d.status) as User['status'],
     provider: lower(d.provider),
+    avatar: d.avatar ?? null,
     createdAt: d.createdAt,
   };
 }
@@ -61,6 +64,8 @@ function toWatch(d: any): Watch {
     rating: d.rating,
     reviewCount: d.reviewCount,
     status: lower(d.status) as Watch['status'],
+    arReviewStatus: lower(d.arReviewStatus) as Watch['arReviewStatus'],
+    arReviewNote: d.arReviewNote ?? null,
     shopId: d.shopId,
     createdAt: d.createdAt,
   };
@@ -87,6 +92,7 @@ function toShop(d: any): Shop {
     reviewCount: d.reviewCount,
     since: d.since,
     status: lower(d.status) as Shop['status'],
+    lockReason: d.lockReason ?? null,
     createdAt: d.createdAt,
   };
 }
@@ -166,6 +172,24 @@ export const authApi = {
   async me(): Promise<User> {
     return toUser(await http.get<any>('/api/auth/me'));
   },
+  /** Request a password-reset email (always resolves; never reveals if email exists). */
+  async forgotPassword(email: string): Promise<void> {
+    await http.post('/api/auth/forgot-password', { email }, { auth: false });
+  },
+  /** Complete a password reset with the token from the emailed link. */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await http.post('/api/auth/reset-password', { token, newPassword }, { auth: false });
+  },
+  /** Self-service profile edit: name, email, avatar, and/or password change. */
+  async updateProfile(input: {
+    name?: string;
+    email?: string;
+    avatar?: string | null;
+    currentPassword?: string;
+    newPassword?: string;
+  }): Promise<User> {
+    return toUser(await http.put<any>('/api/auth/me', { ...input }));
+  },
   logout() {
     setToken(null);
   },
@@ -216,6 +240,16 @@ export const watchApi = {
   async remove(id: string): Promise<void> {
     await http.del(`/api/watches/${id}`);
   },
+  /** Admin: AR-enabled watches awaiting/holding a moderation decision. */
+  async arModeration(): Promise<Watch[]> {
+    return (await http.get<any[]>('/api/watches/ar-moderation')).map(toWatch);
+  },
+  /** Admin: approve or reject a watch's AR/3D model. */
+  async reviewAr(id: string, status: 'approved' | 'rejected', note?: string): Promise<Watch> {
+    return toWatch(
+      await http.post<any>(`/api/watches/${id}/ar-review`, { status: upper(status), note }),
+    );
+  },
 };
 
 // --- Shops ------------------------------------------------------------------
@@ -237,6 +271,7 @@ function shopPayload(s: Partial<Shop>) {
     services: s.services ?? [],
     since: s.since,
     status: upper(s.status) ?? 'ACTIVE',
+    lockReason: s.lockReason ?? null,
   };
 }
 
@@ -400,6 +435,34 @@ export const subscriptionApi = {
   /** Admin: real plan catalogue with active-subscriber counts. */
   async adminOverview(): Promise<AdminPlanOverview[]> {
     return http.get<AdminPlanOverview[]>('/api/subscription/admin/overview');
+  },
+  /** Admin: create a new plan. */
+  async adminCreatePlan(input: PlanInput): Promise<AdminPlanOverview> {
+    return http.post<AdminPlanOverview>('/api/subscription/admin/plans', { ...input });
+  },
+  /** Admin: update an existing plan. */
+  async adminUpdatePlan(code: string, input: PlanInput): Promise<AdminPlanOverview> {
+    return http.put<AdminPlanOverview>(`/api/subscription/admin/plans/${code}`, { ...input });
+  },
+  /** Admin: delete a plan (blocked while it has active subscribers). */
+  async adminDeletePlan(code: string): Promise<void> {
+    await http.del(`/api/subscription/admin/plans/${code}`);
+  },
+  /** Admin: sellers currently on a paid plan, with user + shop info. */
+  async adminSubscribers(): Promise<AdminSubscriberRow[]> {
+    return http.get<AdminSubscriberRow[]>('/api/subscription/admin/subscribers');
+  },
+  /** Admin: move a seller onto a different plan (resets the period). */
+  async adminChangePlan(userId: string, plan: string): Promise<void> {
+    await http.post(`/api/subscription/admin/subscribers/${userId}/change-plan`, { plan });
+  },
+  /** Admin: extend a seller's current period by N days. */
+  async adminExtend(userId: string, days: number): Promise<void> {
+    await http.post(`/api/subscription/admin/subscribers/${userId}/extend`, { days });
+  },
+  /** Admin: cancel a seller's plan (expires it immediately). */
+  async adminCancel(userId: string): Promise<void> {
+    await http.post(`/api/subscription/admin/subscribers/${userId}/cancel`, {});
   },
 };
 

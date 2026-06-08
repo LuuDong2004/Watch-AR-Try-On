@@ -16,7 +16,7 @@ export function parseAppRoute(pathname) {
   const path = normalizePath(pathname);
   const parts = path === '/' ? [] : path.slice(1).split('/');
 
-  if (parts.length === 0 || parts[0] === 'oauth-callback') {
+  if (parts.length === 0 || parts[0] === 'oauth-callback' || parts[0] === 'reset-password') {
     return { area: 'user', page: 'home' };
   }
 

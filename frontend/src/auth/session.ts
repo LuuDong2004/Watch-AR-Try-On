@@ -16,6 +16,8 @@ interface SessionState {
   init: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
+  /** Replace the cached user after a profile edit. */
+  setUser: (user: User) => void;
   logout: () => void;
 }
 
@@ -45,6 +47,7 @@ export const useSession = create<SessionState>((set) => ({
     set({ user, status: 'authed' });
     return user;
   },
+  setUser: (user) => set({ user }),
   logout: () => {
     authApi.logout();
     set({ user: null, status: 'anon' });
