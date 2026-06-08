@@ -22,6 +22,7 @@ public final class UserDtos {
             String shopId,
             UserStatus status,
             String provider,
+            String avatar,
             long createdAt) {
 
         public static UserResponse from(User u) {
@@ -29,6 +30,7 @@ public final class UserDtos {
                     u.getId(), u.getName(), u.getEmail(), u.getRole(),
                     u.getShopId(), u.getStatus(),
                     u.getProvider() == null ? null : u.getProvider().name(),
+                    u.getAvatar(),
                     u.getCreatedAt());
         }
     }
@@ -49,4 +51,15 @@ public final class UserDtos {
             Role role,
             String shopId,
             UserStatus status) {}
+
+    /**
+     * Self-service profile update (the signed-in user edits their own account).
+     * All fields optional; password length is validated in the service so that a
+     * blank {@code newPassword} simply means "don't change the password".
+     */
+    public record ProfileUpdateRequest(
+            String name,
+            String avatar,
+            String currentPassword,
+            String newPassword) {}
 }

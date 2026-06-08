@@ -96,6 +96,10 @@ public class Shop {
     @Builder.Default
     private ListingStatus status = ListingStatus.ACTIVE;
 
+    /** Reason shown to the seller when an admin locks the shop; cleared on unlock. */
+    @Column(name = "lock_reason", length = 500)
+    private String lockReason;
+
     @Column(name = "created_at", nullable = false)
     private long createdAt;
 }

@@ -1,5 +1,6 @@
 package com.truewrist.backend.service;
 
+import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Shop;
 import com.truewrist.backend.domain.User;
 import com.truewrist.backend.dto.ShopDtos.ShopRequest;
@@ -131,7 +132,10 @@ public class ShopService {
         shop.setMapUrl(req.mapUrl());
         shop.setServices(req.servicesOrEmpty());
         shop.setSince(req.since());
-        shop.setStatus(req.statusOrActive());
+        ListingStatus status = req.statusOrActive();
+        shop.setStatus(status);
+        // Keep the lock reason only while the shop is locked; clear it on unlock.
+        shop.setLockReason(status == ListingStatus.LOCKED ? req.lockReason() : null);
         return shopRepository.save(shop);
     }
 

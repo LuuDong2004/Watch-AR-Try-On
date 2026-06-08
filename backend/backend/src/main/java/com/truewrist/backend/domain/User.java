@@ -56,6 +56,10 @@ public class User {
     @Column(nullable = false, length = 16)
     private AuthProvider provider;
 
+    /** Profile picture URL (uploaded to object storage); null = use initials. */
+    @Column(name = "avatar", length = 1000)
+    private String avatar;
+
     @Column(name = "created_at", nullable = false)
     private long createdAt;
 }

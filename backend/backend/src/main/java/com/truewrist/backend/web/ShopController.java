@@ -1,5 +1,6 @@
 package com.truewrist.backend.web;
 
+import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.dto.ShopDtos.ShopRequest;
 import com.truewrist.backend.dto.ShopDtos.ShopResponse;
 import com.truewrist.backend.exception.ApiException;
@@ -68,6 +69,10 @@ public class ShopController {
         if (!shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
             throw ApiException.forbidden("Bạn chỉ có thể đặt cửa hàng của mình làm chính.");
         }
+        if (shopService.findById(id).getStatus() == ListingStatus.LOCKED) {
+            throw ApiException.forbidden(
+                    "Cửa hàng đang bị khóa nên không thể đặt làm cửa hàng chính.");
+        }
         shopService.setActiveShop(actor.getId(), id);
         return ShopResponse.from(shopService.findById(id));
     }
@@ -81,8 +86,14 @@ public class ShopController {
             @AuthenticationPrincipal AppUserPrincipal actor) {
         boolean isAdmin = actor.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
-            throw ApiException.forbidden("Bạn chỉ có thể chỉnh sửa cửa hàng của mình.");
+        if (!isAdmin) {
+            if (!shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
+                throw ApiException.forbidden("Bạn chỉ có thể chỉnh sửa cửa hàng của mình.");
+            }
+            if (shopService.findById(id).getStatus() == ListingStatus.LOCKED) {
+                throw ApiException.forbidden(
+                        "Cửa hàng đang bị khóa nên không thể chỉnh sửa. Vui lòng liên hệ quản trị viên.");
+            }
         }
         return ShopResponse.from(shopService.update(id, req));
     }
@@ -95,8 +106,14 @@ public class ShopController {
     public void delete(@PathVariable String id, @AuthenticationPrincipal AppUserPrincipal actor) {
         boolean isAdmin = actor.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
-            throw ApiException.forbidden("Bạn chỉ có thể xóa cửa hàng của mình.");
+        if (!isAdmin) {
+            if (!shopService.isOwnedBy(id, actor.getId(), actor.getShopId())) {
+                throw ApiException.forbidden("Bạn chỉ có thể xóa cửa hàng của mình.");
+            }
+            if (shopService.findById(id).getStatus() == ListingStatus.LOCKED) {
+                throw ApiException.forbidden(
+                        "Cửa hàng đang bị khóa nên không thể xóa. Vui lòng liên hệ quản trị viên.");
+            }
         }
         shopService.delete(id);
     }

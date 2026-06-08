@@ -31,6 +31,7 @@ public final class ShopDtos {
             int reviewCount,
             String since,
             ListingStatus status,
+            String lockReason,
             long createdAt) {
 
         public static ShopResponse from(Shop s) {
@@ -39,7 +40,7 @@ public final class ShopDtos {
                     s.getDescription(), s.getColor(), s.getZalo(), s.getMessenger(),
                     s.getHours(), s.getManager(), s.getImage(), s.getMapUrl(), s.getServices(),
                     s.getRating(), s.getReviewCount(), s.getSince(), s.getStatus(),
-                    s.getCreatedAt());
+                    s.getLockReason(), s.getCreatedAt());
         }
     }
 
@@ -58,7 +59,8 @@ public final class ShopDtos {
             String mapUrl,
             List<String> services,
             String since,
-            ListingStatus status) {
+            ListingStatus status,
+            String lockReason) {
 
         public List<String> servicesOrEmpty() {
             return services == null ? new ArrayList<>() : new ArrayList<>(services);
