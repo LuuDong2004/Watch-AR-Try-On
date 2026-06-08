@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Store, Pencil, Upload, X, MapPin, Phone, Clock,
-  ImageOff, Trash2, Map as MapIcon, Plus, MoreVertical, Star,
+  ImageOff, Trash2, Map as MapIcon, Plus, MoreVertical, Star, Lock,
 } from 'lucide-react';
 import { shopApi, uploadApi, ApiError } from '../../api';
 import type { Shop } from '../../api';
@@ -217,6 +217,7 @@ export default function ShopSettings() {
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
         {showrooms.map((room) => {
           const directions = mapDirectionsUrl(room.mapUrl);
+          const locked = room.status === 'locked';
           return (
             <div key={room.id} className="group bg-white rounded-2xl border border-[#e5e0d8] shadow-sm overflow-hidden flex flex-col">
               {/* Cover */}
@@ -231,12 +232,17 @@ export default function ShopSettings() {
                 {room.id === user?.shopId && (
                   <span className="absolute left-2 top-2 rounded-full bg-[#B8924A] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">Cửa hàng chính</span>
                 )}
+                {locked && (
+                  <span className="absolute left-1/2 top-2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-red-600/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
+                    <Lock className="h-2.5 w-2.5" /> Đã khóa
+                  </span>
+                )}
                 <h4 className="absolute bottom-2 left-3 right-3 font-display text-sm font-bold text-white truncate">{room.name}</h4>
                 {/* Compact action menu: one "⋮" reveals edit / map / delete */}
                 <div className="absolute right-2 top-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   {menuOpenId === room.id && (
                     <div className="flex items-center gap-1.5 animate-fade-in">
-                      {room.id !== user?.shopId && (
+                      {room.id !== user?.shopId && !locked && (
                         <button
                           onClick={() => handleSetPrimary(room.id)}
                           title="Đặt làm cửa hàng chính"
@@ -246,14 +252,16 @@ export default function ShopSettings() {
                           <Star className="h-4 w-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => { setMenuOpenId(null); openEditor(room); }}
-                        title="Sửa thông tin"
-                        aria-label="Sửa thông tin"
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#17140F] shadow hover:bg-white active:scale-95 transition"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
+                      {!locked && (
+                        <button
+                          onClick={() => { setMenuOpenId(null); openEditor(room); }}
+                          title="Sửa thông tin"
+                          aria-label="Sửa thông tin"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-[#17140F] shadow hover:bg-white active:scale-95 transition"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      )}
                       {directions && (
                         <a
                           href={directions}
@@ -267,15 +275,17 @@ export default function ShopSettings() {
                           <MapIcon className="h-4 w-4" />
                         </a>
                       )}
-                      <button
-                        onClick={() => { setMenuOpenId(null); handleDelete(room.id); }}
-                        disabled={deleting}
-                        title="Xóa cửa hàng"
-                        aria-label="Xóa cửa hàng"
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-500 shadow hover:bg-white active:scale-95 transition disabled:opacity-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!locked && (
+                        <button
+                          onClick={() => { setMenuOpenId(null); handleDelete(room.id); }}
+                          disabled={deleting}
+                          title="Xóa cửa hàng"
+                          aria-label="Xóa cửa hàng"
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-500 shadow hover:bg-white active:scale-95 transition disabled:opacity-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   )}
                   <button
@@ -299,12 +309,18 @@ export default function ShopSettings() {
                 <p className="flex items-center gap-1.5 text-gray-600"><Clock className="h-3.5 w-3.5 text-[#B8924A] shrink-0" /> {room.hours || '—'}</p>
               </div>
 
-              <button
-                onClick={() => openEditor(room)}
-                className="m-3 mt-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#17140F] py-2.5 text-xs font-bold text-white hover:bg-black active:scale-[0.98] transition"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Sửa thông tin
-              </button>
+              {locked ? (
+                <div className="m-3 mt-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 py-2.5 text-xs font-bold text-red-600">
+                  <Lock className="h-3.5 w-3.5" /> Đã bị khóa
+                </div>
+              ) : (
+                <button
+                  onClick={() => openEditor(room)}
+                  className="m-3 mt-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#17140F] py-2.5 text-xs font-bold text-white hover:bg-black active:scale-[0.98] transition"
+                >
+                  <Pencil className="h-3.5 w-3.5" /> Sửa thông tin
+                </button>
+              )}
             </div>
           );
         })}

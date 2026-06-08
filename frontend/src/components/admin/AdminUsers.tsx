@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Lock, ShieldCheck, Store, Unlock, User as UserIcon, Eye, Search,
-  UserCog, X, Calendar, Building2, Globe, Check, Mail, Hash,
+  X, Calendar, Building2, Globe, Check, Mail, Hash, MoreVertical,
 } from 'lucide-react';
 import { userApi, ApiError } from '../../api';
 import type { User } from '../../api';
@@ -60,8 +60,9 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
-  // Role dropdown (fixed-positioned to avoid table clipping)
-  const [roleMenu, setRoleMenu] = useState<{ user: User; x: number; y: number } | null>(null);
+  // Unified row actions menu (fixed-positioned to avoid table clipping):
+  // view details + change role + lock/unlock, all under one "⋮" button.
+  const [actionsMenu, setActionsMenu] = useState<{ user: User; x: number; y: number } | null>(null);
   // Detail modal
   const [detailUser, setDetailUser] = useState<User | null>(null);
 
@@ -100,7 +101,7 @@ export default function AdminUsers() {
   }), [users]);
 
   const handleSetRole = async (u: User, role: User['role']) => {
-    setRoleMenu(null);
+    setActionsMenu(null);
     if (u.role === role) return;
     if (u.id === currentUser?.id) {
       toast.info('Bạn không thể tự thay đổi vai trò của chính mình.');
@@ -146,9 +147,9 @@ export default function AdminUsers() {
     }
   };
 
-  const openRoleMenu = (e: React.MouseEvent, u: User) => {
+  const openActionsMenu = (e: React.MouseEvent, u: User) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setRoleMenu({ user: u, x: r.right, y: r.bottom + 6 });
+    setActionsMenu({ user: u, x: r.right, y: r.bottom + 6 });
   };
 
   const formatDate = (ts?: number) => (ts ? new Date(ts).toLocaleDateString('vi-VN') : '—');
@@ -290,36 +291,16 @@ export default function AdminUsers() {
                   </td>
                   <td className="py-3.5 px-4 text-right text-gray-400">{formatDate(u.createdAt)}</td>
                   <td className="py-3.5 px-4 text-right">
-                    <div className="inline-flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => setDetailUser(u)}
-                        title="Xem chi tiết"
-                        aria-label="Xem chi tiết"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#17140F]"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={(e) => openRoleMenu(e, u)}
-                        disabled={savingId === u.id || isSelf}
-                        title={isSelf ? 'Không thể đổi vai trò của chính bạn' : 'Thay đổi vai trò'}
-                        aria-label="Thay đổi vai trò"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[#B8924A]/30 text-[#B8924A] hover:bg-[#B8924A]/10 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <UserCog className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleToggleBlock(u)}
-                        disabled={savingId === u.id || isSelf}
-                        title={isSelf ? 'Không thể khóa chính bạn' : isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                        aria-label={isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                        className={isActive
-                          ? 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40'
-                          : 'inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 text-green-600 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40'}
-                      >
-                        {isActive ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
-                      </button>
-                    </div>
+                    <button
+                      onClick={(e) => openActionsMenu(e, u)}
+                      disabled={savingId === u.id}
+                      title="Hành động"
+                      aria-label="Hành động"
+                      aria-haspopup="menu"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#17140F] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
                   </td>
                 </tr>
                 );
@@ -329,35 +310,68 @@ export default function AdminUsers() {
         </div>
       </section>
 
-      {/* Role dropdown menu (fixed) */}
-      {roleMenu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setRoleMenu(null)} />
-          <div
-            className="fixed z-50 w-52 bg-white rounded-xl border border-[#e5e0d8] shadow-xl py-1.5 text-xs"
-            style={{ top: roleMenu.y, left: Math.max(8, roleMenu.x - 208) }}
-          >
-            <p className="px-3 py-1.5 text-[9px] uppercase tracking-wider text-gray-400 font-bold">Đặt vai trò</p>
-            {ROLE_ORDER.map((role) => {
-              const isCurrent = roleMenu.user.role === role;
-              return (
-                <button
-                  key={role}
-                  onClick={() => handleSetRole(roleMenu.user, role)}
-                  disabled={isCurrent}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition ${
-                    isCurrent ? 'text-gray-300 cursor-default' : 'text-[#17140F] hover:bg-[#F6F4EF]'
-                  }`}
-                >
-                  <RoleIcon role={role} className="h-4 w-4 flex-shrink-0" />
-                  <span className="flex-1 font-semibold">{ROLE_LABELS[role]}</span>
-                  {isCurrent && <Check className="h-3.5 w-3.5 text-[#B8924A]" />}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
+      {/* Unified row actions menu (fixed): view + role + lock/unlock */}
+      {actionsMenu && (() => {
+        const u = actionsMenu.user;
+        const isSelf = u.id === currentUser?.id;
+        const active = u.status !== 'locked';
+        return (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setActionsMenu(null)} />
+            <div
+              className="fixed z-50 w-56 bg-white rounded-xl border border-[#e5e0d8] shadow-xl py-1.5 text-xs"
+              style={{ top: actionsMenu.y, left: Math.max(8, actionsMenu.x - 224) }}
+            >
+              <button
+                onClick={() => { setActionsMenu(null); setDetailUser(u); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-left text-[#17140F] hover:bg-[#F6F4EF] transition"
+              >
+                <Eye className="h-4 w-4 text-gray-500" />
+                <span className="font-semibold">Xem chi tiết</span>
+              </button>
+
+              <div className="my-1 border-t border-gray-100" />
+              <p className="px-3 py-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">Đặt vai trò</p>
+              {ROLE_ORDER.map((role) => {
+                const isCurrent = u.role === role;
+                const disabled = isCurrent || isSelf;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => handleSetRole(u, role)}
+                    disabled={disabled}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition ${
+                      disabled ? 'text-gray-300 cursor-not-allowed' : 'text-[#17140F] hover:bg-[#F6F4EF]'
+                    }`}
+                  >
+                    <RoleIcon role={role} className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1 font-semibold">{ROLE_LABELS[role]}</span>
+                    {isCurrent && <Check className="h-3.5 w-3.5 text-[#B8924A]" />}
+                  </button>
+                );
+              })}
+
+              <div className="my-1 border-t border-gray-100" />
+              <button
+                onClick={() => { setActionsMenu(null); handleToggleBlock(u); }}
+                disabled={isSelf}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                  active ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'
+                }`}
+              >
+                {active ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
+                {active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+              </button>
+
+              {isSelf && (
+                <p className="px-3 pt-1.5 text-[10px] italic text-gray-400">
+                  Không thể đổi vai trò hoặc khóa tài khoản của chính bạn.
+                </p>
+              )}
+            </div>
+          </>
+        );
+      })()}
 
       {/* Detail modal */}
       {detailUser && (
