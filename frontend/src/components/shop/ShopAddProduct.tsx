@@ -867,13 +867,13 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                     <span className="text-xs font-bold">4.8</span>
                     <span className="text-xs text-gray-400">(1 đánh giá)</span>
                   </div>
-                  <div className="mb-4 mt-auto flex items-baseline gap-2">
+                  <div className="mb-4 mt-auto flex flex-col gap-0.5">
                     <span className="text-sm font-bold text-[#17140F] sm:text-base">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(form.price) || 0)}
+                      {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(form.price) || 0) + ' vnđ'}
                     </span>
                     {Number(form.originalPrice) > Number(form.price) && (
                       <span className="text-xs text-gray-400 line-through">
-                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(form.originalPrice))}
+                        {new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(Number(form.originalPrice)) + ' vnđ'}
                       </span>
                     )}
                   </div>

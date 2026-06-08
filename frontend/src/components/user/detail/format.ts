@@ -13,10 +13,8 @@ import {
 
 export const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(n);
+  }).format(n) + ' vnđ';
 
 /** Discount percentage (rounded) when an original price exists, else 0. */
 export const discountPct = (watch: any): number => {

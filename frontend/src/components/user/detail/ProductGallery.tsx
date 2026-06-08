@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Maximize2, MousePointer, X } from 'lucide-react';
 import Watch3DViewer from '../../watch/Watch3DViewer';
+import { canTryAr } from '../../../utils/publicListings';
 
 interface ProductGalleryProps {
   watch: any;
@@ -14,7 +15,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
   const gallery: string[] = Array.from(
     new Set((watch.gallery?.length ? watch.gallery : [watch.image]).filter(Boolean)),
   );
-  const has3D = !!(watch.hasAR && watch.model);
+  const has3D = canTryAr(watch) && !!watch.model;
 
   const [active, setActive] = useState<'live3d' | number>(has3D ? 'live3d' : 0);
   const [lightbox, setLightbox] = useState(false);

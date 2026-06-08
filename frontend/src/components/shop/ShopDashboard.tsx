@@ -25,10 +25,8 @@ const CHART_BOTTOM = 170;
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value) + ' vnđ';
 
 const getLeadTime = (lead: Lead) => {
   if (lead.createdAt) return lead.createdAt;

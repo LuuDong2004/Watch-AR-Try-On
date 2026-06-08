@@ -14,6 +14,8 @@ import type { Watch } from '../../api';
 interface ShopProductDetailProps {
   watch: Watch;
   shopName?: string;
+  /** When the shop is locked, edit/delete are hidden (admin froze the shop). */
+  locked?: boolean;
   onBack: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -21,10 +23,8 @@ interface ShopProductDetailProps {
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value) + ' vnđ';
 
 const formatDate = (timestamp?: number) => {
   if (!timestamp) return 'Chưa có dữ liệu';
@@ -38,6 +38,7 @@ const formatDate = (timestamp?: number) => {
 export default function ShopProductDetail({
   watch,
   shopName,
+  locked = false,
   onBack,
   onEdit,
   onDelete,
@@ -75,24 +76,26 @@ export default function ShopProductDetail({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 pl-12 sm:pl-0">
-          <button
-            type="button"
-            onClick={onDelete}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3.5 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Xóa
-          </button>
-          <button
-            type="button"
-            onClick={onEdit}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#17140F] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-black"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Chỉnh sửa
-          </button>
-        </div>
+        {!locked && (
+          <div className="flex items-center gap-2 pl-12 sm:pl-0">
+            <button
+              type="button"
+              onClick={onDelete}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3.5 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Xóa
+            </button>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#17140F] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-black"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Chỉnh sửa
+            </button>
+          </div>
+        )}
       </header>
 
       <main className="overflow-hidden rounded-2xl border border-[#ddd7ce] bg-white shadow-sm">
@@ -146,7 +149,29 @@ export default function ShopProductDetail({
                   Ảnh 2D
                 </span>
               )}
+              {watch.hasAR && (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-bold ${
+                    watch.arReviewStatus === 'approved'
+                      ? 'bg-green-50 text-green-700'
+                      : watch.arReviewStatus === 'rejected'
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-amber-50 text-amber-700'
+                  }`}
+                >
+                  {watch.arReviewStatus === 'approved'
+                    ? 'AR đã duyệt'
+                    : watch.arReviewStatus === 'rejected'
+                      ? 'AR bị từ chối'
+                      : 'AR chờ duyệt'}
+                </span>
+              )}
             </div>
+            {watch.hasAR && watch.arReviewStatus === 'rejected' && watch.arReviewNote && (
+              <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[11px] text-red-600">
+                <span className="font-bold">Lý do từ chối AR: </span>{watch.arReviewNote}
+              </p>
+            )}
 
             <div className="mt-5 border-b border-[#eeeae3] pb-5">
               <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">

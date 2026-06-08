@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Check, Clock, MapPin, Phone, ShieldCheck, Store, Truck, Lock, Star, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
 import { formatVND, discountPct, referenceNo } from './format';
+import { canTryAr } from '../../../utils/publicListings';
 
 interface ProductSummaryProps {
   watch: any;
@@ -30,6 +31,7 @@ export default function ProductSummary({
 }: ProductSummaryProps) {
   const off = discountPct(watch);
   const inStock = watch.status !== 'locked';
+  const canAr = canTryAr(watch);
   const goToShop = () => shop && onOpenShop?.(shop.id);
 
   return (
@@ -99,7 +101,7 @@ export default function ProductSummary({
 
       {/* CTAs */}
       <div className="flex flex-col gap-3">
-        {watch.hasAR && (
+        {canAr && (
           <button
             onClick={onOpenAR}
             className="group flex w-full items-center justify-center gap-2 rounded-2xl bg-champagne py-4 text-sm font-bold uppercase tracking-wider text-white shadow-luxe transition hover:brightness-[1.05] active:scale-[0.99]"
@@ -113,7 +115,7 @@ export default function ProductSummary({
           <button
             onClick={onOpenContact}
             className={`flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-2xl py-3.5 text-sm font-bold transition active:scale-[0.99] ${
-              watch.hasAR
+              canAr
                 ? 'border border-navy/20 text-navy hover:border-navy hover:bg-navy hover:text-white'
                 : 'bg-champagne text-white shadow-luxe hover:brightness-[1.05]'
             }`}

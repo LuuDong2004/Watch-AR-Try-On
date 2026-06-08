@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Eye,
   Image as ImageIcon,
+  Lock,
   Package,
   Pencil,
   Plus,
@@ -28,17 +29,15 @@ type ProductView =
   | { kind: 'detail'; watchId: string }
   | { kind: 'edit'; watchId: string };
 
-type StatusFilter = 'all' | 'active' | 'archived';
+type StatusFilter = 'all' | 'active' | 'locked';
 
 const SHOP_STORAGE_KEY = 'tw_product_shop';
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value) + ' vnđ';
 
 export default function ShopProducts() {
   const user = useSession((state) => state.user);
@@ -59,6 +58,13 @@ export default function ShopProducts() {
     () => Object.fromEntries(myShops.map((shop) => [shop.id, shop.name])),
     [myShops],
   );
+
+  const selectedShop = useMemo(
+    () => myShops.find((shop) => shop.id === selectedShopId) ?? null,
+    [myShops, selectedShopId],
+  );
+  // A locked shop is frozen: the seller cannot add/edit/remove its products.
+  const shopLocked = selectedShop?.status === 'locked';
 
   useEffect(() => {
     if (!user) return;
@@ -177,6 +183,7 @@ export default function ShopProducts() {
       <ShopProductDetail
         watch={activeWatch}
         shopName={shopNames[activeWatch.shopId]}
+        locked={shopLocked}
         onBack={() => setView({ kind: 'list' })}
         onEdit={() => setView({ kind: 'edit', watchId: activeWatch.id })}
         onDelete={() => void handleDelete(activeWatch)}
@@ -223,13 +230,27 @@ export default function ShopProducts() {
         <button
           type="button"
           onClick={() => setView({ kind: 'create' })}
-          disabled={!selectedShopId}
+          disabled={!selectedShopId || shopLocked}
+          title={shopLocked ? 'Cửa hàng đang bị khóa' : undefined}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#17140F] px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
           Thêm sản phẩm
         </button>
       </header>
+
+      {shopLocked && (
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+          <Lock className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-600" />
+          <p className="text-xs leading-5 text-red-700">
+            <span className="font-bold">Cửa hàng "{selectedShop?.name}" đang bị khóa.</span>{' '}
+            {selectedShop?.lockReason && (
+              <span>Lý do: <span className="font-semibold">{selectedShop.lockReason}</span>. </span>
+            )}
+            Bạn không thể thêm, chỉnh sửa hoặc xóa sản phẩm cho đến khi được quản trị viên mở khóa.
+          </p>
+        </div>
+      )}
 
       <section className="overflow-hidden rounded-2xl border border-[#ddd7ce] bg-white shadow-sm">
         <div className="border-b border-[#e9e4dc] px-4 py-3.5 md:px-5">
@@ -287,7 +308,7 @@ export default function ShopProducts() {
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="active">Đang bán</option>
-                <option value="archived">Ngừng bán</option>
+                <option value="locked">Ngừng bán</option>
               </select>
             </div>
           </div>
@@ -403,18 +424,20 @@ export default function ShopProducts() {
                           <button
                             type="button"
                             onClick={() => setView({ kind: 'edit', watchId: watch.id })}
-                            title="Chỉnh sửa"
+                            disabled={shopLocked}
+                            title={shopLocked ? 'Cửa hàng đang bị khóa' : 'Chỉnh sửa'}
                             aria-label="Chỉnh sửa"
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-black"
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-black disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => void handleDelete(watch)}
-                            title="Xóa sản phẩm"
+                            disabled={shopLocked}
+                            title={shopLocked ? 'Cửa hàng đang bị khóa' : 'Xóa sản phẩm'}
                             aria-label="Xóa sản phẩm"
-                            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-red-50 hover:text-red-600"
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -446,7 +469,7 @@ export default function ShopProducts() {
               >
                 Xóa bộ lọc
               </button>
-            ) : selectedShopId ? (
+            ) : selectedShopId && !shopLocked ? (
               <button
                 type="button"
                 onClick={() => setView({ kind: 'create' })}

@@ -3,7 +3,7 @@ import { Sparkles, ArrowRight, Star, Wand2, UploadCloud, Lock, Check, Bell } fro
 import Watch3DViewer from '../watch/Watch3DViewer';
 import { shopApi, watchApi } from '../../api';
 import type { Watch } from '../../api';
-import { publicWatches } from '../../utils/publicListings';
+import { publicWatches, canTryAr } from '../../utils/publicListings';
 
 interface UserHomeProps {
   onSelectWatch: (id: string) => void;
@@ -12,7 +12,7 @@ interface UserHomeProps {
 }
 
 const formatVND = (n: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
 
 export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHomeProps) {
   const [watches, setWatches] = useState<Watch[]>([]);
@@ -25,7 +25,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
     return () => { cancelled = true; };
   }, []);
 
-  const featured = watches.find((w) => w.hasAR) || watches[0];
+  const featured = watches.find((w) => canTryAr(w)) || watches[0];
   const popular = watches.slice(0, 4);
 
   return (
@@ -208,14 +208,19 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
                 >
                   <div className="relative h-44 overflow-hidden">
                     <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    {w.hasAR && (
+                    {canTryAr(w) && (
                       <span className="absolute top-2 right-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">AR</span>
                     )}
                   </div>
                   <div className="p-4">
                     <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">{w.brand}</p>
                     <h3 className="text-sm font-bold mt-0.5 mb-1 line-clamp-1 group-hover:text-[#B8924A] transition">{w.name}</h3>
-                    <span className="text-sm font-bold">{formatVND(w.price)}</span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold whitespace-nowrap">{formatVND(w.price)}</span>
+                      {w.originalPrice && w.originalPrice > w.price && (
+                        <span className="text-xs text-gray-400 line-through whitespace-nowrap">{formatVND(w.originalPrice)}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

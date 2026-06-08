@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
 import { formatVND } from './format';
+import { canTryAr } from '../../../utils/publicListings';
 
 interface SimilarWatchesProps {
   watches: any[];
@@ -56,7 +57,7 @@ export default function SimilarWatches({ watches, onSelect }: SimilarWatchesProp
                 alt={w.name}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
               />
-              {w.hasAR && (
+              {canTryAr(w) && (
                 <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-champagne px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-white">
                   <Sparkles className="h-3 w-3" /> AR
                 </span>
@@ -67,7 +68,12 @@ export default function SimilarWatches({ watches, onSelect }: SimilarWatchesProp
               <h3 className="mt-1 line-clamp-1 font-display text-sm font-bold text-navy transition group-hover:text-champagne">
                 {w.name}
               </h3>
-              <span className="mt-auto pt-3 font-display text-lg font-bold text-navy">{formatVND(w.price)}</span>
+              <div className="mt-auto flex flex-col gap-0.5 pt-3">
+                <span className="font-display text-lg font-bold text-navy whitespace-nowrap">{formatVND(w.price)}</span>
+                {w.originalPrice && w.originalPrice > w.price && (
+                  <span className="text-xs text-gray-400 line-through whitespace-nowrap">{formatVND(w.originalPrice)}</span>
+                )}
+              </div>
             </div>
           </button>
         ))}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles, Search, Star, ArrowLeft, ArrowRight } from 'lucide-react';
 import { shopApi, watchApi } from '../../api';
 import type { Watch } from '../../api';
-import { publicWatches } from '../../utils/publicListings';
+import { publicWatches, canTryAr } from '../../utils/publicListings';
 
 interface UserCatalogProps {
   onSelectWatch: (id: string) => void;
@@ -43,10 +43,8 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
 
   const formatVND = (n: number) => {
     return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
       maximumFractionDigits: 0
-    }).format(n);
+    }).format(n) + ' vnđ';
   };
 
   // Filter & Sort logic
@@ -56,7 +54,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
       if (q && !w.name.toLowerCase().includes(q) && !w.brand.toLowerCase().includes(q)) return false;
       if (selectedBrand !== 'all' && w.brand !== selectedBrand) return false;
       if (w.price > priceRange) return false;
-      if (onlyAR && !w.hasAR) return false; // only models with a real 3D .glb support AR try-on
+      if (onlyAR && !canTryAr(w)) return false; // only models with a real 3D .glb support AR try-on
       
       const material = w.specs?.['Chất liệu vỏ'] || '';
       if (selectedMaterial !== 'all') {
@@ -296,7 +294,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
 
                     {/* AR / 3D badge — only for models with a real 3D asset */}
-                    {w.hasAR ? (
+                    {canTryAr(w) ? (
                       <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
                         <Sparkles className="h-4 w-4" /> AR Try-On
                       </span>
@@ -323,19 +321,19 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
                       <span className="text-xs text-gray-400">({w.reviewCount} đánh giá)</span>
                     </div>
 
-                    <div className="mt-auto flex items-baseline gap-2 mb-4">
-                      <span className="text-[#17140F] font-bold text-sm sm:text-base">
+                    <div className="mt-auto mb-4 flex flex-col gap-0.5">
+                      <span className="text-[#17140F] font-bold text-sm sm:text-base whitespace-nowrap">
                         {formatVND(w.price)}
                       </span>
-                      {w.originalPrice && (
-                        <span className="text-xs text-gray-400 line-through">
+                      {w.originalPrice && w.originalPrice > w.price && (
+                        <span className="text-xs text-gray-400 line-through whitespace-nowrap">
                           {formatVND(w.originalPrice)}
                         </span>
                       )}
                     </div>
 
                     {/* Quick action — AR if available, otherwise view details */}
-                    {w.hasAR ? (
+                    {canTryAr(w) ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

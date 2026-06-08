@@ -5,7 +5,7 @@ import type { Shop, Watch } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
 import { toast } from '../../store/useToast';
 import { mapDirectionsUrl } from '../../utils/maps';
-import { isPublicShop, publicWatches } from '../../utils/publicListings';
+import { isPublicShop, publicWatches, canTryAr } from '../../utils/publicListings';
 import { detectRegion } from '../../utils/region';
 import MapPreview from '../MapPreview';
 
@@ -17,7 +17,7 @@ interface UserStoresProps {
 }
 
 const formatVND = (n: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
 
 const STORES_PER_PAGE = 6;
 const SHOP_PRODUCTS_PER_PAGE = 6;
@@ -271,7 +271,7 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
 
-                        {w.hasAR ? (
+                        {canTryAr(w) ? (
                           <span className="absolute top-3 right-3 bg-[#B8924A] text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-md tracking-widest uppercase flex items-center gap-1">
                             <Sparkles className="h-4 w-4" /> AR Try-On
                           </span>
@@ -296,19 +296,19 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                           <span className="text-xs text-gray-400">({w.reviewCount} đánh giá)</span>
                         </div>
 
-                        <div className="mt-auto flex items-baseline gap-2 mb-4">
-                          <span className="text-[#17140F] font-bold text-sm sm:text-base">
+                        <div className="mt-auto mb-4 flex flex-col gap-0.5">
+                          <span className="text-[#17140F] font-bold text-sm sm:text-base whitespace-nowrap">
                             {formatVND(w.price)}
                           </span>
-                          {w.originalPrice && (
-                            <span className="text-xs text-gray-400 line-through">
+                          {w.originalPrice && w.originalPrice > w.price && (
+                            <span className="text-xs text-gray-400 line-through whitespace-nowrap">
                               {formatVND(w.originalPrice)}
                             </span>
                           )}
                         </div>
 
                         <div className="space-y-2">
-                          {w.hasAR ? (
+                          {canTryAr(w) ? (
                             <button onClick={(e) => { e.stopPropagation(); onOpenAR(w.id); }} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2.5 rounded-full hover:bg-black transition flex items-center justify-center gap-1.5 shadow-sm border border-[#B8924A]/30"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                           ) : (
                             <button onClick={(e) => { e.stopPropagation(); onSelectWatch(w.id); }} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2.5 rounded-full hover:bg-[#F6F4EF] transition flex items-center justify-center gap-1.5 shadow-sm border border-[#17140F]/20">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>

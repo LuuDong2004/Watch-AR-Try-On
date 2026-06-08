@@ -4,7 +4,7 @@ import { favoriteApi, shopApi, watchApi, ApiError } from '../../api';
 import type { Watch } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
-import { publicWatches } from '../../utils/publicListings';
+import { publicWatches, canTryAr } from '../../utils/publicListings';
 
 interface UserFavoritesProps {
   onSelectWatch: (id: string) => void;
@@ -14,7 +14,7 @@ interface UserFavoritesProps {
 }
 
 const formatVND = (n: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
 
 export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog, onChanged }: UserFavoritesProps) {
   const user = useSession((s) => s.user);
@@ -119,7 +119,7 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
               >
                 <div className="relative h-44 overflow-hidden cursor-pointer" onClick={() => onSelectWatch(w.id)}>
                   <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                  {w.hasAR && (
+                  {canTryAr(w) && (
                     <span className="absolute top-2 left-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest inline-flex items-center gap-1">
                       <Sparkles className="h-3 w-3" /> AR
                     </span>
@@ -142,9 +142,14 @@ export default function UserFavorites({ onSelectWatch, onOpenAR, onBackToCatalog
                   >
                     {w.name}
                   </h3>
-                  <span className="text-sm font-bold mb-3">{formatVND(w.price)}</span>
+                  <div className="mb-3 flex flex-col gap-0.5">
+                    <span className="text-sm font-bold whitespace-nowrap">{formatVND(w.price)}</span>
+                    {w.originalPrice && w.originalPrice > w.price && (
+                      <span className="text-xs text-gray-400 line-through whitespace-nowrap">{formatVND(w.originalPrice)}</span>
+                    )}
+                  </div>
                   <div className="mt-auto space-y-2">
-                    {w.hasAR ? (
+                    {canTryAr(w) ? (
                       <button onClick={() => onOpenAR(w.id)} className="w-full bg-[#17140F] text-white text-xs font-semibold py-2 rounded-full hover:bg-black transition border border-[#B8924A]/30 inline-flex items-center justify-center gap-1.5"><Sparkles className="h-4 w-4" /> Thử Đeo AR</button>
                     ) : (
                       <button onClick={() => onSelectWatch(w.id)} className="w-full bg-white text-[#17140F] text-xs font-semibold py-2 rounded-full hover:bg-[#F6F4EF] transition border border-[#17140F]/20 inline-flex items-center justify-center gap-1.5">Xem chi tiết <ArrowRight className="h-4 w-4" /></button>
