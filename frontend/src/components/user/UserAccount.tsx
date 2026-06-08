@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Store, Calendar, Heart, Camera, LogIn, Globe, ShieldCheck, BadgeCheck, Hash, CheckCircle2 } from 'lucide-react';
+import { LogOut, Store, Calendar, Heart, Camera, LogIn, Globe, ShieldCheck, BadgeCheck, CheckCircle2, Pencil } from 'lucide-react';
 import { leadApi, favoriteApi, shopApi, watchApi, closetApi, ApiError } from '../../api';
 import type { Lead, Watch, ClosetItem } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
 import { publicWatches } from '../../utils/publicListings';
+import ProfileEditModal from './ProfileEditModal';
 
 interface UserAccountProps {
   onSelectWatch: (id: string) => void;
@@ -13,6 +14,7 @@ interface UserAccountProps {
 
 export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAccountProps) {
   const user = useSession((s) => s.user);
+  const setUser = useSession((s) => s.setUser);
   const logout = useSession((s) => s.logout);
   const showLogin = useLoginPrompt((s) => s.show);
 
@@ -21,6 +23,7 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
   const [captures, setCaptures] = useState<ClosetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSubTab, setActiveSubTab] = useState<'leads' | 'favs' | 'captures'>('leads');
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (!user) { setLeads([]); setFavorites([]); setCaptures([]); setLoading(false); return; }
@@ -45,10 +48,8 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
 
   const formatVND = (n: number) => {
     return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
       maximumFractionDigits: 0
-    }).format(n);
+    }).format(n) + ' vnđ';
   };
 
   // Status mapping
@@ -123,10 +124,23 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
           {/* Left Panel: Profile summary card (4 cols) */}
           <div className="lg:col-span-4 bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm">
             <div className="flex flex-col items-center text-center border-b border-[#e5e0d8] pb-6 mb-6">
-              <div className="relative mb-4">
-                <div className="h-20 w-20 rounded-full bg-[#17140F] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A]">
-                  {initials}
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                title="Chỉnh sửa hồ sơ"
+                aria-label="Chỉnh sửa hồ sơ"
+                className="group relative mb-4"
+              >
+                <div className="h-20 w-20 overflow-hidden rounded-full bg-[#17140F] text-[#F6F4EF] text-3xl font-bold flex items-center justify-center border-2 border-[#B8924A]">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
                 </div>
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition group-hover:opacity-100">
+                  <Camera className="h-5 w-5 text-white" />
+                </span>
                 <span
                   className={`absolute -bottom-1 -right-1 h-6 w-6 rounded-full border-2 border-white flex items-center justify-center ${
                     isActive ? 'bg-green-500' : 'bg-gray-400'
@@ -135,13 +149,20 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                 >
                   <CheckCircle2 className="h-3.5 w-3.5 text-white" />
                 </span>
-              </div>
+              </button>
               <h2 className="font-serif text-lg font-bold">{user.name}</h2>
               <span className="inline-flex items-center gap-1 mt-1 mb-2 bg-[#B8924A]/10 text-[#B8924A] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
                 {user.role === 'admin' ? <ShieldCheck className="h-3 w-3" /> : user.role === 'shop' ? <Store className="h-3 w-3" /> : <BadgeCheck className="h-3 w-3" />}
                 {membership}
               </span>
               <p className="text-[11px] text-gray-400">{user.email}</p>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#e5e0d8] px-4 py-2 text-xs font-bold text-[#17140F] transition hover:border-[#B8924A] hover:text-[#9A7434]"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Chỉnh sửa hồ sơ
+              </button>
             </div>
 
             {/* Account details */}
@@ -164,15 +185,6 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
                   <div className="min-w-0">
                     <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Phương thức đăng nhập</p>
                     <p className="font-semibold text-[#17140F]">{providerLabel}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2.5 text-xs">
-                  <span className="h-8 w-8 rounded-lg bg-[#F6F4EF] flex items-center justify-center text-[#B8924A] flex-shrink-0">
-                    <Hash className="h-4 w-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold">Mã thành viên</p>
-                    <p className="font-mono text-[11px] font-semibold text-[#17140F] truncate">{user.id}</p>
                   </div>
                 </div>
               </div>
@@ -390,6 +402,14 @@ export default function UserAccount({ onSelectWatch, onBackToCatalog }: UserAcco
           </div>
         </div>
       </div>
+
+      {editing && (
+        <ProfileEditModal
+          user={user}
+          onClose={() => setEditing(false)}
+          onSaved={(updated) => { setUser(updated); setEditing(false); }}
+        />
+      )}
     </div>
   );
 }

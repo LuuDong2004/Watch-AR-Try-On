@@ -109,8 +109,12 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount, 
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
               >
-                <span className="h-7 w-7 rounded-full bg-[#17140F] text-[#F6F4EF] flex items-center justify-center text-xs font-bold">
-                  {initial}
+                <span className="h-7 w-7 overflow-hidden rounded-full bg-[#17140F] text-[#F6F4EF] flex items-center justify-center text-xs font-bold">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    initial
+                  )}
                 </span>
                 <span className="hidden sm:block max-w-[8rem] truncate">{firstName}</span>
                 <ChevronDown className={`h-4 w-4 text-[#17140F]/60 transition ${menuOpen ? 'rotate-180' : ''}`} />
@@ -121,8 +125,12 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount, 
                 <div className="absolute right-0 mt-2 w-72 z-50 rounded-2xl border border-[#e5e0d8] bg-white shadow-2xl overflow-hidden animate-fade-in">
                   {/* Identity */}
                   <div className="flex items-center gap-3 px-4 py-4 border-b border-[#e5e0d8]">
-                    <span className="h-11 w-11 rounded-full bg-[#17140F] text-[#F6F4EF] flex items-center justify-center text-base font-bold">
-                      {initial}
+                    <span className="h-11 w-11 overflow-hidden rounded-full bg-[#17140F] text-[#F6F4EF] flex items-center justify-center text-base font-bold">
+                      {user.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+                      ) : (
+                        initial
+                      )}
                     </span>
                     <div className="min-w-0">
                       <p className="font-display text-sm font-bold text-[#17140F] truncate">{user.name}</p>
