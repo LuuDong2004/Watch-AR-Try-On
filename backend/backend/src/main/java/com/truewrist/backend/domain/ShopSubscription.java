@@ -2,8 +2,6 @@ package com.truewrist.backend.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -31,9 +29,9 @@ public class ShopSubscription {
     @Column(name = "user_id", nullable = false, length = 64)
     private String userId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 24)
-    private SubscriptionPlan plan;
+    /** Code of the {@link SubscriptionPlan} this seller is on (catalogue FK by code). */
+    @Column(name = "plan", nullable = false, length = 64)
+    private String planCode;
 
     @Column(name = "registered_at", nullable = false)
     private long registeredAt;

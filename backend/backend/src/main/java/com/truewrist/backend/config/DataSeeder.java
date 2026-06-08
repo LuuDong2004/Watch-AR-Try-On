@@ -1,5 +1,6 @@
 package com.truewrist.backend.config;
 
+import com.truewrist.backend.domain.ArReviewStatus;
 import com.truewrist.backend.domain.AuthProvider;
 import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Role;
@@ -11,9 +12,11 @@ import com.truewrist.backend.domain.UserStatus;
 import com.truewrist.backend.domain.Watch;
 import com.truewrist.backend.repository.ShopRepository;
 import com.truewrist.backend.repository.ShopSubscriptionRepository;
+import com.truewrist.backend.repository.SubscriptionPlanRepository;
 import com.truewrist.backend.repository.UserRepository;
 import com.truewrist.backend.repository.WatchRepository;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,7 @@ public class DataSeeder implements CommandLineRunner {
     private final ShopRepository shopRepository;
     private final WatchRepository watchRepository;
     private final ShopSubscriptionRepository subscriptionRepository;
+    private final SubscriptionPlanRepository planRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(
@@ -49,19 +53,26 @@ public class DataSeeder implements CommandLineRunner {
             ShopRepository shopRepository,
             WatchRepository watchRepository,
             ShopSubscriptionRepository subscriptionRepository,
+            SubscriptionPlanRepository planRepository,
             PasswordEncoder passwordEncoder) {
         this.props = props;
         this.userRepository = userRepository;
         this.shopRepository = shopRepository;
         this.watchRepository = watchRepository;
         this.subscriptionRepository = subscriptionRepository;
+        this.planRepository = planRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
+        // Required config (not gated by seed.enabled): the plan catalogue must
+        // exist for trials/upgrades to work. Idempotent — only seeds when empty.
+        ensureDefaultPlans();
         // Idempotent migration: link shops created before ownerId existed.
         backfillShopOwnership();
+        // Idempotent migration: AR review status for watches created before it existed.
+        backfillArReviewStatus();
         ensureAventusMonthlySubscription();
 
         if (!props.seed().enabled()) {
@@ -121,22 +132,98 @@ public class DataSeeder implements CommandLineRunner {
      * lazily create a trial subscription.
      */
     private void ensureAventusMonthlySubscription() {
+        SubscriptionPlan essential = planRepository.findById("ESSENTIAL").orElse(null);
+        if (essential == null) {
+            return;
+        }
         userRepository.findById("u-shop-aventus").ifPresent(user -> {
             long now = System.currentTimeMillis();
-            long expiresAt = now + Duration.ofDays(SubscriptionPlan.ESSENTIAL.getDurationDays()).toMillis();
+            long expiresAt = now + Duration.ofDays(essential.getDurationDays()).toMillis();
             ShopSubscription subscription = subscriptionRepository.findByUserId(user.getId())
                     .orElseGet(() -> ShopSubscription.builder()
                             .id("sub-aventus-monthly")
                             .userId(user.getId())
                             .build());
 
-            subscription.setPlan(SubscriptionPlan.ESSENTIAL);
+            subscription.setPlanCode(essential.getCode());
             subscription.setRegisteredAt(now);
             subscription.setExpiresAt(expiresAt);
             subscription.setUpdatedAt(now);
             subscription.setAutoRenew(false);
             subscriptionRepository.save(subscription);
         });
+    }
+
+    /**
+     * Seed the default plan catalogue (TRIAL / ESSENTIAL / PREMIUM) when empty.
+     * Codes are stable so any pre-existing {@code shop_subscriptions.plan} values
+     * keep resolving. Admins can edit/extend this catalogue at runtime afterwards.
+     */
+    private void ensureDefaultPlans() {
+        if (planRepository.count() > 0) {
+            return;
+        }
+        log.info("Seeding default subscription plans...");
+        planRepository.save(SubscriptionPlan.builder()
+                .code("TRIAL").name("Dùng thử")
+                .description("Trải nghiệm các tính năng quản lý cửa hàng")
+                .price(0).durationDays(14).maxShops(1).maxProducts(10)
+                .recommended(false).trial(true).sortOrder(0)
+                .features(new ArrayList<>(List.of(
+                        "1 cửa hàng",
+                        "Tối đa 10 sản phẩm",
+                        "Quản lý liên hệ khách hàng",
+                        "Trải nghiệm AR cơ bản")))
+                .build());
+        planRepository.save(SubscriptionPlan.builder()
+                .code("ESSENTIAL").name("Gói Tháng")
+                .description("Quyền bán hàng 1 tháng cho cửa hàng mới bắt đầu")
+                .price(499_000).durationDays(30).maxShops(3).maxProducts(50)
+                .recommended(false).trial(false).sortOrder(1)
+                .features(new ArrayList<>(List.of(
+                        "Tối đa 3 cửa hàng",
+                        "Tối đa 50 sản phẩm",
+                        "Quản lý liên hệ và lịch hẹn",
+                        "Thống kê hoạt động cửa hàng",
+                        "Hỗ trợ AR Try-on")))
+                .build());
+        planRepository.save(SubscriptionPlan.builder()
+                .code("PREMIUM").name("Premium")
+                .description("Dành cho chuỗi cửa hàng và đại lý")
+                .price(4_199_000).durationDays(365).maxShops(50).maxProducts(-1)
+                .recommended(true).trial(false).sortOrder(2)
+                .features(new ArrayList<>(List.of(
+                        "Tối đa 50 cửa hàng",
+                        "Sản phẩm không giới hạn",
+                        "Toàn bộ tính năng Essential",
+                        "Ưu tiên hiển thị sản phẩm",
+                        "Hỗ trợ kỹ thuật ưu tiên")))
+                .build());
+    }
+
+    /**
+     * Backfill {@code Watch.arReviewStatus} for watches created before the AR
+     * moderation field existed. Null statuses default to PENDING; the seeded
+     * demo model ("chrono") is auto-approved so the AR demo keeps working.
+     */
+    private void backfillArReviewStatus() {
+        boolean[] changed = {false};
+        for (Watch w : watchRepository.findAll()) {
+            ArReviewStatus desired = "chrono".equals(w.getId())
+                    ? ArReviewStatus.APPROVED
+                    : w.getArReviewStatus();
+            if (desired == null) {
+                desired = ArReviewStatus.PENDING;
+            }
+            if (desired != w.getArReviewStatus()) {
+                w.setArReviewStatus(desired);
+                watchRepository.save(w);
+                changed[0] = true;
+            }
+        }
+        if (changed[0]) {
+            log.info("Backfilled AR review status for legacy watches.");
+        }
     }
 
     private void seedShops() {
@@ -200,6 +287,7 @@ public class DataSeeder implements CommandLineRunner {
                 .modelUrl("/models/chronograph_watch.glb").hasAR(true).arWatchId("chrono")
                 .metal("#f3f4f6").dial("#ffffff").accent("#B8924A")
                 .rating(4.9).reviewCount(18).status(ListingStatus.ACTIVE)
+                .arReviewStatus(ArReviewStatus.APPROVED)
                 .shopId("shop-1").createdAt(1714500500000L).build());
     }
 
