@@ -29,10 +29,8 @@ import { toast } from '../../store/useToast';
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value) + ' vnđ';
 
 const formatDate = (timestamp: number) =>
   new Intl.DateTimeFormat('vi-VN', {
@@ -52,21 +50,17 @@ const getUsagePercent = (value: number, limit: number) => {
   return Math.min(100, Math.max(0, (value / Math.max(limit, 1)) * 100));
 };
 
-const PLAN_RANK: Record<SubscriptionPlanCode, number> = {
-  TRIAL: 0,
-  ESSENTIAL: 1,
-  PREMIUM: 2,
+// Plans are a dynamic catalogue now, so derive presentation from rank/price
+// rather than hard-coded codes. The top-ranked plan gets the premium look.
+const planTone = (isTop: boolean, isTrial: boolean): string => {
+  if (isTop) return 'bg-[#17140F] text-white';
+  if (isTrial) return 'bg-[#B8924A]/10 text-[#B8924A]';
+  return 'bg-[#B8924A]/15 text-[#9A7434]';
 };
 
-const PLAN_TONE: Record<SubscriptionPlanCode, string> = {
-  TRIAL: 'bg-[#B8924A]/10 text-[#B8924A]',
-  ESSENTIAL: 'bg-[#B8924A]/15 text-[#9A7434]',
-  PREMIUM: 'bg-[#17140F] text-white',
-};
-
-const planIcon = (plan: SubscriptionPlanCode): LucideIcon => {
-  if (plan === 'PREMIUM') return Crown;
-  if (plan === 'ESSENTIAL') return Zap;
+const planIcon = (plan: SubscriptionPlan, isTop: boolean): LucideIcon => {
+  if (isTop) return Crown;
+  if (plan.price > 0) return Zap;
   return Sparkles;
 };
 
@@ -175,10 +169,14 @@ export default function ShopPlanManagement() {
     );
   }
 
-  const CurrentIcon = planIcon(subscription.plan);
   const currentPlan = subscription.currentPlan;
   const isExpired = subscription.status === 'EXPIRED';
   const daysRemaining = Math.max(0, subscription.daysRemaining);
+
+  // Highest rank in the upgrade catalogue → used to pick the "premium" styling.
+  const maxSort = subscription.plans.reduce((m, p) => Math.max(m, p.sortOrder), currentPlan.sortOrder);
+  const currentRank = currentPlan.sortOrder;
+  const CurrentIcon = planIcon(currentPlan, currentRank >= maxSort);
 
   const usageCards = [
     {
@@ -431,16 +429,16 @@ export default function ShopPlanManagement() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             {subscription.plans.map((plan) => {
-              const Icon = planIcon(plan.code);
+              const isTop = plan.sortOrder >= maxSort;
+              const Icon = planIcon(plan, isTop);
               const isCurrent = plan.code === subscription.plan;
-              const isLower =
-                !isExpired && PLAN_RANK[plan.code] < PLAN_RANK[subscription.plan];
+              const isLower = !isExpired && plan.sortOrder < currentRank;
               const actionLabel = isCurrent
                 ? 'Gia hạn gói'
-                : PLAN_RANK[plan.code] > PLAN_RANK[subscription.plan] || isExpired
+                : plan.sortOrder > currentRank || isExpired
                   ? 'Nâng cấp ngay'
                   : 'Gói thấp hơn';
-              const isPremium = plan.code === 'PREMIUM';
+              const isPremium = isTop;
               const isBusy = upgradingPlan === plan.code;
 
               return (
@@ -472,7 +470,7 @@ export default function ShopPlanManagement() {
                   </div>
 
                   <div className="flex items-start gap-3">
-                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${PLAN_TONE[plan.code]}`}>
+                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${planTone(isTop, plan.price === 0)}`}>
                       <Icon className="h-6 w-6" />
                     </span>
                     <div className="min-w-0">
