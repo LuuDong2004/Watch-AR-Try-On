@@ -3,7 +3,6 @@ package com.truewrist.backend.security;
 import com.truewrist.backend.domain.User;
 import com.truewrist.backend.domain.UserStatus;
 import java.util.Collection;
-import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,7 +33,10 @@ public class AppUserPrincipal implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(user.getRole().authority()));
+        return user.effectiveRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.authority()))
+                .map(GrantedAuthority.class::cast)
+                .toList();
     }
 
     @Override

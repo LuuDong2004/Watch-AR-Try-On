@@ -4,7 +4,10 @@ import com.truewrist.backend.dto.AuthDtos.AuthResponse;
 import com.truewrist.backend.dto.AuthDtos.ForgotPasswordRequest;
 import com.truewrist.backend.dto.AuthDtos.LoginRequest;
 import com.truewrist.backend.dto.AuthDtos.RegisterRequest;
+import com.truewrist.backend.dto.AuthDtos.RegisterResponse;
+import com.truewrist.backend.dto.AuthDtos.ResendVerificationRequest;
 import com.truewrist.backend.dto.AuthDtos.ResetPasswordRequest;
+import com.truewrist.backend.dto.AuthDtos.VerifyEmailRequest;
 import com.truewrist.backend.dto.UserDtos.ProfileUpdateRequest;
 import com.truewrist.backend.dto.UserDtos.UserResponse;
 import com.truewrist.backend.exception.ApiException;
@@ -36,8 +39,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest req) {
+    public RegisterResponse register(@Valid @RequestBody RegisterRequest req) {
         return authService.register(req);
+    }
+
+    /** Verify a new account's email from the link, returning a session token. */
+    @PostMapping("/verify-email")
+    public AuthResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest req) {
+        return authService.verifyEmail(req.token());
+    }
+
+    /** Resend the verification email. Always 200 (never reveals if the email exists). */
+    @PostMapping("/resend-verification")
+    public void resendVerification(@Valid @RequestBody ResendVerificationRequest req) {
+        authService.resendVerification(req.email());
     }
 
     /** Request a password-reset email. Always 200 (never reveals if the email exists). */

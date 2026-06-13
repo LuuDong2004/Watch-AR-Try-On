@@ -71,12 +71,15 @@ public class SecurityConfig {
                         // Public auth + OAuth2 endpoints
                         .requestMatchers(
                                 "/api/auth/login", "/api/auth/register",
-                                "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
+                                "/api/auth/forgot-password", "/api/auth/reset-password",
+                                "/api/auth/verify-email", "/api/auth/resend-verification").permitAll()
                         .requestMatchers("/oauth2/**", "/login/**").permitAll()
                         // A seller's own shops require auth (must come before the public wildcard)
                         .requestMatchers(HttpMethod.GET, "/api/shops/mine").authenticated()
                         // Public storefront reads
                         .requestMatchers(HttpMethod.GET, "/api/watches/**", "/api/shops/**").permitAll()
+                        // Public pricing catalogue (the "become a partner" page)
+                        .requestMatchers(HttpMethod.GET, "/api/subscription/plans").permitAll()
                         // Public storefront submissions (contact form / feedback); user id
                         // is attached automatically when the visitor happens to be signed in.
                         .requestMatchers(HttpMethod.POST, "/api/leads", "/api/feedback").permitAll()

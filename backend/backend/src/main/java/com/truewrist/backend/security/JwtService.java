@@ -28,6 +28,7 @@ public class JwtService {
         var builder = Jwts.builder()
                 .subject(user.getId())
                 .claim("role", user.getRole().name())
+                .claim("roles", user.effectiveRoles().stream().map(Enum::name).toList())
                 .claim("email", user.getEmail())
                 .claim("name", user.getName())
                 .issuedAt(new Date(now))

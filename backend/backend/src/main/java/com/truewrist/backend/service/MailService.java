@@ -26,6 +26,21 @@ public class MailService {
         this.props = props;
     }
 
+    /** Verification email with the activation link sent right after registration. */
+    public void sendEmailVerification(String toEmail, String name, String verifyUrl) {
+        String subject = "Xác minh email tài khoản TrueWrist";
+        String body = "Xin chào " + (name == null || name.isBlank() ? "bạn" : name) + ",\n\n"
+                + "Cảm ơn bạn đã đăng ký TrueWrist. Vui lòng nhấn vào liên kết dưới đây để "
+                + "xác minh email và hoàn tất đăng ký:\n\n"
+                + verifyUrl + "\n\n"
+                + "Tài khoản chỉ được kích hoạt sau khi bạn xác minh email. Liên kết có hiệu lực trong 24 giờ.\n"
+                + "Nếu bạn không thực hiện đăng ký này, vui lòng bỏ qua email.\n\n"
+                + "Trân trọng,\nĐội ngũ TrueWrist";
+        // Always log the link too, so dev without SMTP can still complete the flow.
+        log.info("[VERIFY LINK] {} → {}", toEmail, verifyUrl);
+        send(toEmail, subject, body, "Email verification");
+    }
+
     public void sendPasswordReset(String toEmail, String name, String resetUrl) {
         long ttl = props.passwordReset().ttlMinutesOrDefault();
         String subject = "Đặt lại mật khẩu TrueWrist";
@@ -59,6 +74,29 @@ public class MailService {
             // the user can still be helped manually.
             log.error("Failed to send reset email to {}: {}", toEmail, e.getMessage());
             log.warn("[MAIL FALLBACK] Reset link for {} → {}", toEmail, resetUrl);
+        }
+    }
+
+    /** Send a plain-text email, or log it when mail is disabled / no SMTP sender. */
+    private void send(String toEmail, String subject, String body, String label) {
+        JavaMailSender sender = mailSenderProvider.getIfAvailable();
+        boolean enabled = props.mail() != null && props.mail().enabled();
+        if (!enabled || sender == null) {
+            log.warn("[MAIL DISABLED] {} → {}", label, toEmail);
+            return;
+        }
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            if (props.mail().from() != null && !props.mail().from().isBlank()) {
+                msg.setFrom(props.mail().from());
+            }
+            msg.setTo(toEmail);
+            msg.setSubject(subject);
+            msg.setText(body);
+            sender.send(msg);
+            log.info("Sent email ({}) to {}", label, toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send email ({}) to {}: {}", label, toEmail, e.getMessage());
         }
     }
 }

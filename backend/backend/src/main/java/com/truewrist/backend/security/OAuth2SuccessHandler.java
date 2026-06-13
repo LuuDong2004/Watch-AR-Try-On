@@ -51,7 +51,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
             long now = System.currentTimeMillis();
-            return User.builder()
+            User created = User.builder()
                     .id(Ids.generate("u"))
                     .name(name != null && !name.isBlank() ? name : email)
                     .email(email)
@@ -61,6 +61,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     .provider(AuthProvider.GOOGLE)
                     .createdAt(now)
                     .build();
+            created.assignRoles(java.util.Set.of(Role.CUSTOMER));
+            return created;
         });
 
         // A locked account must not get a token even via Google.
