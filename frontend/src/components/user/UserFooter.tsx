@@ -1,59 +1,73 @@
 import React from 'react';
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, UserPlus, Sparkles, ArrowUpRight } from 'lucide-react';
 import BrandLogo from '../ui/BrandLogo';
+import { useLoginPrompt } from '../../auth/loginPrompt';
+import { useSession } from '../../auth/session';
 
 interface UserFooterProps {
   onChangePage: (page: string) => void;
 }
 
-export default function UserFooter({ onChangePage }: UserFooterProps) {
-  return (
-    <footer className="bg-[#17140F] text-[#F6F4EF] font-sans mt-auto">
-      {/* Newsletter / CTA strip */}
-      <div className="border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-10 grid md:grid-cols-2 gap-6 items-center">
-          <div>
-            <h3 className="font-display text-xl md:text-2xl font-bold mb-1.5">
-              Đăng ký nhận bộ sưu tập giới hạn
-            </h3>
-            <p className="text-sm text-gray-400 max-w-md">
-              Nhận thông tin ra mắt sản phẩm mới, ưu đãi riêng và lời mời sự kiện trải nghiệm AR độc quyền.
-            </p>
-          </div>
-          <form
-            onSubmit={(e) => e.preventDefault()}
-            className="flex gap-2"
-          >
-            <input
-              type="email"
-              required
-              placeholder="Nhập email của bạn"
-              className="flex-1 rounded-full bg-white/10 border border-white/15 px-5 py-3 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
-            />
-            <button className="bg-[#B8924A] hover:bg-[#a6803f] text-white font-semibold px-6 py-3 rounded-full text-sm transition shadow-md active:scale-95 whitespace-nowrap">
-              Đăng ký
-            </button>
-          </form>
-        </div>
-      </div>
+const SOCIALS = ['Facebook', 'Instagram', 'YouTube', 'TikTok'];
 
-      {/* Main footer columns */}
-      <div className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
-        {/* Brand */}
-        <div className="col-span-2 md:col-span-1">
-          <div className="mb-4">
-            <BrandLogo surface="dark" size="md" />
+export default function UserFooter({ onChangePage }: UserFooterProps) {
+  const showLogin = useLoginPrompt((s) => s.show);
+  const user = useSession((s) => s.user);
+
+  return (
+    <footer className="relative mt-auto bg-[#14110c] font-sans text-[#F6F4EF]">
+      {/* gold hairline */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-[#B8924A]/70 to-transparent" />
+
+      {/* Account CTA band */}
+      {!user && (
+        <div className="border-b border-white/[0.07]">
+          <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-4 py-12 md:flex-row md:items-center">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#B8924A]/30 bg-[#B8924A]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#E7CE8F]">
+                <Sparkles className="h-3 w-3" /> Tài khoản TrueWrist
+              </span>
+              <h3 className="mt-3 font-display text-2xl font-bold leading-snug md:text-[1.7rem]">
+                Đăng ký tài khoản để lưu yêu thích &amp; đặt lịch thử AR
+              </h3>
+              <p className="mt-1.5 max-w-xl text-sm text-gray-400">
+                Tạo tài khoản miễn phí để lưu mẫu yêu thích, theo dõi lịch hẹn và trải nghiệm thử đeo AR độc quyền.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                onClick={() => showLogin('register')}
+                className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#E7CE8F] to-[#B8924A] px-6 py-3 text-sm font-semibold text-black transition hover:brightness-105 active:scale-95"
+              >
+                <UserPlus className="h-4 w-4" /> Đăng ký tài khoản
+              </button>
+              <button
+                onClick={() => showLogin('login')}
+                className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-white/80 transition hover:border-[#B8924A] hover:text-white"
+              >
+                Đăng nhập
+              </button>
+            </div>
           </div>
-          <p className="text-gray-400 leading-relaxed mb-4">
+        </div>
+      )}
+
+      {/* Columns */}
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-8 gap-y-10 px-4 py-14 md:grid-cols-12">
+        {/* Brand */}
+        <div className="col-span-2 md:col-span-5">
+          <BrandLogo surface="dark" size="md" />
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-400">
             Sàn trưng bày đồng hồ cao cấp kết hợp công nghệ thử đeo AR thời gian thực — đeo thử trước, liên hệ shop sau.
           </p>
-          <div className="flex gap-3">
-            {['Facebook', 'Instagram', 'YouTube', 'TikTok'].map((s) => (
+          <div className="mt-5 flex gap-2.5">
+            {SOCIALS.map((s) => (
               <a
                 key={s}
                 href="#"
                 title={s}
-                className="h-9 w-9 rounded-full bg-white/10 hover:bg-[#B8924A] flex items-center justify-center text-xs font-bold transition"
+                aria-label={s}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-xs font-bold text-gray-300 transition hover:border-[#B8924A] hover:bg-[#B8924A] hover:text-black"
               >
                 {s[0]}
               </a>
@@ -62,46 +76,56 @@ export default function UserFooter({ onChangePage }: UserFooterProps) {
         </div>
 
         {/* Khám phá */}
-        <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Khám phá</h4>
-          <ul className="space-y-2.5 text-gray-400">
-            <li><button onClick={() => onChangePage('home')} className="hover:text-white transition">Trang chủ</button></li>
-            <li><button onClick={() => onChangePage('catalog')} className="hover:text-white transition">Bộ sưu tập</button></li>
-            <li><button onClick={() => onChangePage('stores')} className="hover:text-white transition">Cửa hàng</button></li>
-          </ul>
-        </div>
-
-        {/* Dịch vụ */}
-        <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Dịch vụ</h4>
-          <ul className="space-y-2.5 text-gray-400">
-            <li>Thử đeo AR thời gian thực</li>
-            <li>Xem mô hình 3D 360°</li>
-            <li>Tư vấn VIP 1-1</li>
-            <li>Bảo hành chính hãng</li>
+        <div className="md:col-span-3">
+          <h4 className="mb-4 font-display text-xs font-bold uppercase tracking-[0.18em] text-[#B8924A]">Khám phá</h4>
+          <ul className="space-y-3 text-sm text-gray-400">
+            {[
+              { label: 'Trang chủ', page: 'home' },
+              { label: 'Bộ sưu tập', page: 'catalog' },
+              { label: 'Cửa hàng', page: 'stores' },
+              { label: 'Trở thành đối tác', page: 'pricing' },
+            ].map((it) => (
+              <li key={it.page}>
+                <button
+                  onClick={() => onChangePage(it.page)}
+                  className="group inline-flex items-center gap-1 transition hover:text-white"
+                >
+                  {it.label}
+                  <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition group-hover:opacity-100 group-hover:text-[#B8924A]" />
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* Liên hệ */}
-        <div>
-          <h4 className="font-display font-bold mb-4 text-[#B8924A] uppercase text-xs tracking-wider">Liên hệ</h4>
-          <ul className="space-y-2.5 text-gray-400">
-            <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> 15 Lý Tự Trọng, Q1, TP.HCM</li>
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> 1900 6868</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> care@aventus.luxury</li>
-            <li className="flex items-center gap-2"><Clock className="h-4 w-4" /> 09:00 – 21:30 hằng ngày</li>
+        <div className="col-span-2 md:col-span-4">
+          <h4 className="mb-4 font-display text-xs font-bold uppercase tracking-[0.18em] text-[#B8924A]">Liên hệ</h4>
+          <ul className="space-y-3.5 text-sm text-gray-300">
+            <li className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#B8924A]" /> 15 Lý Tự Trọng, Quận 1, TP. Hồ Chí Minh
+            </li>
+            <li className="flex items-center gap-3">
+              <Phone className="h-4 w-4 shrink-0 text-[#B8924A]" /> 1900 6868
+            </li>
+            <li className="flex items-center gap-3">
+              <Mail className="h-4 w-4 shrink-0 text-[#B8924A]" /> care@truewrist.vn
+            </li>
+            <li className="flex items-center gap-3">
+              <Clock className="h-4 w-4 shrink-0 text-[#B8924A]" /> 09:00 – 21:30 · cả tuần
+            </li>
           </ul>
         </div>
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <span>© 2026 TrueWrist AR Watch Studio · Sàn Trưng Bày & Đeo Thử Đồng Hồ Cao Cấp</span>
-          <div className="flex gap-5">
-            <a href="#" className="hover:text-white transition">Điều khoản</a>
-            <a href="#" className="hover:text-white transition">Bảo mật</a>
-            <a href="#" className="hover:text-white transition">Chính sách đổi trả</a>
+      <div className="border-t border-white/[0.07]">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-5 text-xs text-gray-500 sm:flex-row">
+          <span>© 2026 TrueWrist · Sàn Trưng Bày &amp; Đeo Thử Đồng Hồ Cao Cấp</span>
+          <div className="flex gap-6">
+            <a href="#" className="transition hover:text-white">Điều khoản</a>
+            <a href="#" className="transition hover:text-white">Bảo mật</a>
+            <a href="#" className="transition hover:text-white">Đổi trả</a>
           </div>
         </div>
       </div>

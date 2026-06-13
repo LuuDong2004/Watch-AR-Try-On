@@ -9,12 +9,14 @@ interface UserHomeProps {
   onSelectWatch: (id: string) => void;
   onOpenAR: (watchId: string) => void;
   onNavigate: (page: string) => void;
+  /** Open the catalog filtered by a brand. */
+  onSelectBrand?: (brand: string) => void;
 }
 
 const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
 
-export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHomeProps) {
+export default function UserHome({ onSelectWatch, onOpenAR, onNavigate, onSelectBrand }: UserHomeProps) {
   const [watches, setWatches] = useState<Watch[]>([]);
 
   useEffect(() => {
@@ -105,9 +107,15 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
       <section className="bg-white border-y border-[#e5e0d8]">
         <div className="max-w-6xl mx-auto px-4 py-7 flex flex-wrap items-center justify-center md:justify-between gap-x-10 gap-y-3">
           {['ROLEX', 'OMEGA', 'AVENTUS', 'G-SHOCK', 'SUBMARINER', 'HERITAGE'].map((b) => (
-            <span key={b} className="font-display text-lg md:text-xl font-bold text-[#17140F]/30 tracking-widest">
+            <button
+              key={b}
+              type="button"
+              onClick={() => (onSelectBrand ? onSelectBrand(b) : onNavigate('catalog'))}
+              title={`Xem sản phẩm ${b}`}
+              className="font-display text-lg md:text-xl font-bold text-[#17140F]/30 tracking-widest transition hover:text-[#B8924A]"
+            >
               {b}
-            </span>
+            </button>
           ))}
         </div>
       </section>
@@ -236,20 +244,20 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate }: UserHo
             <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold">Khách hàng nói gì</span>
             <h2 className="font-display text-3xl md:text-4xl font-bold mt-3">Tin tưởng bởi hàng nghìn người</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-6 items-stretch">
             {[
               { name: 'Hoàng Long', role: 'Doanh nhân', text: 'Thử AR trên web thấy vừa vặn, liên hệ shop nhận liền. Trải nghiệm mua sắm hiện đại nhất tôi từng có.' },
               { name: 'Quốc Bảo', role: 'Kiến trúc sư', text: 'Xoay 3D xem rõ từng cọc số sapphire. Quá tiện để quyết định trước khi xuống tiền.' },
               { name: 'Minh Anh', role: 'Nhà sáng tạo nội dung', text: 'Đặt lịch nhanh gọn, shop tư vấn rất tận tình. Sẽ quay lại!' },
             ].map((t) => (
-              <div key={t.name} className="bg-white/5 border border-white/10 rounded-3xl p-7">
+              <div key={t.name} className="flex h-full flex-col bg-white/5 border border-white/10 rounded-3xl p-7">
                 <div className="flex text-[#B8924A] mb-3">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                   ))}
                 </div>
-                <p className="text-sm text-gray-300 leading-relaxed mb-5">“{t.text}”</p>
-                <div className="flex items-center gap-3">
+                <p className="text-sm text-gray-300 leading-relaxed mb-5 flex-1">“{t.text}”</p>
+                <div className="mt-auto flex items-center gap-3">
                   <span className="h-10 w-10 rounded-full bg-[#B8924A]/20 border border-[#B8924A]/40 flex items-center justify-center font-bold text-[#B8924A]">
                     {t.name[0]}
                   </span>

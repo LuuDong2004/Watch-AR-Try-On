@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Stage, useGLTF, Html } from '@react-three/drei'
+import { OrbitControls, Stage, useGLTF, Html, Environment, Lightformer } from '@react-three/drei'
 import { applyGltfVariant } from '../../utils/gltfVariants.js'
 
 function WatchModel({ url, variant }) {
@@ -14,7 +14,8 @@ function WatchModel({ url, variant }) {
 function Loader() {
   return (
     <Html center>
-      <div className="text-xs text-gray-500 bg-white/80 px-3 py-1.5 rounded-full">
+      <div className="flex items-center gap-2 rounded-full bg-white/85 px-3 py-1.5 text-xs text-gray-600 shadow-sm backdrop-blur">
+        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#B8924A]/30 border-t-[#B8924A]" />
         Đang tải mô hình 3D…
       </div>
     </Html>
@@ -27,13 +28,21 @@ export default function Watch3DViewer({
   height = 320,
   // When true: spins continuously, no pause button, no zoom/drag hint, no border.
   hideControls = false,
-  // Initial camera position. A 3/4 angle reads more dynamic than a flat front view.
-  camera = [1.7, 0.9, 2.6],
+  // Initial camera position. An elevated 3/4 angle reads diagonal & more dynamic
+  // than a flat front view.
+  camera = [2.1, 1.45, 2.3],
 }) {
   const [hovered, setHovered] = useState(false)
   const [autoRotate, setAutoRotate] = useState(true)
 
   const showControls = !hideControls
+
+  // Warm the cache so the model is ready as soon as the canvas mounts.
+  useEffect(() => {
+    if (modelUrl) {
+      try { useGLTF.preload(modelUrl) } catch { /* ignore */ }
+    }
+  }, [modelUrl])
 
   return (
     <div
@@ -46,9 +55,17 @@ export default function Watch3DViewer({
     >
       <Canvas camera={{ position: camera, fov: 45 }} dpr={[1, 2]}>
         <Suspense fallback={<Loader />}>
-          <Stage environment="city" intensity={0.5} adjustCamera={1.35}>
+          <Stage environment={null} preset="rembrandt" intensity={0.5} adjustCamera={1.3} shadows="contact">
             <WatchModel url={modelUrl} variant={variant} />
           </Stage>
+          {/* Procedural studio environment (no network HDRI → fast) so the metal
+              reflects something instead of rendering black. */}
+          <Environment resolution={256} frames={1}>
+            <Lightformer form="rect" intensity={4} position={[0, 3, 3]} scale={[8, 4, 1]} color="#ffffff" />
+            <Lightformer form="rect" intensity={2} position={[3, 1, 2]} scale={[5, 5, 1]} color="#fff3df" />
+            <Lightformer form="rect" intensity={2} position={[-3, 1, 2]} scale={[5, 5, 1]} color="#ffffff" />
+            <Lightformer form="ring" intensity={1.2} position={[0, -1, -4]} scale={[6, 6, 1]} color="#ffe9c7" />
+          </Environment>
         </Suspense>
         <OrbitControls
           enablePan={false}
