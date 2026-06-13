@@ -13,12 +13,19 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  /** Primary role (highest precedence) — drives the app shell. */
   role: Role;
+  /** Full set of granted roles (multi-role). Always includes {@link role}. */
+  roles: Role[];
   shopId?: string | null;
   status: UserStatus;
   provider?: string;
   /** Profile picture URL; null/undefined = show initials. */
   avatar?: string | null;
+  /** Contact phone number; pre-fills enquiry/appointment forms. */
+  phone?: string | null;
+  /** Whether the account's email has been verified (self-registrations gate on this). */
+  emailVerified?: boolean;
   createdAt?: number;
 }
 
@@ -76,6 +83,22 @@ export interface Shop {
   /** Reason shown to the owner when an admin locks the shop. */
   lockReason?: string | null;
   createdAt?: number;
+}
+
+/** A threaded comment on a watch (display + AR platform — no star ratings). */
+export interface ProductComment {
+  id: string;
+  watchId: string;
+  userId: string;
+  authorName: string;
+  /** Author owns the watch's shop → render a "Shop" badge. */
+  isShop: boolean;
+  /** User marked "đã thử AR và thấy phù hợp". */
+  triedAr: boolean;
+  body: string;
+  parentId?: string | null;
+  createdAt: number;
+  replies: ProductComment[];
 }
 
 export type LeadType = 'contact' | 'appointment';
@@ -175,6 +198,25 @@ export interface AdminPlanOverview {
   sortOrder: number;
   subscribers: number;
   features: string[];
+}
+
+/** Lifecycle of a user's plan-upgrade request (manual admin approval). */
+export type UpgradeRequestStatus = 'pending' | 'approved' | 'rejected';
+
+/** A user's request to move onto a paid selling plan, pending admin approval. */
+export interface PlanUpgradeRequest {
+  id: string;
+  userId: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  planCode: string;
+  planName: string;
+  planPrice: number;
+  planDurationDays: number;
+  status: UpgradeRequestStatus;
+  note?: string | null;
+  createdAt: number;
+  decidedAt?: number | null;
 }
 
 /** Admin payload to create/update a plan (code is server-assigned on create). */

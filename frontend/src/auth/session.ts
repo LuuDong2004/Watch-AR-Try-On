@@ -15,7 +15,8 @@ interface SessionState {
   /** Restore the session from a stored token (call once on app boot). */
   init: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
-  register: (name: string, email: string, password: string) => Promise<User>;
+  /** Register — does NOT sign in (account must verify email first). */
+  register: (name: string, email: string, password: string) => Promise<{ email: string; message: string }>;
   /** Replace the cached user after a profile edit. */
   setUser: (user: User) => void;
   logout: () => void;
@@ -43,9 +44,8 @@ export const useSession = create<SessionState>((set) => ({
     return user;
   },
   register: async (name, email, password) => {
-    const { user } = await authApi.register(name, email, password);
-    set({ user, status: 'authed' });
-    return user;
+    // No session is created — the user must click the email verification link first.
+    return authApi.register(name, email, password);
   },
   setUser: (user) => set({ user }),
   logout: () => {

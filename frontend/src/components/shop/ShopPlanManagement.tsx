@@ -21,6 +21,7 @@ import {
   watchApi,
 } from '../../api';
 import type {
+  PlanUpgradeRequest,
   ShopSubscription,
   SubscriptionPlan,
   SubscriptionPlanCode,
@@ -69,18 +70,21 @@ export default function ShopPlanManagement() {
   const [usage, setUsage] = useState({ shops: 0, products: 0 });
   const [loading, setLoading] = useState(true);
   const [upgradingPlan, setUpgradingPlan] = useState<SubscriptionPlanCode | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<PlanUpgradeRequest | null>(null);
   const [loadError, setLoadError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const [subscriptionData, shops] = await Promise.all([
+      const [subscriptionData, shops, myRequests] = await Promise.all([
         subscriptionApi.get(),
         shopApi.mine(),
+        subscriptionApi.myRequests().catch(() => [] as PlanUpgradeRequest[]),
       ]);
       const productLists = await Promise.all(shops.map((shop) => watchApi.list(shop.id)));
       setSubscription(subscriptionData);
+      setPendingRequest(myRequests.find((r) => r.status === 'pending') ?? null);
       setUsage({
         shops: shops.length,
         products: productLists.reduce((total, products) => total + products.length, 0),
@@ -109,22 +113,22 @@ export default function ShopPlanManagement() {
     const isRenewal = plan.code === subscription.plan;
     const confirmed = await toast.confirm(
       isRenewal
-        ? `Gia hạn gói ${plan.name} thêm ${plan.durationDays} ngày với giá ${formatPlanPrice(plan.price)}?`
-        : `Nâng cấp lên gói ${plan.name} với giá ${formatPlanPrice(plan.price)}?`,
+        ? `Gửi yêu cầu gia hạn gói ${plan.name} (${plan.durationDays} ngày · ${formatPlanPrice(plan.price)}) đến quản trị viên?`
+        : `Gửi yêu cầu nâng cấp lên gói ${plan.name} (${formatPlanPrice(plan.price)}) đến quản trị viên?`,
       {
-        title: isRenewal ? 'Xác nhận gia hạn' : 'Xác nhận nâng cấp',
-        confirmText: isRenewal ? 'Gia hạn' : 'Nâng cấp',
+        title: isRenewal ? 'Xác nhận gửi yêu cầu gia hạn' : 'Xác nhận gửi yêu cầu nâng cấp',
+        confirmText: 'Gửi yêu cầu',
       },
     );
     if (!confirmed) return;
 
     setUpgradingPlan(plan.code);
     try {
-      const updated = await subscriptionApi.upgrade(plan.code);
-      setSubscription(updated);
-      toast.success(isRenewal ? 'Gia hạn gói thành công.' : `Đã nâng cấp lên gói ${plan.name}.`);
+      const request = await subscriptionApi.requestUpgrade(plan.code);
+      setPendingRequest(request);
+      toast.success('Đã gửi yêu cầu. Quản trị viên sẽ duyệt và kích hoạt gói cho bạn.');
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Không thể cập nhật gói sử dụng.');
+      toast.error(error instanceof ApiError ? error.message : 'Không thể gửi yêu cầu nâng cấp.');
     } finally {
       setUpgradingPlan(null);
     }
@@ -240,6 +244,17 @@ export default function ShopPlanManagement() {
             Làm mới dữ liệu
           </button>
         </header>
+
+        {isExpired && currentPlan.price > 0 && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+            <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+            <p className="text-xs leading-5 text-red-700">
+              <span className="font-bold">Gói trả phí của bạn đã hết hạn.</span>{' '}
+              Vui lòng gửi yêu cầu gia hạn. Sau <span className="font-bold">3 ngày</span> cửa hàng sẽ tạm bị khóa,
+              và sau <span className="font-bold">7 ngày</span> tài khoản sẽ được chuyển về người dùng thường.
+            </p>
+          </div>
+        )}
 
         <section className="mb-6 grid gap-4 md:grid-cols-3">
           {headlineStats.map((stat) => (
@@ -427,17 +442,32 @@ export default function ShopPlanManagement() {
             </div>
           </div>
 
+          {pendingRequest && (
+            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#B8924A]/40 bg-[#B8924A]/5 p-4">
+              <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-[#B8924A]" />
+              <p className="text-xs leading-5 text-[#7a5e28]">
+                <span className="font-bold">Yêu cầu gói “{pendingRequest.planName}” đang chờ quản trị viên duyệt.</span>{' '}
+                Chưa có cổng thanh toán nên gói sẽ được kích hoạt sau khi admin xác nhận. Bạn không thể gửi yêu cầu mới khi yêu cầu này còn chờ xử lý.
+              </p>
+            </div>
+          )}
+
           <div className="grid gap-5 lg:grid-cols-3">
             {subscription.plans.map((plan) => {
               const isTop = plan.sortOrder >= maxSort;
               const Icon = planIcon(plan, isTop);
               const isCurrent = plan.code === subscription.plan;
-              const isLower = !isExpired && plan.sortOrder < currentRank;
-              const actionLabel = isCurrent
-                ? 'Gia hạn gói'
-                : plan.sortOrder > currentRank || isExpired
-                  ? 'Nâng cấp ngay'
-                  : 'Gói thấp hơn';
+              // While the plan is still active, the current plan and any lower plan
+              // are locked — only higher tiers can be requested (until expiry).
+              const blockedWhileActive = !isExpired && plan.sortOrder <= currentRank;
+              const isPendingPlan = pendingRequest?.planCode === plan.code;
+              const actionLabel = isPendingPlan
+                ? 'Đang chờ duyệt'
+                : isCurrent
+                  ? (isExpired ? 'Gia hạn gói' : 'Đang sử dụng')
+                  : plan.sortOrder > currentRank || isExpired
+                    ? 'Nâng cấp ngay'
+                    : 'Gói thấp hơn';
               const isPremium = isTop;
               const isBusy = upgradingPlan === plan.code;
 
@@ -445,14 +475,21 @@ export default function ShopPlanManagement() {
                 <article
                   key={plan.code}
                   className={`relative flex min-h-full flex-col overflow-hidden rounded-[2rem] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-luxe ${
-                    plan.recommended
-                      ? 'border-2 border-[#B8924A]'
-                      : 'border border-[#ded7ca]'
+                    isCurrent
+                      ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/15'
+                      : plan.recommended
+                        ? 'border-2 border-[#B8924A]'
+                        : 'border border-[#ded7ca]'
                   }`}
                 >
+                  {isCurrent && (
+                    <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm">
+                      <Check className="h-3 w-3" /> Gói đang sử dụng
+                    </span>
+                  )}
                   <div
                     className={`absolute inset-x-0 top-0 h-1.5 ${
-                      isPremium ? 'bg-[#17140F]' : 'bg-[#B8924A]'
+                      isCurrent ? 'bg-emerald-500' : isPremium ? 'bg-[#17140F]' : 'bg-[#B8924A]'
                     }`}
                   />
 
@@ -460,11 +497,6 @@ export default function ShopPlanManagement() {
                     {plan.recommended && (
                       <span className="rounded-full bg-[#B8924A] px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white">
                         Đề xuất
-                      </span>
-                    )}
-                    {isCurrent && (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-                        Đang dùng
                       </span>
                     )}
                   </div>
@@ -519,7 +551,7 @@ export default function ShopPlanManagement() {
                   <button
                     type="button"
                     onClick={() => void handleUpgrade(plan)}
-                    disabled={isLower || upgradingPlan !== null}
+                    disabled={blockedWhileActive || upgradingPlan !== null || pendingRequest !== null}
                     className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       isPremium
                         ? 'bg-[#17140F] text-white hover:bg-black'

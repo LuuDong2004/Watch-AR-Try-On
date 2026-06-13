@@ -14,9 +14,12 @@ import type {
   Feedback,
   Lead,
   PlanInput,
+  PlanUpgradeRequest,
+  ProductComment,
   Role,
   Shop,
   ShopSubscription,
+  SubscriptionPlan,
   SubscriptionPlanCode,
   User,
   Watch,
@@ -30,15 +33,23 @@ export { ApiError, getToken, setToken } from './client';
 const lower = (v: unknown): any => (typeof v === 'string' ? v.toLowerCase() : v);
 
 function toUser(d: any): User {
+  const roles: Role[] = Array.isArray(d.roles) && d.roles.length
+    ? d.roles.map((r: unknown) => lower(r) as Role)
+    : d.role
+      ? [lower(d.role) as Role]
+      : [];
   return {
     id: d.id,
     name: d.name,
     email: d.email,
     role: lower(d.role) as Role,
+    roles,
     shopId: d.shopId ?? null,
     status: lower(d.status) as User['status'],
     provider: lower(d.provider),
     avatar: d.avatar ?? null,
+    phone: d.phone ?? null,
+    emailVerified: d.emailVerified ?? true,
     createdAt: d.createdAt,
   };
 }
@@ -149,6 +160,38 @@ function toFeedback(d: any): Feedback {
   };
 }
 
+function toComment(d: any): ProductComment {
+  return {
+    id: d.id,
+    watchId: d.watchId,
+    userId: d.userId,
+    authorName: d.authorName,
+    isShop: !!d.isShop,
+    triedAr: !!d.triedAr,
+    body: d.body,
+    parentId: d.parentId ?? null,
+    createdAt: d.createdAt,
+    replies: Array.isArray(d.replies) ? d.replies.map(toComment) : [],
+  };
+}
+
+function toUpgradeRequest(d: any): PlanUpgradeRequest {
+  return {
+    id: d.id,
+    userId: d.userId,
+    userName: d.userName ?? null,
+    userEmail: d.userEmail ?? null,
+    planCode: d.planCode,
+    planName: d.planName,
+    planPrice: d.planPrice ?? 0,
+    planDurationDays: d.planDurationDays ?? 0,
+    status: lower(d.status) as PlanUpgradeRequest['status'],
+    note: d.note ?? null,
+    createdAt: d.createdAt,
+    decidedAt: d.decidedAt ?? null,
+  };
+}
+
 const upper = (v?: string) => (v ? v.toUpperCase() : v);
 
 // --- Auth -------------------------------------------------------------------
@@ -164,10 +207,20 @@ export const authApi = {
     setToken(d.token);
     return { token: d.token, user: toUser(d.user) };
   },
-  async register(name: string, email: string, password: string): Promise<AuthResult> {
+  /** Register — creates an UNVERIFIED account and emails a link; no auto-login. */
+  async register(name: string, email: string, password: string): Promise<{ email: string; message: string }> {
     const d = await http.post<any>('/api/auth/register', { name, email, password }, { auth: false });
+    return { email: d.email, message: d.message };
+  },
+  /** Verify the email from the link's token, then sign in. */
+  async verifyEmail(token: string): Promise<AuthResult> {
+    const d = await http.post<any>('/api/auth/verify-email', { token }, { auth: false });
     setToken(d.token);
     return { token: d.token, user: toUser(d.user) };
+  },
+  /** Resend the verification email (always resolves). */
+  async resendVerification(email: string): Promise<void> {
+    await http.post('/api/auth/resend-verification', { email }, { auth: false });
   },
   async me(): Promise<User> {
     return toUser(await http.get<any>('/api/auth/me'));
@@ -185,6 +238,7 @@ export const authApi = {
     name?: string;
     email?: string;
     avatar?: string | null;
+    phone?: string | null;
     currentPassword?: string;
     newPassword?: string;
   }): Promise<User> {
@@ -313,13 +367,15 @@ export const userApi = {
   async create(u: Partial<User> & { password: string }): Promise<User> {
     return toUser(await http.post<any>('/api/users', {
       name: u.name, email: u.email, password: u.password,
-      role: upper(u.role), shopId: u.shopId, status: upper(u.status),
+      role: upper(u.role), roles: u.roles?.map((r) => upper(r)),
+      shopId: u.shopId, phone: u.phone, status: upper(u.status),
     }));
   },
   async update(id: string, u: Partial<User> & { password?: string }): Promise<User> {
     return toUser(await http.put<any>(`/api/users/${id}`, {
       name: u.name, email: u.email, password: u.password,
-      role: upper(u.role), shopId: u.shopId, status: upper(u.status),
+      role: upper(u.role), roles: u.roles?.map((r) => upper(r)),
+      shopId: u.shopId, phone: u.phone, status: upper(u.status),
     }));
   },
   async remove(id: string): Promise<void> {
@@ -385,6 +441,40 @@ export const favoriteApi = {
   },
 };
 
+// --- Comments (threaded; no ratings) ----------------------------------------
+
+export const commentApi = {
+  /** Public list of a watch's comments (top-level newest-first, with replies). */
+  async list(watchId: string): Promise<ProductComment[]> {
+    return (await http.get<any[]>(`/api/watches/${watchId}/comments`, { auth: false })).map(toComment);
+  },
+  /** Post a comment, or a reply when {@code parentId} is given. */
+  async create(
+    watchId: string,
+    input: { body: string; triedAr?: boolean; parentId?: string | null },
+  ): Promise<ProductComment> {
+    return toComment(await http.post<any>(`/api/watches/${watchId}/comments`, {
+      body: input.body,
+      triedAr: input.triedAr ?? false,
+      parentId: input.parentId ?? null,
+    }));
+  },
+  /** Edit a comment's text (author or admin). */
+  async update(
+    watchId: string,
+    commentId: string,
+    input: { body: string; triedAr?: boolean },
+  ): Promise<ProductComment> {
+    return toComment(await http.put<any>(`/api/watches/${watchId}/comments/${commentId}`, {
+      body: input.body,
+      triedAr: input.triedAr ?? false,
+    }));
+  },
+  async remove(watchId: string, commentId: string): Promise<void> {
+    await http.del(`/api/watches/${watchId}/comments/${commentId}`);
+  },
+};
+
 // --- Closet (AR saves) ------------------------------------------------------
 
 export const closetApi = {
@@ -429,8 +519,29 @@ export const subscriptionApi = {
   async get(): Promise<ShopSubscription> {
     return http.get<ShopSubscription>('/api/subscription');
   },
-  async upgrade(plan: SubscriptionPlanCode): Promise<ShopSubscription> {
-    return http.post<ShopSubscription>('/api/subscription/upgrade', { plan });
+  /** Non-trial plans a user can request to upgrade to. */
+  async plans(): Promise<SubscriptionPlan[]> {
+    return http.get<SubscriptionPlan[]>('/api/subscription/plans');
+  },
+  /** Submit an upgrade request (queued for manual admin approval). */
+  async requestUpgrade(plan: SubscriptionPlanCode): Promise<PlanUpgradeRequest> {
+    return toUpgradeRequest(await http.post<any>('/api/subscription/requests', { plan }));
+  },
+  /** The signed-in user's own upgrade requests (latest first). */
+  async myRequests(): Promise<PlanUpgradeRequest[]> {
+    return (await http.get<any[]>('/api/subscription/requests/mine')).map(toUpgradeRequest);
+  },
+  /** Admin: queue of upgrade requests awaiting a decision. */
+  async adminRequests(): Promise<PlanUpgradeRequest[]> {
+    return (await http.get<any[]>('/api/subscription/admin/requests')).map(toUpgradeRequest);
+  },
+  /** Admin: approve a request — grants SHOP role and applies the plan. */
+  async approveRequest(id: string): Promise<PlanUpgradeRequest> {
+    return toUpgradeRequest(await http.post<any>(`/api/subscription/admin/requests/${id}/approve`));
+  },
+  /** Admin: reject a request with an optional reason. */
+  async rejectRequest(id: string, note?: string): Promise<PlanUpgradeRequest> {
+    return toUpgradeRequest(await http.post<any>(`/api/subscription/admin/requests/${id}/reject`, { note }));
   },
   /** Admin: real plan catalogue with active-subscriber counts. */
   async adminOverview(): Promise<AdminPlanOverview[]> {
