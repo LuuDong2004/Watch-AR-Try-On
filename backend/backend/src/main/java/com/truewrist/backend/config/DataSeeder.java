@@ -9,7 +9,9 @@ import com.truewrist.backend.domain.ShopSubscription;
 import com.truewrist.backend.domain.SubscriptionPlan;
 import com.truewrist.backend.domain.User;
 import com.truewrist.backend.domain.UserStatus;
+import com.truewrist.backend.domain.ProductComment;
 import com.truewrist.backend.domain.Watch;
+import com.truewrist.backend.repository.ProductCommentRepository;
 import com.truewrist.backend.repository.ShopRepository;
 import com.truewrist.backend.repository.ShopSubscriptionRepository;
 import com.truewrist.backend.repository.SubscriptionPlanRepository;
@@ -45,6 +47,7 @@ public class DataSeeder implements CommandLineRunner {
     private final WatchRepository watchRepository;
     private final ShopSubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanRepository planRepository;
+    private final ProductCommentRepository commentRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(
@@ -54,6 +57,7 @@ public class DataSeeder implements CommandLineRunner {
             WatchRepository watchRepository,
             ShopSubscriptionRepository subscriptionRepository,
             SubscriptionPlanRepository planRepository,
+            ProductCommentRepository commentRepository,
             PasswordEncoder passwordEncoder) {
         this.props = props;
         this.userRepository = userRepository;
@@ -61,6 +65,7 @@ public class DataSeeder implements CommandLineRunner {
         this.watchRepository = watchRepository;
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
+        this.commentRepository = commentRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -69,11 +74,14 @@ public class DataSeeder implements CommandLineRunner {
         // Required config (not gated by seed.enabled): the plan catalogue must
         // exist for trials/upgrades to work. Idempotent — only seeds when empty.
         ensureDefaultPlans();
+        // Idempotent migration: populate the user_roles table from the legacy role.
+        backfillUserRoles();
         // Idempotent migration: link shops created before ownerId existed.
         backfillShopOwnership();
         // Idempotent migration: AR review status for watches created before it existed.
         backfillArReviewStatus();
         ensureAventusMonthlySubscription();
+        ensureDemoComments();
 
         if (!props.seed().enabled()) {
             return;
@@ -91,6 +99,25 @@ public class DataSeeder implements CommandLineRunner {
 
         log.info("Seed complete: {} users, {} shops, {} watches.",
                 userRepository.count(), shopRepository.count(), watchRepository.count());
+    }
+
+    /**
+     * Backfill the {@code user_roles} table for accounts created before multi-role
+     * existed: each user's single legacy {@code role} becomes their initial role
+     * set. Runs every boot; a no-op once every account has at least one role row.
+     */
+    private void backfillUserRoles() {
+        boolean[] changed = {false};
+        for (User u : userRepository.findAll()) {
+            if ((u.getRoles() == null || u.getRoles().isEmpty()) && u.getRole() != null) {
+                u.assignRoles(java.util.Set.of(u.getRole()));
+                userRepository.save(u);
+                changed[0] = true;
+            }
+        }
+        if (changed[0]) {
+            log.info("Backfilled user_roles from legacy role column.");
+        }
     }
 
     /**
@@ -152,6 +179,38 @@ public class DataSeeder implements CommandLineRunner {
             subscription.setAutoRenew(false);
             subscriptionRepository.save(subscription);
         });
+    }
+
+    /**
+     * Seed a couple of demo comments (a customer note + the shop's reply) on the
+     * sample AR watch so the "Khách hàng nói gì" section isn't empty. Idempotent:
+     * only runs when there are no comments yet and the referenced rows exist.
+     */
+    private void ensureDemoComments() {
+        if (commentRepository.count() > 0) {
+            return;
+        }
+        if (!watchRepository.existsById("chrono")
+                || !userRepository.existsById("u-customer")
+                || !userRepository.existsById("u-shop-aventus")) {
+            return;
+        }
+        long base = 1_716_600_000_000L; // ~24/05/2024, stable demo timestamps
+        commentRepository.save(ProductComment.builder()
+                .id("cmt-demo-1").watchId("chrono")
+                .userId("u-customer").authorName("Khách Demo")
+                .parentId(null)
+                .body("Đã ướm thử bằng AR trên web thấy rất vừa cổ tay, mặt số nhìn sắc nét. "
+                        + "Cảm ơn shop đã hỗ trợ trải nghiệm hiện đại này!")
+                .triedAr(true).createdAt(base).build());
+        commentRepository.save(ProductComment.builder()
+                .id("cmt-demo-1-reply").watchId("chrono")
+                .userId("u-shop-aventus").authorName("Aventus Luxury Watches")
+                .parentId("cmt-demo-1")
+                .body("Cảm ơn bạn đã trải nghiệm! Mời bạn ghé showroom để xem trực tiếp và "
+                        + "được tư vấn thêm về bộ máy nhé.")
+                .triedAr(false).createdAt(base + 3_600_000L).build());
+        log.info("Seeded demo product comments.");
     }
 
     /**
