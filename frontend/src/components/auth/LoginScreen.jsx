@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowLeft, MailCheck } from 'lucide-react';
 import { useSession } from '../../auth/session';
+import { useLoginPrompt } from '../../auth/loginPrompt';
 import { ApiError, authApi } from '../../api';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
@@ -19,29 +20,59 @@ const DEMO = [
 export default function LoginScreen({ onClose }) {
   const login = useSession((s) => s.login);
   const register = useSession((s) => s.register);
+  // Open straight to the tab the prompt asked for (e.g. 'register' from the footer).
+  const initialMode = useLoginPrompt((s) => s.mode);
 
-  const [tab, setTab] = useState('login');
+  const [tab, setTab] = useState(initialMode === 'register' ? 'register' : 'login');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
 
-  const switchTab = (t) => { setTab(t); setError(null); setSent(false); };
+  const switchTab = (t) => { setTab(t); setError(null); setSent(false); setRegistered(false); setConfirmPassword(''); };
 
   async function submit(e) {
     e.preventDefault();
     setError(null);
+    if (tab === 'register') {
+      if (password.length < 6) {
+        setError('Mật khẩu phải có ít nhất 6 ký tự.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError('Mật khẩu nhập lại không khớp.');
+        return;
+      }
+    }
     setBusy(true);
     try {
-      if (tab === 'login') await login(email.trim(), password);
-      else await register(name.trim(), email.trim(), password);
-      onClose?.();
+      if (tab === 'login') {
+        await login(email.trim(), password);
+        onClose?.();
+      } else {
+        await register(name.trim(), email.trim(), password);
+        setRegistered(true); // show "check your email" — no auto sign-in
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Có lỗi xảy ra, thử lại sau.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function resendVerification() {
+    setResendBusy(true);
+    try {
+      await authApi.resendVerification(email.trim());
+    } catch {
+      /* always silent */
+    } finally {
+      setResendBusy(false);
     }
   }
 
@@ -132,6 +163,33 @@ export default function LoginScreen({ onClose }) {
               </form>
             )}
           </div>
+        ) : registered ? (
+          /* ---- Registered: verify your email ---- */
+          <div className="rounded-2xl border border-[#B8924A]/30 bg-white/5 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#B8924A]/15 text-[#E7CE8F]">
+              <MailCheck className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold">Xác minh email của bạn</p>
+            <p className="mt-1.5 text-xs leading-5 text-white/60">
+              Chúng tôi đã gửi liên kết xác minh tới <span className="text-white/80">{email}</span>.
+              Hãy mở email và bấm vào liên kết để kích hoạt tài khoản (hiệu lực 24 giờ).
+            </p>
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={resendBusy}
+              className="mt-4 text-xs font-semibold text-[#E7CE8F]/80 hover:text-[#E7CE8F] disabled:opacity-60"
+            >
+              {resendBusy ? 'Đang gửi lại…' : 'Gửi lại email xác minh'}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchTab('login')}
+              className="mt-5 w-full rounded-xl bg-gradient-to-r from-[#E7CE8F] to-[#B8924A] py-3 text-sm font-semibold text-black transition hover:brightness-105"
+            >
+              Về đăng nhập
+            </button>
+          </div>
         ) : (
           <>
             {/* Tabs */}
@@ -175,9 +233,21 @@ export default function LoginScreen({ onClose }) {
                 autoComplete={tab === 'login' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mật khẩu"
+                placeholder={tab === 'register' ? 'Mật khẩu (tối thiểu 6 ký tự)' : 'Mật khẩu'}
                 className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-[#B8924A]"
               />
+
+              {tab === 'register' && (
+                <input
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Nhập lại mật khẩu"
+                  className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none focus:border-[#B8924A]"
+                />
+              )}
 
               {tab === 'login' && (
                 <div className="text-right">

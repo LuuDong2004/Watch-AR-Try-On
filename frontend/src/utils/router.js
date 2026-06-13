@@ -16,7 +16,16 @@ export function parseAppRoute(pathname) {
   const path = normalizePath(pathname);
   const parts = path === '/' ? [] : path.slice(1).split('/');
 
-  if (parts.length === 0 || parts[0] === 'oauth-callback' || parts[0] === 'reset-password') {
+  // Auth overlays & callbacks resolve to the home shell; App.jsx reads the token
+  // from the query string and opens the right overlay. The OAuth success/failure
+  // redirects use an "/auth/..." prefix, so match that too.
+  if (
+    parts.length === 0
+    || parts[0] === 'auth'
+    || parts[0] === 'oauth-callback'
+    || parts[0] === 'reset-password'
+    || parts[0] === 'verify-email'
+  ) {
     return { area: 'user', page: 'home' };
   }
 
