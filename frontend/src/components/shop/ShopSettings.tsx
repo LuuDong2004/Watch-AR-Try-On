@@ -23,7 +23,7 @@ const emptyShop = (): Shop => ({
   services: [], status: 'active',
 });
 
-type ShopErrors = Partial<Record<'name' | 'address' | 'phone' | 'zalo' | 'messenger' | 'mapUrl', string>>;
+type ShopErrors = Partial<Record<'name' | 'address' | 'phone' | 'email' | 'zalo' | 'messenger' | 'mapUrl', string>>;
 
 /** Client-side validation for the create/edit shop form. */
 function validateShop(s: Shop): ShopErrors {
@@ -38,6 +38,9 @@ function validateShop(s: Shop): ShopErrors {
   const phone = (s.phone || '').trim();
   if (!phone) e.phone = 'Vui lòng nhập hotline';
   else if (!/^[0-9+\-\s().]{8,20}$/.test(phone) || phone.replace(/\D/g, '').length < 8) e.phone = 'Số điện thoại không hợp lệ';
+
+  const email = (s.email || '').trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Email không hợp lệ';
 
   if (!isUrl(s.zalo)) e.zalo = 'Link phải bắt đầu bằng http:// hoặc https://';
   if (!isUrl(s.messenger)) e.messenger = 'Link phải bắt đầu bằng http:// hoặc https://';
@@ -484,6 +487,22 @@ function EditShopModal({ room, setRoom, saving, uploading, deleting, onPickFile,
               <label className={labelCls}>Địa chỉ chi nhánh</label>
               <textarea value={room.address || ''} onChange={(e) => set({ address: e.target.value })} rows={2} className={`${field} resize-none${errFor('address')}`} />
               <ErrMsg k="address" />
+            </div>
+
+            <div className="col-span-2">
+              <label className={labelCls}>Mô tả cửa hàng</label>
+              <textarea value={room.description || ''} onChange={(e) => set({ description: e.target.value })} rows={2} className={`${field} resize-none`} placeholder="Giới thiệu ngắn về cửa hàng, dịch vụ, bảo hành…" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Chủ shop</label>
+              <input type="text" value={room.manager || ''} onChange={(e) => set({ manager: e.target.value })} className={field} placeholder="Tên người phụ trách" />
+            </div>
+
+            <div>
+              <label className={labelCls}>Email cửa hàng</label>
+              <input type="email" value={room.email || ''} onChange={(e) => set({ email: e.target.value })} className={`${field}${errFor('email')}`} placeholder="shop@email.com" />
+              <ErrMsg k="email" />
             </div>
 
             <div>

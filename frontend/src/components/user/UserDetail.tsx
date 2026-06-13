@@ -10,6 +10,7 @@ import ProductSummary from './detail/ProductSummary';
 import SpecGrid from './detail/SpecGrid';
 import ProductStory from './detail/ProductStory';
 import SimilarWatches from './detail/SimilarWatches';
+import BranchShops, { type BranchShopEntry } from './detail/BranchShops';
 import CustomerReviews from './detail/CustomerReviews';
 import DetailModal from './detail/DetailModal';
 import ProductContactModal from './detail/ProductContactModal';
@@ -39,6 +40,7 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
 
   const [watch, setWatch] = useState<Watch | null>(null);
   const [allWatches, setAllWatches] = useState<Watch[]>([]);
+  const [allShops, setAllShops] = useState<Shop[]>([]);
   const [shop, setShop] = useState<Shop | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
   const [info, setInfo] = useState<null | 'specs' | 'story'>(null);
@@ -55,6 +57,7 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
         const foundShop = found ? shops.find((s) => s.id === found.shopId && isPublicShop(s)) || null : null;
         const visibleWatch = found && foundShop && isPublicWatch(found) ? found : null;
         setAllWatches(publicWatches(list, shops));
+        setAllShops(shops.filter(isPublicShop));
         setWatch(visibleWatch);
         setShop(visibleWatch ? foundShop : null);
       })
@@ -78,14 +81,39 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
     return () => { cancelled = true; };
   }, [watchId, user]);
 
-  // Similar watches: same brand first, then fill with other models.
+  // Similar watches: prioritise same brand + price closest to this model, showing
+  // the seller's own branches first, then other shops. Up to 10 results.
   const similar = useMemo(() => {
     if (!watch) return [];
-    const others = allWatches.filter((w) => w.id !== watch.id);
-    const sameBrand = others.filter((w) => w.brand === watch.brand);
-    const rest = others.filter((w) => w.brand !== watch.brand);
-    return [...sameBrand, ...rest].slice(0, 8);
-  }, [allWatches, watch]);
+    const ownerId = shop?.ownerId ?? null;
+    const ownerByShop = new Map(allShops.map((s) => [s.id, s.ownerId ?? null]));
+    const isBranch = (w: Watch) => ownerId != null && ownerByShop.get(w.shopId) === ownerId;
+    const sameBrand = (w: Watch) => w.brand === watch.brand;
+    const priceGap = (w: Watch) => Math.abs((w.price ?? 0) - (watch.price ?? 0));
+    // Tier: 0 = same brand + branch, 1 = same brand + other shop,
+    //       2 = other brand + branch, 3 = other brand + other shop.
+    const tier = (w: Watch) => (sameBrand(w) ? 0 : 2) + (isBranch(w) ? 0 : 1);
+
+    return allWatches
+      .filter((w) => w.id !== watch.id)
+      .sort((a, b) => tier(a) - tier(b) || priceGap(a) - priceGap(b))
+      .slice(0, 10);
+  }, [allWatches, allShops, shop, watch]);
+
+  // Other branches of the same seller account that also stock this brand.
+  const branches = useMemo<BranchShopEntry[]>(() => {
+    if (!watch || !shop?.ownerId) return [];
+    return allShops
+      .filter((s) => s.id !== shop.id && s.ownerId && s.ownerId === shop.ownerId)
+      .map((s) => {
+        const brandWatches = allWatches.filter(
+          (w) => w.shopId === s.id && w.brand === watch.brand,
+        );
+        return { shop: s, matchCount: brandWatches.length, thumb: brandWatches[0]?.image };
+      })
+      .filter((b) => b.matchCount > 0)
+      .sort((a, b) => b.matchCount - a.matchCount);
+  }, [allShops, allWatches, shop, watch]);
 
   if (loading || !watch) {
     return <div className="py-20 text-center font-display text-lg text-navy">Đang tải chi tiết đồng hồ...</div>;
@@ -128,6 +156,13 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
           </div>
         </section>
 
+        {/* Other branches of the same seller that stock this brand */}
+        {onSelectShop && branches.length > 0 && (
+          <section className="pt-14">
+            <BranchShops brand={watch.brand} branches={branches} onSelect={onSelectShop} />
+          </section>
+        )}
+
         {/* Secondary info — opened as popups to keep the page compact */}
         <div className="mt-12 grid gap-3 sm:grid-cols-2">
           <button
@@ -164,13 +199,13 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
           <SimilarWatches watches={similar} onSelect={onSelectWatch} />
         </section>
 
-        {/* Customer reviews */}
+        {/* Customer comments */}
         <section className="pb-20 pt-16">
           <header className="mb-6">
-            <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-champagne">Đánh giá</span>
+            <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-champagne">Bình luận</span>
             <h2 className="mt-2 font-display text-2xl font-bold text-navy md:text-3xl">Khách hàng nói gì</h2>
           </header>
-          <CustomerReviews watch={watch} />
+          <CustomerReviews watch={watch} shop={shop} />
         </section>
       </div>
 

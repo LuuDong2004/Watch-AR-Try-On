@@ -4,6 +4,7 @@ import { shopApi, watchApi, leadApi, ApiError } from '../../api';
 import type { Shop, Watch } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
 import { toast } from '../../store/useToast';
+import { useSession } from '../../auth/session';
 import { mapDirectionsUrl } from '../../utils/maps';
 import { isPublicShop, publicWatches, canTryAr } from '../../utils/publicListings';
 import { detectRegion } from '../../utils/region';
@@ -23,6 +24,7 @@ const STORES_PER_PAGE = 6;
 const SHOP_PRODUCTS_PER_PAGE = 6;
 
 export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initialShopId }: UserStoresProps) {
+  const user = useSession((s) => s.user);
   const [shops, setShops] = useState<Shop[]>([]);
   const [watches, setWatches] = useState<Watch[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -91,9 +93,10 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
     if (!selected) return;
     const chosen = watchesAt(selected.id).find((w) => w.id === watchId);
     setContactForm({
-      name: '',
-      phone: '',
-      email: '',
+      // Pre-fill from the signed-in user's profile.
+      name: user?.name ?? '',
+      phone: user?.phone ?? '',
+      email: user?.email ?? '',
       type: 'contact',
       watchId: chosen?.id || '',
       date: '',

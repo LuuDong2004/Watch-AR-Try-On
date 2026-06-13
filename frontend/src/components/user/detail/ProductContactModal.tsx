@@ -3,6 +3,7 @@ import { Check, Mail, Store, X } from 'lucide-react';
 import { leadApi, ApiError } from '../../../api';
 import type { Shop, Watch, LeadType } from '../../../api';
 import { toast } from '../../../store/useToast';
+import { useSession } from '../../../auth/session';
 import { Field, Select, SegmentedControl, TextArea, TextInput } from '../../ui/Field';
 
 interface ProductContactModalProps {
@@ -13,6 +14,7 @@ interface ProductContactModalProps {
 }
 
 export default function ProductContactModal({ open, watch, shop, onClose }: ProductContactModalProps) {
+  const user = useSession((s) => s.user);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
@@ -29,15 +31,16 @@ export default function ProductContactModal({ open, watch, shop, onClose }: Prod
     if (!open) return;
     setSuccess(false);
     setForm({
-      name: '',
-      phone: '',
-      email: '',
+      // Pre-fill from the signed-in user's profile so they don't retype it.
+      name: user?.name ?? '',
+      phone: user?.phone ?? '',
+      email: user?.email ?? '',
       type: 'contact',
       date: '',
       time: '09:30',
       message: `Tôi đang quan tâm đến mẫu ${watch.name}. Nhờ ${shop?.name || 'shop'} tư vấn thêm.`,
     });
-  }, [open, shop?.name, watch.name]);
+  }, [open, shop?.name, watch.name, user?.name, user?.phone, user?.email]);
 
   useEffect(() => {
     if (!open) return;

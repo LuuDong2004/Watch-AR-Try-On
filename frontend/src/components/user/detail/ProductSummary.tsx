@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Check, Clock, MapPin, Phone, ShieldCheck, Store, Truck, Lock, Star, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, Clock, MapPin, Phone, ShieldCheck, Store, Truck, Lock, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
 import { formatVND, discountPct, referenceNo } from './format';
 import { canTryAr } from '../../../utils/publicListings';
 
@@ -47,15 +47,6 @@ export default function ProductSummary({
         <p className="mt-2 text-xs font-medium uppercase tracking-[0.18em] text-gray-400">
           {referenceNo(watch)}
         </p>
-      </div>
-
-      {/* Rating + reviews */}
-      <div className="flex items-center gap-3 text-sm">
-        <span className="inline-flex items-center gap-1 rounded-full bg-champagne/10 px-2.5 py-1 font-bold text-champagne">
-          <Star className="h-3.5 w-3.5 fill-current" /> {watch.rating}
-        </span>
-        <span className="text-gray-300">|</span>
-        <span className="text-gray-500">{watch.reviewCount} lượt đánh giá</span>
       </div>
 
       {/* Price block */}

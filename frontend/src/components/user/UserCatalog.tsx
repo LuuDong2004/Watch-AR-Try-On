@@ -7,13 +7,15 @@ import { publicWatches, canTryAr } from '../../utils/publicListings';
 interface UserCatalogProps {
   onSelectWatch: (id: string) => void;
   onOpenAR: (watchId: string) => void;
+  /** Pre-select a brand filter (e.g. clicked from the home brand strip). */
+  initialBrand?: string | null;
 }
 
-export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProps) {
+export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: UserCatalogProps) {
   const [watches, setWatches] = useState<Watch[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedBrand, setSelectedBrand] = useState<string>('all');
+  const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || 'all');
   const [priceRange, setPriceRange] = useState<number>(350000000); // max price filter
   const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
   const [selectedDiameter, setSelectedDiameter] = useState<string>('all');
@@ -35,6 +37,11 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
         // Extract unique brands
         const uniqueBrands = Array.from(new Set(visibleWatches.map((w) => w.brand)));
         setBrands(uniqueBrands);
+        // Resolve a pre-selected brand to its real casing (the strip is uppercase).
+        if (initialBrand) {
+          const matched = uniqueBrands.find((b) => b.toLowerCase() === initialBrand.toLowerCase());
+          setSelectedBrand(matched || initialBrand);
+        }
       })
       .catch(() => { if (!cancelled) setWatches([]); })
       .finally(() => { if (!cancelled) setLoading(false); });
@@ -52,7 +59,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
     .filter((w) => {
       const q = searchQuery.trim().toLowerCase();
       if (q && !w.name.toLowerCase().includes(q) && !w.brand.toLowerCase().includes(q)) return false;
-      if (selectedBrand !== 'all' && w.brand !== selectedBrand) return false;
+      if (selectedBrand !== 'all' && w.brand.toLowerCase() !== selectedBrand.toLowerCase()) return false;
       if (w.price > priceRange) return false;
       if (onlyAR && !canTryAr(w)) return false; // only models with a real 3D .glb support AR try-on
       
@@ -91,7 +98,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR }: UserCatalogProp
   return (
     <div className="bg-[#F6F4EF] min-h-screen text-[#17140F] font-sans pb-16">
       {/* Hero Banner */}
-      <section className="relative bg-[#17140F] text-white py-16 px-6 md:px-12 text-center rounded-b-[40px] shadow-lg border-b border-[#B8924A]/20">
+      <section className="relative bg-[#17140F] text-white py-16 px-6 md:px-12 text-center shadow-lg border-b border-[#B8924A]/20">
         <div className="max-w-3xl mx-auto">
           <span className="text-xs uppercase tracking-[0.3em] text-[#B8924A] font-bold mb-3 block animate-fade-in">
             TrueWrist Haute Horlogerie & AR Studio

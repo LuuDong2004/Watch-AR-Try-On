@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import {
-  X, Camera, Check, RefreshCw, Mail, Lock, Eye, EyeOff, Trash2, User as UserIcon, ShieldCheck,
+  X, Camera, Check, RefreshCw, Mail, Lock, Eye, EyeOff, Trash2, User as UserIcon, ShieldCheck, Phone,
 } from 'lucide-react';
 import type { User } from '../../api';
 import { authApi, uploadApi, ApiError } from '../../api';
@@ -24,6 +24,7 @@ const initialsOf = (name: string, email: string) =>
 
 export default function ProfileEditModal({ user, onClose, onSaved }: ProfileEditModalProps) {
   const [name, setName] = useState(user.name || '');
+  const [phone, setPhone] = useState(user.phone || '');
   const [avatar, setAvatar] = useState<string | null>(user.avatar ?? null);
 
   const [showPwdSection, setShowPwdSection] = useState(false);
@@ -74,6 +75,7 @@ export default function ProfileEditModal({ user, onClose, onSaved }: ProfileEdit
     const payload: Parameters<typeof authApi.updateProfile>[0] = {
       name: name.trim(),
       avatar: avatar ?? '',
+      phone: phone.trim(),
     };
     if (wantPassword) {
       payload.currentPassword = currentPassword;
@@ -156,6 +158,23 @@ export default function ProfileEditModal({ user, onClose, onSaved }: ProfileEdit
                 <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input value={name} onChange={(e) => setName(e.target.value)} className={`${field} pl-9`} placeholder="Tên của bạn" />
               </div>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">Số điện thoại</label>
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={`${field} pl-9`}
+                  placeholder="09xx xxx xxx"
+                  autoComplete="tel"
+                />
+              </div>
+              <p className="mt-1 text-[10px] text-gray-400">Dùng để tự điền khi bạn liên hệ / đặt lịch với shop.</p>
             </div>
 
             {/* Email (read-only — login identity cannot change) */}
