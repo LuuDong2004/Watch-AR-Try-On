@@ -8,9 +8,10 @@ import { useSession, uiRoleFor } from './auth/session';
 import { useLoginPrompt } from './auth/loginPrompt';
 import LoginScreen from './components/auth/LoginScreen';
 import ResetPasswordScreen from './components/auth/ResetPasswordScreen';
+import VerifyEmailScreen from './components/auth/VerifyEmailScreen';
 import ToastHost from './components/ToastHost';
 import AppErrorPage from './components/AppErrorPage.jsx';
-import { setToken, watchApi, favoriteApi, leadApi, shopApi } from './api';
+import { setToken, watchApi, favoriteApi, leadApi, shopApi, subscriptionApi } from './api';
 import { normalizePath, parseAppRoute, routePathForState } from './utils/router.js';
 
 // User (Customer) Components
@@ -43,6 +44,7 @@ import AdminUsers from './components/admin/AdminUsers';
 import AdminFeedback from './components/admin/AdminFeedback';
 import AdminPlans from './components/admin/AdminPlans';
 import AdminSettings from './components/admin/AdminSettings';
+import AdminUpgradeRequests from './components/admin/AdminUpgradeRequests';
 
 // Lazy loaded MediaPipe AR try-on overlay
 const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'));
@@ -72,6 +74,9 @@ export default function App() {
   const [selectedShopId, setSelectedShopId] = useState(() => initialRoute.shopId || sessionStorage.getItem('tw_shop') || null);
   const [mode, setMode] = useState('none');
   const [resetToken, setResetToken] = useState(null);
+  const [verifyToken, setVerifyToken] = useState(null);
+  // Brand to pre-filter the catalog by (set when a brand chip is clicked on home).
+  const [catalogBrand, setCatalogBrand] = useState(null);
   // Shop/admin users can preview the customer storefront ("view as user").
   const [storefront, setStorefront] = useState(() => initialRoute.area === 'user' || sessionStorage.getItem('tw_storefront') === '1');
 
@@ -112,6 +117,7 @@ export default function App() {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [lockedShops, setLockedShops] = useState([]);
+  const [pendingUpgradesCount, setPendingUpgradesCount] = useState(0);
   const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
 
   // Boot: capture an OAuth callback token, restore the session, handle AR deep link.
@@ -120,9 +126,13 @@ export default function App() {
     const token = params.get('token');
     const isCallback = window.location.pathname.includes('oauth-callback');
     const isReset = window.location.pathname.includes('reset-password');
+    const isVerify = window.location.pathname.includes('verify-email');
     if (isReset && token) {
       // Password-reset link — open the reset overlay (this is NOT an auth token).
       setResetToken(token);
+    } else if (isVerify && token) {
+      // Email-verification link — open the verify overlay (it stores its own token).
+      setVerifyToken(token);
     } else if (token && (isCallback || params.has('token'))) {
       setToken(token);
     }
@@ -130,11 +140,11 @@ export default function App() {
 
     if (params.get('ar') === '1') setMode('ar');
 
-    if (token || params.has('ar') || isCallback || isReset) {
+    if (token || params.has('ar') || isCallback || isReset || isVerify) {
       const url = new URL(window.location.href);
       url.searchParams.delete('token');
       url.searchParams.delete('ar');
-      const cleanPath = (isCallback || isReset) ? '/' : url.pathname;
+      const cleanPath = (isCallback || isReset || isVerify) ? '/' : url.pathname;
       window.history.replaceState({}, '', cleanPath + url.search);
     }
   }, [initSession]);
@@ -149,9 +159,15 @@ export default function App() {
     const loggedIn = was === 'anon' && status === 'authed';
     const loggedOut = was === 'authed' && status === 'anon';
     if (loggedIn) {
-      setPage(role === 'user' ? 'home' : 'dashboard');
-      setSelectedShopId(null);
-      setStorefront(false);
+      if (role === 'user') {
+        // Stay on the page the user was browsing when they signed in (don't snap home).
+        setStorefront(false);
+      } else {
+        // Sellers/admins switch into their dashboard shell.
+        setPage('dashboard');
+        setSelectedShopId(null);
+        setStorefront(false);
+      }
     } else if (loggedOut) {
       setPage('home');
       setSelectedShopId(null);
@@ -178,6 +194,11 @@ export default function App() {
           const shops = await shopApi.mine();
           if (!cancelled) setLockedShops(shops.filter((s) => s.status === 'locked'));
         } else if (!cancelled) setLockedShops([]);
+
+        if (user && role === 'admin') {
+          const reqs = await subscriptionApi.adminRequests();
+          if (!cancelled) setPendingUpgradesCount(reqs.length);
+        } else if (!cancelled) setPendingUpgradesCount(0);
       } catch {
         /* ignore badge fetch errors */
       }
@@ -232,7 +253,8 @@ export default function App() {
       case 'home':
         return (
           <UserHome
-            onNavigate={(p) => setPage(p)}
+            onNavigate={(p) => { if (p === 'catalog') setCatalogBrand(null); setPage(p); }}
+            onSelectBrand={(b) => { setCatalogBrand(b); setPage('catalog'); }}
             onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
           />
@@ -240,6 +262,7 @@ export default function App() {
       case 'catalog':
         return (
           <UserCatalog
+            initialBrand={catalogBrand}
             onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
           />
@@ -337,6 +360,8 @@ export default function App() {
         return <AdminAudit />;
       case 'users':
         return <AdminUsers />;
+      case 'requests':
+        return <AdminUpgradeRequests />;
       case 'feedback':
         return <AdminFeedback />;
       case 'plans':
@@ -381,7 +406,7 @@ export default function App() {
         <div className="flex flex-col min-h-screen">
           <UserHeader
             currentPage={page}
-            onChangePage={(p) => { setSelectedShopId(null); setPage(p); }}
+            onChangePage={(p) => { setSelectedShopId(null); setCatalogBrand(null); setPage(p); }}
             favoritesCount={favoritesCount}
             user={user}
             onLogin={() => showLogin('login')}
@@ -389,7 +414,7 @@ export default function App() {
             onGoDashboard={exitStorefront}
           />
           <main className="flex-1">{renderUserPages()}</main>
-          <UserFooter onChangePage={(p) => { setSelectedShopId(null); setPage(p); }} />
+          <UserFooter onChangePage={(p) => { setSelectedShopId(null); setCatalogBrand(null); setPage(p); }} />
         </div>
       )}
 
@@ -433,6 +458,7 @@ export default function App() {
             currentPage={page}
             onChangePage={(p) => setPage(p)}
             pendingAuditsCount={0}
+            pendingUpgradesCount={pendingUpgradesCount}
             user={user}
             onLogout={handleLogout}
             onGoHome={goStorefront}
@@ -453,6 +479,15 @@ export default function App() {
           token={resetToken}
           onClose={() => setResetToken(null)}
           onLoginClick={() => { setResetToken(null); showLogin('login'); }}
+        />
+      )}
+
+      {/* Email verification overlay (from the emailed link) */}
+      {verifyToken && (
+        <VerifyEmailScreen
+          token={verifyToken}
+          onClose={() => setVerifyToken(null)}
+          onLoginClick={() => { setVerifyToken(null); showLogin('login'); }}
         />
       )}
 
