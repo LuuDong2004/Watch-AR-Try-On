@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Lock, ShieldCheck, Store, Unlock, User as UserIcon, Eye, Search,
-  X, Calendar, Building2, Globe, Check, Mail, Hash, MoreVertical,
+  X, Calendar, Building2, Globe, Check, Mail, Hash, MoreVertical, Phone,
 } from 'lucide-react';
 import { userApi, ApiError } from '../../api';
 import type { User } from '../../api';
@@ -82,10 +82,12 @@ export default function AdminUsers() {
     load();
   }, []);
 
+  const rolesOf = (u: User): User['role'][] => (u.roles?.length ? u.roles : [u.role]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
-      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (roleFilter !== 'all' && !rolesOf(u).includes(roleFilter)) return false;
       if (statusFilter !== 'all' && u.status !== statusFilter) return false;
       if (q && !`${u.name} ${u.email}`.toLowerCase().includes(q)) return false;
       return true;
@@ -94,33 +96,43 @@ export default function AdminUsers() {
 
   const counts = useMemo(() => ({
     total: users.length,
-    customer: users.filter((u) => u.role === 'customer').length,
-    shop: users.filter((u) => u.role === 'shop').length,
-    admin: users.filter((u) => u.role === 'admin').length,
+    customer: users.filter((u) => rolesOf(u).includes('customer')).length,
+    shop: users.filter((u) => rolesOf(u).includes('shop')).length,
+    admin: users.filter((u) => rolesOf(u).includes('admin')).length,
     locked: users.filter((u) => u.status === 'locked').length,
   }), [users]);
 
-  const handleSetRole = async (u: User, role: User['role']) => {
-    setActionsMenu(null);
-    if (u.role === role) return;
+  // Toggle a single role on/off for a multi-role account. Keeps at least one role.
+  const handleToggleRole = async (u: User, role: User['role']) => {
     if (u.id === currentUser?.id) {
       toast.info('Bạn không thể tự thay đổi vai trò của chính mình.');
       return;
     }
-
+    const current = u.roles?.length ? u.roles : [u.role];
+    const has = current.includes(role);
+    const next = has ? current.filter((r) => r !== role) : [...current, role];
+    if (next.length === 0) {
+      toast.info('Tài khoản phải có ít nhất một vai trò.');
+      return;
+    }
     const ok = await toast.confirm(
-      `Đặt vai trò của ${u.name} thành ${ROLE_LABELS[role]}?`,
-      { title: 'Xác nhận thay đổi vai trò', confirmText: 'Cập nhật' },
+      has
+        ? `Gỡ vai trò ${ROLE_LABELS[role]} khỏi ${u.name}?`
+        : `Thêm vai trò ${ROLE_LABELS[role]} cho ${u.name}?`,
+      { title: 'Xác nhận phân quyền', confirmText: 'Cập nhật' },
     );
     if (!ok) return;
 
+    // Clear the shop assignment when the account is no longer a showroom.
+    const keepShop = next.includes('shop');
     try {
       setSavingId(u.id);
-      // Clear the shop assignment when the account is no longer a showroom.
-      await userApi.update(u.id, { ...u, role, shopId: role === 'shop' ? u.shopId : '' });
+      await userApi.update(u.id, { ...u, roles: next, shopId: keepShop ? u.shopId : '' });
       await load();
-      setDetailUser((d) => (d && d.id === u.id ? { ...d, role, shopId: role === 'shop' ? d.shopId : null } : d));
-      toast.success(`Đã cập nhật vai trò ${u.name} thành ${ROLE_LABELS[role]}.`);
+      setDetailUser((d) =>
+        d && d.id === u.id ? { ...d, roles: next, role: next[0], shopId: keepShop ? d.shopId : null } : d,
+      );
+      toast.success(`Đã cập nhật phân quyền cho ${u.name}.`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra');
     } finally {
@@ -272,10 +284,14 @@ export default function AdminUsers() {
                   </td>
                   <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>
                   <td className="py-3.5 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-[9px] uppercase ${roleBadgeClass(u.role)}`}>
-                      <RoleIcon role={u.role} className="h-3 w-3" />
-                      {ROLE_LABELS[u.role] || u.role}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {rolesOf(u).map((r) => (
+                        <span key={r} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-[9px] uppercase ${roleBadgeClass(r)}`}>
+                          <RoleIcon role={r} className="h-3 w-3" />
+                          {ROLE_LABELS[r] || r}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="py-3.5 px-4 text-gray-500">{PROVIDER_LABELS[u.provider || ''] || u.provider || '—'}</td>
                   <td className="py-3.5 text-center">
@@ -331,22 +347,23 @@ export default function AdminUsers() {
               </button>
 
               <div className="my-1 border-t border-gray-100" />
-              <p className="px-3 py-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">Đặt vai trò</p>
+              <p className="px-3 py-1 text-[9px] uppercase tracking-wider text-gray-400 font-bold">Phân quyền (chọn nhiều)</p>
               {ROLE_ORDER.map((role) => {
-                const isCurrent = u.role === role;
-                const disabled = isCurrent || isSelf;
+                const has = (u.roles?.length ? u.roles : [u.role]).includes(role);
                 return (
                   <button
                     key={role}
-                    onClick={() => handleSetRole(u, role)}
-                    disabled={disabled}
+                    onClick={() => { setActionsMenu(null); handleToggleRole(u, role); }}
+                    disabled={isSelf}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition ${
-                      disabled ? 'text-gray-300 cursor-not-allowed' : 'text-[#17140F] hover:bg-[#F6F4EF]'
+                      isSelf ? 'text-gray-300 cursor-not-allowed' : 'text-[#17140F] hover:bg-[#F6F4EF]'
                     }`}
                   >
+                    <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border ${has ? 'border-[#B8924A] bg-[#B8924A] text-white' : 'border-gray-300'}`}>
+                      {has && <Check className="h-3 w-3" />}
+                    </span>
                     <RoleIcon role={role} className="h-4 w-4 flex-shrink-0" />
                     <span className="flex-1 font-semibold">{ROLE_LABELS[role]}</span>
-                    {isCurrent && <Check className="h-3.5 w-3.5 text-[#B8924A]" />}
                   </button>
                 );
               })}
@@ -380,7 +397,7 @@ export default function AdminUsers() {
           isSelf={detailUser.id === currentUser?.id}
           saving={savingId === detailUser.id}
           onClose={() => setDetailUser(null)}
-          onSetRole={handleSetRole}
+          onToggleRole={handleToggleRole}
           onToggleBlock={handleToggleBlock}
           formatDateTime={formatDateTime}
         />
@@ -396,7 +413,7 @@ interface DetailProps {
   isSelf: boolean;
   saving: boolean;
   onClose: () => void;
-  onSetRole: (u: User, role: User['role']) => void;
+  onToggleRole: (u: User, role: User['role']) => void;
   onToggleBlock: (u: User) => void;
   formatDateTime: (ts?: number) => string;
 }
@@ -415,8 +432,9 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
   );
 }
 
-function UserDetailModal({ user, isSelf, saving, onClose, onSetRole, onToggleBlock, formatDateTime }: DetailProps) {
+function UserDetailModal({ user, isSelf, saving, onClose, onToggleRole, onToggleBlock, formatDateTime }: DetailProps) {
   const isActive = user.status !== 'locked';
+  const userRoles = user.roles?.length ? user.roles : [user.role];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div
@@ -439,10 +457,14 @@ function UserDetailModal({ user, isSelf, saving, onClose, onSetRole, onToggleBlo
             <div className="min-w-0">
               <h3 className="font-display text-lg font-bold truncate">{user.name}</h3>
               <p className="text-xs text-white/60 truncate">{user.email}</p>
-              <span className={`inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded font-semibold text-[9px] uppercase ${roleBadgeClass(user.role)}`}>
-                <RoleIcon role={user.role} className="h-3 w-3" />
-                {ROLE_LABELS[user.role]}
-              </span>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {userRoles.map((r) => (
+                  <span key={r} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded font-semibold text-[9px] uppercase ${roleBadgeClass(r)}`}>
+                    <RoleIcon role={r} className="h-3 w-3" />
+                    {ROLE_LABELS[r]}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -454,10 +476,13 @@ function UserDetailModal({ user, isSelf, saving, onClose, onSetRole, onToggleBlo
               <span className="font-mono text-[11px]">{user.id}</span>
             </InfoRow>
             <InfoRow icon={<Mail className="h-4 w-4" />} label="Email">{user.email}</InfoRow>
+            <InfoRow icon={<Phone className="h-4 w-4" />} label="Số điện thoại">
+              {user.phone || <span className="text-gray-400 font-normal">Chưa cập nhật</span>}
+            </InfoRow>
             <InfoRow icon={<Globe className="h-4 w-4" />} label="Phương thức đăng nhập">
               {PROVIDER_LABELS[user.provider || ''] || user.provider || '—'}
             </InfoRow>
-            {user.role === 'shop' && (
+            {userRoles.includes('shop') && (
               <InfoRow icon={<Building2 className="h-4 w-4" />} label="Showroom liên kết">
                 {user.shopId || <span className="text-gray-400 font-normal">Chưa tạo showroom</span>}
               </InfoRow>
@@ -476,28 +501,28 @@ function UserDetailModal({ user, isSelf, saving, onClose, onSetRole, onToggleBlo
 
           {/* Role management */}
           <div className="mt-5 pt-5 border-t border-[#e5e0d8]">
-            <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-2.5">Phân quyền tài khoản</p>
+            <p className="text-[9px] uppercase tracking-wider text-gray-400 font-bold mb-2.5">Phân quyền tài khoản · chọn nhiều</p>
             {isSelf ? (
               <p className="text-[11px] text-gray-400 italic">Bạn không thể tự thay đổi vai trò hoặc khóa tài khoản của chính mình.</p>
             ) : (
               <>
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {ROLE_ORDER.map((role) => {
-                    const active = user.role === role;
+                    const active = userRoles.includes(role);
                     return (
                       <button
                         key={role}
-                        onClick={() => onSetRole(user, role)}
-                        disabled={active || saving}
-                        className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[10px] font-bold transition ${
+                        onClick={() => onToggleRole(user, role)}
+                        disabled={saving}
+                        className={`relative flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[10px] font-bold transition disabled:opacity-50 ${
                           active
-                            ? 'bg-[#17140F] text-white border-[#17140F] cursor-default'
-                            : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A] disabled:opacity-50'
+                            ? 'bg-[#17140F] text-white border-[#17140F]'
+                            : 'bg-white text-gray-600 border-[#e5e0d8] hover:border-[#B8924A] hover:text-[#B8924A]'
                         }`}
                       >
+                        {active && <Check className="absolute right-1.5 top-1.5 h-3 w-3 text-[#B8924A]" />}
                         <RoleIcon role={role} className="h-4 w-4" />
                         {ROLE_LABELS[role]}
-                        {active && <span className="text-[8px] text-[#B8924A]">Hiện tại</span>}
                       </button>
                     );
                   })}

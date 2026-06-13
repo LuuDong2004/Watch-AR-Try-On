@@ -8,6 +8,8 @@ interface AdminSidebarProps {
   currentPage: string;
   onChangePage: (page: string) => void;
   pendingAuditsCount: number;
+  /** Pending plan-upgrade requests awaiting admin approval. */
+  pendingUpgradesCount?: number;
   user: User | null;
   onLogout: () => void;
   /** Switch to the customer storefront (view as a normal user). */
@@ -16,7 +18,9 @@ interface AdminSidebarProps {
 
 const COLLAPSE_KEY = 'tw_admin_sidebar_collapsed';
 
-export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsCount, user, onLogout, onGoHome }: AdminSidebarProps) {
+export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsCount, pendingUpgradesCount = 0, user, onLogout, onGoHome }: AdminSidebarProps) {
+  const badgeFor = (id: string) =>
+    id === 'audit' ? pendingAuditsCount : id === 'requests' ? pendingUpgradesCount : 0;
   const initials = (user?.name || 'SA')
     .split(' ')
     .map((p) => p[0])
@@ -53,6 +57,7 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
         {ADMIN_NAV.map((item) => {
           const isActive = currentPage === item.id;
           const Ic = item.icon;
+          const badgeCount = item.badge ? badgeFor(item.id) : 0;
           return (
             <button
               key={item.id}
@@ -66,12 +71,12 @@ export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsC
                 <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
                 {!collapsed && item.name}
               </span>
-              {!collapsed && item.badge && pendingAuditsCount > 0 && (
+              {!collapsed && badgeCount > 0 && (
                 <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#B8924A]' : 'bg-[#B8924A] text-white'}`}>
-                  {pendingAuditsCount}
+                  {badgeCount}
                 </span>
               )}
-              {collapsed && item.badge && pendingAuditsCount > 0 && (
+              {collapsed && badgeCount > 0 && (
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#B8924A]" />
               )}
             </button>
