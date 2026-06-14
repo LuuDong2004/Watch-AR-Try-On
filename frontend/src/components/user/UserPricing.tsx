@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Zap, Crown, Check, Gift, Sparkles, Building2, Boxes, Clock3, Loader2 } from 'lucide-react';
+import { Zap, Crown, Check, Gift, Sparkles, Building2, Boxes, Clock3, Loader2, UserPlus, ClipboardCheck, BadgeCheck, Store } from 'lucide-react';
 import { subscriptionApi, ApiError } from '../../api';
 import type { PlanUpgradeRequest, SubscriptionPlan } from '../../api';
 import { useSession } from '../../auth/session';
@@ -85,6 +85,30 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
           <p className="text-xs md:text-sm text-gray-500 leading-relaxed">
             Đưa cửa hàng của bạn lên TrueWrist với trải nghiệm thử đồng hồ AR chuẩn kích thước 1:1, được đề xuất trực tiếp trong thông tin sản phẩm.
           </p>
+        </div>
+
+        {/* How to become a partner — quick steps */}
+        <div className="mx-auto mb-10 max-w-4xl">
+          <p className="mb-4 text-center text-[11px] font-bold uppercase tracking-[0.2em] text-[#B8924A]">
+            Các bước trở thành đối tác
+          </p>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[
+              { icon: UserPlus, title: 'Đăng ký tài khoản', desc: 'Tạo và đăng nhập tài khoản TrueWrist.' },
+              { icon: ClipboardCheck, title: 'Chọn gói & gửi yêu cầu', desc: 'Chọn gói đối tác phù hợp rồi gửi đăng ký.' },
+              { icon: BadgeCheck, title: 'Chờ admin duyệt', desc: 'Quản trị viên xác nhận và cấp quyền bán hàng.' },
+              { icon: Store, title: 'Mở cửa hàng', desc: 'Tạo cửa hàng, đăng đồng hồ với thử AR 1:1.' },
+            ].map((step, i) => (
+              <div key={step.title} className="relative rounded-2xl border border-[#e5e0d8] bg-white p-4 shadow-sm">
+                <span className="absolute right-3 top-2 font-display text-2xl font-bold text-[#efe7d8]">{i + 1}</span>
+                <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-[#B8924A]/15 text-[#B8924A]">
+                  <step.icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-sm font-bold leading-tight">{step.title}</h3>
+                <p className="mt-1 text-[11px] leading-snug text-gray-500">{step.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Pending request banner */}
