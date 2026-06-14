@@ -6,12 +6,6 @@ import { ApiError, authApi } from '../../api';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
-const DEMO = [
-  { label: 'Admin', email: 'admin@watch.vn', password: 'admin123' },
-  { label: 'Shop', email: 'aventus@watch.vn', password: 'shop123' },
-  { label: 'Khách', email: 'khach@watch.vn', password: 'khach123' },
-];
-
 /**
  * Full-screen sign-in / sign-up overlay. On success it just closes — App.jsx
  * reacts to the session change and swaps to the right shell (shop/admin) or
@@ -88,12 +82,6 @@ export default function LoginScreen({ onClose }) {
     } finally {
       setBusy(false);
     }
-  }
-
-  function quickFill(d) {
-    switchTab('login');
-    setEmail(d.email);
-    setPassword(d.password);
   }
 
   return (
@@ -287,25 +275,6 @@ export default function LoginScreen({ onClose }) {
               </svg>
               Đăng nhập với Google
             </a>
-
-            {/* Demo accounts */}
-            <div className="mt-6">
-              <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-white/30">
-                Tài khoản demo (bấm để điền)
-              </p>
-              <div className="flex justify-center gap-2">
-                {DEMO.map((d) => (
-                  <button
-                    key={d.label}
-                    type="button"
-                    onClick={() => quickFill(d)}
-                    className="rounded-full border border-white/15 px-4 py-1.5 text-xs text-white/70 hover:border-[#B8924A] hover:text-white"
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
           </>
         )}
       </div>
