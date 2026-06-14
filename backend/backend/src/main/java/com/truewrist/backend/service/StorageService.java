@@ -28,7 +28,7 @@ public class StorageService {
     private static final Logger log = LoggerFactory.getLogger(StorageService.class);
 
     private static final Set<String> ALLOWED_TYPES = Set.of("image/png", "image/jpeg", "image/webp");
-    private static final Set<String> ALLOWED_FOLDERS = Set.of("watches", "shops", "ar");
+    private static final Set<String> ALLOWED_FOLDERS = Set.of("watches", "shops", "ar", "avatars");
     private static final Map<String, String> EXTENSIONS_BY_TYPE = Map.of(
             "image/png", ".png",
             "image/jpeg", ".jpg",

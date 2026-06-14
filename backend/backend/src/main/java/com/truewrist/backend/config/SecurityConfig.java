@@ -86,8 +86,9 @@ public class SecurityConfig {
                         // AR try-on snapshot upload is public (anonymous visitors attach
                         // a capture to a lead before signing in).
                         .requestMatchers(HttpMethod.POST, "/api/uploads/data-url").permitAll()
-                        // Watch/shop image uploads are restricted to sellers/admins.
-                        .requestMatchers(HttpMethod.POST, "/api/uploads").hasAnyRole("SHOP", "ADMIN")
+                        // Image uploads require a login; the controller further restricts
+                        // non-avatar folders (watch/shop photos) to sellers/admins.
+                        .requestMatchers(HttpMethod.POST, "/api/uploads").authenticated()
                         .requestMatchers("/error").permitAll()
                         // Everything else needs a valid JWT
                         .anyRequest().authenticated())

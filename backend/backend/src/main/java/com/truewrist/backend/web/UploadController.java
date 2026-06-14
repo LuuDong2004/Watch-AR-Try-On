@@ -1,9 +1,13 @@
 package com.truewrist.backend.web;
 
+import com.truewrist.backend.domain.Role;
 import com.truewrist.backend.dto.UploadDtos.DataUrlUploadRequest;
 import com.truewrist.backend.dto.UploadDtos.UploadResponse;
+import com.truewrist.backend.exception.ApiException;
+import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.service.StorageService;
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,11 +35,22 @@ public class UploadController {
         this.storage = storage;
     }
 
-    /** Upload a watch/shop image. {@code folder} groups objects (e.g. "watches", "shops"). */
+    /** Upload an image. {@code folder} groups objects (e.g. "watches", "shops", "avatars"). */
     @PostMapping
     public UploadResponse upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "folder", required = false, defaultValue = "watches") String folder) {
+            @RequestParam(value = "folder", required = false, defaultValue = "watches") String folder,
+            @AuthenticationPrincipal AppUserPrincipal actor) {
+        // Any signed-in user may upload their own avatar; other folders (watch/shop
+        // photos) stay restricted to sellers and admins.
+        if (!"avatars".equals(folder)) {
+            boolean privileged = actor != null
+                    && (actor.getUser().effectiveRoles().contains(Role.SHOP)
+                        || actor.getUser().effectiveRoles().contains(Role.ADMIN));
+            if (!privileged) {
+                throw ApiException.forbidden("Bạn không có quyền tải ảnh lên mục này.");
+            }
+        }
         return new UploadResponse(storage.store(file, folder));
     }
 
