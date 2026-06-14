@@ -401,7 +401,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-full bg-[#F6F4EF] text-[#17140F] select-none font-sans overflow-x-hidden">
+    <div className="h-full bg-[#F6F4EF] text-[#17140F] font-sans overflow-x-hidden">
       {(role === 'user' || storefront) && (
         <div className="flex flex-col min-h-screen">
           <UserHeader
