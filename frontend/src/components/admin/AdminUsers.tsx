@@ -273,8 +273,12 @@ export default function AdminUsers() {
                 <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition">
                   <td className="py-3.5 px-4 font-bold text-[#17140F]">
                     <div className="flex items-center gap-2">
-                      <span className="h-7 w-7 rounded-full bg-[#17140F]/5 flex items-center justify-center text-[#17140F] flex-shrink-0 text-[10px] font-bold">
-                        {initialsOf(u)}
+                      <span className="h-7 w-7 overflow-hidden rounded-full bg-[#17140F]/5 flex items-center justify-center text-[#17140F] flex-shrink-0 text-[10px] font-bold">
+                        {u.avatar ? (
+                          <img src={u.avatar} alt={u.name} className="h-full w-full object-cover" />
+                        ) : (
+                          initialsOf(u)
+                        )}
                       </span>
                       <span className="flex items-center gap-1.5">
                         {u.name}
@@ -451,8 +455,12 @@ function UserDetailModal({ user, isSelf, saving, onClose, onToggleRole, onToggle
             <X className="h-4 w-4" />
           </button>
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-[#F6F4EF] text-[#17140F] text-xl font-bold flex items-center justify-center border-2 border-[#B8924A] flex-shrink-0">
-              {initialsOf(user)}
+            <div className="h-16 w-16 overflow-hidden rounded-full bg-[#F6F4EF] text-[#17140F] text-xl font-bold flex items-center justify-center border-2 border-[#B8924A] flex-shrink-0">
+              {user.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                initialsOf(user)
+              )}
             </div>
             <div className="min-w-0">
               <h3 className="font-display text-lg font-bold truncate">{user.name}</h3>

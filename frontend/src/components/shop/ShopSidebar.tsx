@@ -97,8 +97,12 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
       <div className="p-3 border-t border-white/10 space-y-2">
         {!collapsed && (
           <div className="flex items-center gap-2.5 px-2 py-1.5">
-            <span className="h-9 w-9 rounded-full bg-white/10 border border-[#B8924A]/40 flex items-center justify-center text-xs font-bold text-[#B8924A]">
-              {avatar}
+            <span className="h-9 w-9 overflow-hidden rounded-full bg-white/10 border border-[#B8924A]/40 flex items-center justify-center text-xs font-bold text-[#B8924A]">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                avatar
+              )}
             </span>
             <div className="min-w-0">
               <p className="text-xs font-semibold truncate">{user?.name || 'Cửa hàng'}</p>
