@@ -30,6 +30,12 @@ spring:
           auth: true
           starttls:
             enable: true
+          # Fail fast when the SMTP host is unreachable (some VPS providers block
+          # outbound SMTP). Without these, send() blocks ~60-75s on the request
+          # thread → nginx 504 without CORS headers → browser reports a CORS error.
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
   security:
     oauth2:
@@ -51,6 +57,8 @@ spring:
 
 server:
   port: ${SERVER_PORT:8888}
+  address: 0.0.0.0
+  forward-headers-strategy: framework
 
 # Application-specific settings (bound in AppProperties)
 app:

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 /**
@@ -27,6 +28,7 @@ public class MailService {
     }
 
     /** Verification email with the activation link sent right after registration. */
+    @Async
     public void sendEmailVerification(String toEmail, String name, String verifyUrl) {
         String subject = "Xác minh email tài khoản TrueWrist";
         String body = "Xin chào " + (name == null || name.isBlank() ? "bạn" : name) + ",\n\n"
@@ -41,6 +43,7 @@ public class MailService {
         send(toEmail, subject, body, "Email verification");
     }
 
+    @Async
     public void sendPasswordReset(String toEmail, String name, String resetUrl) {
         long ttl = props.passwordReset().ttlMinutesOrDefault();
         String subject = "Đặt lại mật khẩu TrueWrist";
