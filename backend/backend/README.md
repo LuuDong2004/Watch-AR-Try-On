@@ -27,15 +27,11 @@ variables — see `.env.example`. Key ones: `DB_URL`, `DB_USERNAME`, `DB_PASSWOR
 $env:DB_PASSWORD = "yourpassword"
 .\mvnw.cmd spring-boot:run
 ```
-On first start, demo data is seeded automatically (disable with `SEED_ENABLED=false`).
-
-### Demo accounts (password seeded with BCrypt)
-| Email             | Password  | Role     |
-|-------------------|-----------|----------|
-| admin@watch.vn    | admin123  | admin    |
-| aventus@watch.vn  | shop123   | shop     |
-| poly@watch.vn     | shop123   | shop     |
-| khach@watch.vn    | khach123  | customer |
+On first start, the app seeds only the required subscription-plan catalogue and
+runs idempotent data migrations. No demo accounts/shops/watches are seeded —
+manage production data (admin account, etc.) via the `db_export/` SQL scripts
+(`add_admin.sql`, `remove_demo_accounts.sql`). The legacy `SEED_ENABLED` flag is
+no longer used.
 
 ## API
 Base URL: `http://localhost:8888`
