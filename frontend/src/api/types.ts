@@ -93,6 +93,8 @@ export interface ProductComment {
   authorName: string;
   /** Author owns the watch's shop → render a "Shop" badge. */
   isShop: boolean;
+  /** Author's profile picture URL; null/undefined = show initials/shop icon. */
+  authorAvatar?: string | null;
   /** User marked "đã thử AR và thấy phù hợp". */
   triedAr: boolean;
   body: string;

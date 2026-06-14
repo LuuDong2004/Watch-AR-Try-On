@@ -16,6 +16,7 @@ import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.util.Ids;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class CommentService {
         this.userRepository = userRepository;
     }
 
-    /** Threaded comments for a watch: top-level newest-first, replies oldest-first. */
+    /** Threaded comments for a watch: top-level newest-first, replies oldest-first, nested to any depth. */
     @Transactional(readOnly = true)
     public List<CommentResponse> list(String watchId) {
         String ownerId = shopOwnerOf(watchId);
@@ -50,19 +51,32 @@ public class CommentService {
                 .filter(c -> c.getParentId() != null)
                 .collect(Collectors.groupingBy(ProductComment::getParentId));
 
+        // Resolve each author's current avatar in one batch (values may be null).
+        List<String> authorIds = all.stream().map(ProductComment::getUserId).distinct().toList();
+        Map<String, String> avatarById = new HashMap<>();
+        userRepository.findAllById(authorIds).forEach(u -> avatarById.put(u.getId(), u.getAvatar()));
+
         List<CommentResponse> roots = new ArrayList<>();
         for (ProductComment c : all) {
-            if (c.getParentId() != null) {
-                continue;
+            if (c.getParentId() == null) {
+                roots.add(toTree(c, byParent, ownerId, avatarById));
             }
-            List<CommentResponse> replies = byParent.getOrDefault(c.getId(), List.of()).stream()
-                    .sorted(Comparator.comparingLong(ProductComment::getCreatedAt))
-                    .map(r -> CommentResponse.of(r, isShop(r, ownerId), List.of()))
-                    .toList();
-            roots.add(CommentResponse.of(c, isShop(c, ownerId), replies));
         }
         roots.sort(Comparator.comparingLong(CommentResponse::createdAt).reversed());
         return roots;
+    }
+
+    /** Recursively builds a comment with all of its descendant replies (oldest-first). */
+    private CommentResponse toTree(
+            ProductComment c,
+            Map<String, List<ProductComment>> byParent,
+            String ownerId,
+            Map<String, String> avatarById) {
+        List<CommentResponse> replies = byParent.getOrDefault(c.getId(), List.of()).stream()
+                .sorted(Comparator.comparingLong(ProductComment::getCreatedAt))
+                .map(r -> toTree(r, byParent, ownerId, avatarById))
+                .toList();
+        return CommentResponse.of(c, isShop(c, ownerId), avatarById.get(c.getUserId()), replies);
     }
 
     public long count(String watchId) {
@@ -81,8 +95,8 @@ public class CommentService {
             if (!parent.getWatchId().equals(watchId)) {
                 throw ApiException.badRequest("Bình luận gốc không thuộc sản phẩm này.");
             }
-            // Collapse to a single nesting level: a reply-to-a-reply attaches to the root.
-            parentId = parent.getParentId() != null ? parent.getParentId() : parent.getId();
+            // Reply directly to the targeted comment — threads nest to any depth.
+            parentId = parent.getId();
         }
 
         User user = userRepository.findById(actor.getId())
@@ -99,7 +113,7 @@ public class CommentService {
                 .createdAt(System.currentTimeMillis())
                 .build();
         commentRepository.save(comment);
-        return CommentResponse.of(comment, isShop(comment, shopOwnerOf(watchId)), List.of());
+        return CommentResponse.of(comment, isShop(comment, shopOwnerOf(watchId)), user.getAvatar(), List.of());
     }
 
     /** Edit a comment's text — only the author (or an admin) may edit. */
@@ -114,7 +128,8 @@ public class CommentService {
         comment.setBody(req.body().trim());
         comment.setTriedAr(req.triedAr());
         commentRepository.save(comment);
-        return CommentResponse.of(comment, isShop(comment, shopOwnerOf(comment.getWatchId())), List.of());
+        String avatar = userRepository.findById(comment.getUserId()).map(User::getAvatar).orElse(null);
+        return CommentResponse.of(comment, isShop(comment, shopOwnerOf(comment.getWatchId())), avatar, List.of());
     }
 
     @Transactional
@@ -127,9 +142,22 @@ public class CommentService {
         if (!isAdmin && !isAuthor && !isShopOwner) {
             throw ApiException.forbidden("Bạn không có quyền xóa bình luận này.");
         }
-        // Remove any replies first to avoid orphans.
-        commentRepository.deleteByParentId(comment.getId());
-        commentRepository.delete(comment);
+        // Remove the whole subtree (the comment and every nested reply) to avoid orphans.
+        Map<String, List<ProductComment>> byParent =
+                commentRepository.findByWatchIdOrderByCreatedAtAsc(comment.getWatchId()).stream()
+                        .filter(c -> c.getParentId() != null)
+                        .collect(Collectors.groupingBy(ProductComment::getParentId));
+        List<ProductComment> subtree = new ArrayList<>();
+        collectSubtree(comment, byParent, subtree);
+        commentRepository.deleteAll(subtree);
+    }
+
+    private void collectSubtree(
+            ProductComment c, Map<String, List<ProductComment>> byParent, List<ProductComment> acc) {
+        acc.add(c);
+        for (ProductComment child : byParent.getOrDefault(c.getId(), List.of())) {
+            collectSubtree(child, byParent, acc);
+        }
     }
 
     private boolean isShop(ProductComment c, String ownerId) {

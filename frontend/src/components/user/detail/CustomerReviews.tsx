@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Check, CornerDownRight, Loader2, MessageCircle, Pencil, Send, Sparkles, Store, Trash2, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Loader2, MessageCircle, Pencil, Send, Sparkles, Store, Trash2, X } from 'lucide-react';
 import { commentApi, ApiError } from '../../../api';
 import type { ProductComment, Shop, Watch } from '../../../api';
 import { useSession } from '../../../auth/session';
@@ -16,6 +16,15 @@ const initialOf = (name: string) => (name || '?').trim().charAt(0).toUpperCase()
 const formatDate = (ts: number) =>
   new Date(ts).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+/** How many top-level comments to show before the "Xem thêm" button. */
+const ROOT_PAGE_SIZE = 5;
+/** How many replies to preview under a comment before "Xem thêm N phản hồi". */
+const REPLY_PREVIEW = 2;
+
+/** Total number of replies nested under a comment (all depths). */
+const countDescendants = (c: ProductComment): number =>
+  c.replies.reduce((n, r) => n + 1 + countDescendants(r), 0);
+
 /**
  * Threaded product comments. The platform is display + AR try-on only (no sales),
  * so there are no star ratings — customers leave comments (optionally flagged
@@ -27,6 +36,7 @@ export default function CustomerReviews({ watch, shop }: CustomerReviewsProps) {
   const showLogin = useLoginPrompt((s) => s.show);
 
   const [comments, setComments] = useState<ProductComment[]>([]);
+  const [visibleCount, setVisibleCount] = useState(ROOT_PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState('');
   const [triedAr, setTriedAr] = useState(false);
@@ -47,11 +57,14 @@ export default function CustomerReviews({ watch, shop }: CustomerReviewsProps) {
 
   useEffect(() => {
     setLoading(true);
+    setVisibleCount(ROOT_PAGE_SIZE);
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watch.id]);
 
-  const total = comments.reduce((n, c) => n + 1 + c.replies.length, 0);
+  const countAll = (list: ProductComment[]): number =>
+    list.reduce((n, c) => n + 1 + countAll(c.replies), 0);
+  const total = countAll(comments);
 
   const submitTopLevel = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,21 +126,44 @@ export default function CustomerReviews({ watch, shop }: CustomerReviewsProps) {
       ) : comments.length === 0 ? (
         <p className="py-10 text-center text-sm text-gray-400">Chưa có bình luận. Hãy là người đầu tiên chia sẻ cảm nhận!</p>
       ) : (
-        <div className="space-y-6">
-          {comments.map((c) => (
-            <CommentItem
-              key={c.id}
-              comment={c}
-              canReply={!!user}
-              isShopOwner={isShopOwner}
-              canEdit={canEdit}
-              canDelete={canDelete}
-              onReply={handleReply}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        <>
+          <div className="space-y-6">
+            {comments.slice(0, visibleCount).map((c) => (
+              <CommentNode
+                key={c.id}
+                comment={c}
+                depth={0}
+                canReply={!!user}
+                isShopOwner={isShopOwner}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                onReply={handleReply}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+          {(comments.length > visibleCount || visibleCount > ROOT_PAGE_SIZE) && (
+            <div className="mt-5 flex items-center gap-3">
+              {comments.length > visibleCount && (
+                <button
+                  onClick={() => setVisibleCount((n) => n + ROOT_PAGE_SIZE)}
+                  className="flex-1 rounded-xl border border-[#e9e3d8] bg-cream/40 py-2.5 text-xs font-bold text-navy transition hover:bg-cream"
+                >
+                  Xem thêm bình luận ({comments.length - visibleCount} còn lại)
+                </button>
+              )}
+              {visibleCount > ROOT_PAGE_SIZE && (
+                <button
+                  onClick={() => setVisibleCount(ROOT_PAGE_SIZE)}
+                  className="rounded-xl border border-[#e9e3d8] bg-white px-4 py-2.5 text-xs font-bold text-gray-500 transition hover:bg-gray-50"
+                >
+                  Thu gọn
+                </button>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* Composer (bottom) */}
@@ -163,10 +199,14 @@ export default function CustomerReviews({ watch, shop }: CustomerReviewsProps) {
   );
 }
 
-/* ----------------------------------------------------------------- Comment item */
+/* ----------------------------------------------------------------- Comment node */
 
-interface CommentItemProps {
+/** Stop adding left-indentation past this depth so deep threads never drift off-screen. */
+const MAX_INDENT_DEPTH = 3;
+
+interface CommentNodeProps {
   comment: ProductComment;
+  depth: number;
   canReply: boolean;
   isShopOwner: boolean;
   canEdit: (c: ProductComment) => boolean;
@@ -176,10 +216,12 @@ interface CommentItemProps {
   onDelete: (c: ProductComment) => void;
 }
 
-function CommentItem({ comment, canReply, isShopOwner, canEdit, canDelete, onReply, onEdit, onDelete }: CommentItemProps) {
+function CommentNode({ comment, depth, canReply, isShopOwner, canEdit, canDelete, onReply, onEdit, onDelete }: CommentNodeProps) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [repliesExpanded, setRepliesExpanded] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,50 +236,79 @@ function CommentItem({ comment, canReply, isShopOwner, canEdit, canDelete, onRep
     }
   };
 
+  const isReply = depth > 0;
+  const shownReplies = repliesExpanded ? comment.replies : comment.replies.slice(0, REPLY_PREVIEW);
+  const hiddenReplies = comment.replies.length - shownReplies.length;
+
   return (
-    <div className="border-b border-[#e9e3d8] pb-6 last:border-0 last:pb-0">
+    <div className={isReply ? '' : 'border-b border-[#e9e3d8] pb-6 last:border-0 last:pb-0'}>
       <CommentBody comment={comment} canEdit={canEdit(comment)} canDelete={canDelete(comment)} onEdit={onEdit} onDelete={onDelete} />
 
-      {canReply && (
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="ml-12 mt-2 text-[11px] font-bold text-champagne transition hover:underline"
-        >
-          {isShopOwner ? 'Phản hồi khách hàng' : 'Trả lời'}
-        </button>
-      )}
+          {canReply && (
+            <button
+              onClick={() => setOpen((o) => !o)}
+              className="ml-12 mt-2 text-[11px] font-bold text-champagne transition hover:underline"
+            >
+              {isShopOwner && depth === 0 ? 'Phản hồi khách hàng' : 'Trả lời'}
+            </button>
+          )}
 
-      {open && (
-        <form onSubmit={submit} className="ml-12 mt-2 flex items-center gap-2">
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Viết phản hồi…"
-            className="flex-1 rounded-xl border border-[#e9e3d8] bg-white px-3 py-2 text-sm focus:border-champagne focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
-          >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Gửi
-          </button>
-        </form>
-      )}
+          {open && (
+            <form onSubmit={submit} className="ml-12 mt-2 flex items-center gap-2">
+              <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Viết phản hồi…"
+                className="flex-1 rounded-xl border border-[#e9e3d8] bg-white px-3 py-2 text-sm focus:border-champagne focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={busy}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-navy px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />} Gửi
+              </button>
+            </form>
+          )}
 
-      {/* Replies (ladder) */}
-      {comment.replies.length > 0 && (
-        <div className="ml-7 mt-4 space-y-4 border-l-2 border-[#efe9dd] pl-5">
-          {comment.replies.map((r) => (
-            <div key={r.id} className="flex gap-2">
-              <CornerDownRight className="mt-3 h-3.5 w-3.5 shrink-0 text-gray-300" />
-              <div className="flex-1">
-                <CommentBody comment={r} canEdit={canEdit(r)} canDelete={canDelete(r)} onEdit={onEdit} onDelete={onDelete} />
-              </div>
+          {/* Reply thread — collapsible. Indent comes only from the container and stops past
+              MAX_INDENT_DEPTH so deep threads flatten instead of cascading off-screen. */}
+          {comment.replies.length > 0 && (
+            <button
+              onClick={() => setCollapsed((c) => !c)}
+              className="ml-12 mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-champagne transition hover:underline"
+            >
+              {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+              {collapsed ? `Xem ${countDescendants(comment)} phản hồi` : 'Ẩn phản hồi'}
+            </button>
+          )}
+
+          {comment.replies.length > 0 && !collapsed && (
+            <div className={depth < MAX_INDENT_DEPTH ? 'ml-2 mt-4 space-y-4 border-l-2 border-[#efe9dd] pl-3 sm:ml-4 sm:pl-4' : 'mt-4 space-y-4'}>
+              {shownReplies.map((r) => (
+                <CommentNode
+                  key={r.id}
+                  comment={r}
+                  depth={depth + 1}
+                  canReply={canReply}
+                  isShopOwner={isShopOwner}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  onReply={onReply}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ))}
+              {hiddenReplies > 0 && (
+                <button
+                  onClick={() => setRepliesExpanded(true)}
+                  className="text-[11px] font-bold text-champagne transition hover:underline"
+                >
+                  Xem thêm {hiddenReplies} phản hồi
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          )}
     </div>
   );
 }
@@ -278,11 +349,17 @@ function CommentBody({
   return (
     <div className="flex gap-3">
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold ${
+        className={`flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full font-bold ${
           comment.isShop ? 'bg-navy text-white' : 'border border-champagne/40 bg-champagne/10 text-champagne'
         }`}
       >
-        {comment.isShop ? <Store className="h-4 w-4" /> : initialOf(comment.authorName)}
+        {comment.authorAvatar ? (
+          <img src={comment.authorAvatar} alt={comment.authorName} className="h-full w-full object-cover" />
+        ) : comment.isShop ? (
+          <Store className="h-4 w-4" />
+        ) : (
+          initialOf(comment.authorName)
+        )}
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">

@@ -20,12 +20,14 @@ public final class CommentDtos {
             @NotBlank @Size(max = 2000) String body,
             boolean triedAr) {}
 
-    /** A comment plus its replies (one level of nesting, Facebook-style). */
+    /** A comment plus its replies, nested to any depth (Facebook-style threads). */
     public record CommentResponse(
             String id,
             String watchId,
             String userId,
             String authorName,
+            /** Author's profile picture URL (null = render initials/shop icon). */
+            String authorAvatar,
             /** True when the author owns the watch's shop (renders a "Shop" badge). */
             boolean isShop,
             boolean triedAr,
@@ -35,10 +37,10 @@ public final class CommentDtos {
             List<CommentResponse> replies) {
 
         public static CommentResponse of(
-                ProductComment c, boolean isShop, List<CommentResponse> replies) {
+                ProductComment c, boolean isShop, String authorAvatar, List<CommentResponse> replies) {
             return new CommentResponse(
                     c.getId(), c.getWatchId(), c.getUserId(), c.getAuthorName(),
-                    isShop, c.isTriedAr(), c.getBody(), c.getParentId(),
+                    authorAvatar, isShop, c.isTriedAr(), c.getBody(), c.getParentId(),
                     c.getCreatedAt(), replies);
         }
     }

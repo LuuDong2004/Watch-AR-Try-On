@@ -166,6 +166,7 @@ function toComment(d: any): ProductComment {
     watchId: d.watchId,
     userId: d.userId,
     authorName: d.authorName,
+    authorAvatar: d.authorAvatar ?? null,
     isShop: !!d.isShop,
     triedAr: !!d.triedAr,
     body: d.body,
