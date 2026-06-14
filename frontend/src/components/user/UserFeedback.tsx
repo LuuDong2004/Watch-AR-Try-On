@@ -3,6 +3,7 @@ import { MessageSquare, Store, Globe, Star, Check, Send } from 'lucide-react';
 import { shopApi, feedbackApi, ApiError } from '../../api';
 import type { Shop } from '../../api';
 import { Field, TextInput, TextArea, Select, SegmentedControl } from '../ui/Field';
+import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 
 interface UserFeedbackProps {
@@ -13,8 +14,11 @@ const SHOP_TOPICS = ['Thái độ phục vụ', 'Chất lượng sản phẩm', 
 const WEB_TOPICS = ['Trải nghiệm thử AR', 'Mô hình 3D', 'Tốc độ & hiệu năng', 'Giao diện & dễ dùng', 'Đề xuất tính năng', 'Khác'];
 
 export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
+  const user = useSession((s) => s.user);
+  // Shop accounts may only review the website; everyone else can also review a shop.
+  const isShopUser = !!user?.roles?.includes('shop');
   const [shops, setShops] = useState<Shop[]>([]);
-  const [target, setTarget] = useState<'shop' | 'website'>('shop');
+  const [target, setTarget] = useState<'shop' | 'website'>(isShopUser ? 'website' : 'shop');
   const [hoverRating, setHoverRating] = useState(0);
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +43,11 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
       .catch(() => { if (!cancelled) setShops([]); });
     return () => { cancelled = true; };
   }, []);
+
+  // Keep shop accounts pinned to website feedback even if the role resolves late.
+  useEffect(() => {
+    if (isShopUser) setTarget('website');
+  }, [isShopUser]);
 
   const switchTarget = (t: 'shop' | 'website') => {
     setTarget(t);
@@ -80,7 +89,7 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
 
   const resetForm = () => {
     setForm({ shopId: shops[0]?.id || '', rating: 5, topic: '', message: '', name: '', contact: '' });
-    setTarget('shop');
+    setTarget(isShopUser ? 'website' : 'shop');
     setSuccess(false);
   };
 
@@ -126,15 +135,17 @@ export default function UserFeedback({ onBackToCatalog }: UserFeedbackProps) {
               </div>
 
               <div className="p-6 space-y-5">
-                {/* Target: shop vs website */}
-                <SegmentedControl
-                  value={target}
-                  onChange={(v) => switchTarget(v as 'shop' | 'website')}
-                  options={[
-                    { value: 'shop', label: 'Góp ý cửa hàng' },
-                    { value: 'website', label: 'Góp ý website' },
-                  ]}
-                />
+                {/* Target: shop vs website — shop accounts can only review the website */}
+                {!isShopUser && (
+                  <SegmentedControl
+                    value={target}
+                    onChange={(v) => switchTarget(v as 'shop' | 'website')}
+                    options={[
+                      { value: 'shop', label: 'Góp ý cửa hàng' },
+                      { value: 'website', label: 'Góp ý website' },
+                    ]}
+                  />
+                )}
 
                 {/* Visual context badge */}
                 <div className="flex items-center gap-2.5 rounded-xl bg-[#F6F4EF] border border-[#e5e0d8] px-3.5 py-2.5 text-xs text-gray-600">

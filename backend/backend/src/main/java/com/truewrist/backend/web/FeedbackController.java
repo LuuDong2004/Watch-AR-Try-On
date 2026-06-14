@@ -1,7 +1,10 @@
 package com.truewrist.backend.web;
 
+import com.truewrist.backend.domain.FeedbackTarget;
+import com.truewrist.backend.domain.Role;
 import com.truewrist.backend.dto.FeedbackDtos.FeedbackCreateRequest;
 import com.truewrist.backend.dto.FeedbackDtos.FeedbackResponse;
+import com.truewrist.backend.exception.ApiException;
 import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.service.FeedbackService;
 import jakarta.validation.Valid;
@@ -32,6 +35,12 @@ public class FeedbackController {
     public FeedbackResponse create(
             @Valid @RequestBody FeedbackCreateRequest req,
             @AuthenticationPrincipal AppUserPrincipal actor) {
+        // Shop accounts may only review the website, never another shop.
+        if (actor != null
+                && req.target() == FeedbackTarget.SHOP
+                && actor.getUser().effectiveRoles().contains(Role.SHOP)) {
+            throw ApiException.forbidden("Tài khoản cửa hàng chỉ có thể góp ý về website.");
+        }
         String userId = actor != null ? actor.getId() : null;
         return FeedbackResponse.from(feedbackService.create(req, userId));
     }
