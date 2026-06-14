@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { ArrowLeft, ArrowRight, Clock, MapPin, Phone, Store } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, MapPin, Phone, Sparkles, Store } from 'lucide-react';
 import type { Shop } from '../../../api';
 
 export interface BranchShopEntry {
@@ -68,9 +68,9 @@ export default function BranchShops({ brand, branches, onSelect }: BranchShopsPr
           <button
             key={shop.id}
             onClick={() => onSelect(shop.id)}
-            className="group flex w-[300px] max-w-[85vw] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-luxe-lg sm:w-[calc((100%-2.5rem)/3)]"
+            className="group flex w-[300px] max-w-[85vw] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:border-champagne/40 hover:shadow-luxe-lg"
           >
-            <div className="relative h-36 overflow-hidden bg-cream">
+            <div className="relative h-40 overflow-hidden bg-cream">
               {thumb ? (
                 <img
                   src={thumb}
@@ -82,8 +82,9 @@ export default function BranchShops({ brand, branches, onSelect }: BranchShopsPr
                   <Store className="h-10 w-10" />
                 </div>
               )}
-              <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-champagne px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-white">
-                {matchCount} mẫu {brand}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-navy shadow-sm backdrop-blur">
+                <Sparkles className="h-3 w-3 text-champagne" /> {matchCount} mẫu {brand}
               </span>
             </div>
 
@@ -93,28 +94,28 @@ export default function BranchShops({ brand, branches, onSelect }: BranchShopsPr
                 {shop.name}
               </h3>
 
-              <div className="mt-2 space-y-1.5 text-[11px] font-medium leading-4 text-gray-500">
+              <div className="mt-2.5 flex-1 space-y-1.5 text-[11px] font-medium leading-4 text-gray-500">
                 {shop.address && (
                   <p className="flex gap-1.5">
                     <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
                     <span className="line-clamp-2">{shop.address}</span>
                   </p>
                 )}
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {shop.phone && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5 text-champagne" /> {shop.phone}
-                    </span>
-                  )}
-                  {shop.hours && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-champagne" /> {shop.hours}
-                    </span>
-                  )}
-                </div>
+                {shop.phone && (
+                  <p className="flex gap-1.5">
+                    <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                    <span>{shop.phone}</span>
+                  </p>
+                )}
+                {shop.hours && (
+                  <p className="flex gap-1.5">
+                    <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                    <span className="line-clamp-1">{shop.hours}</span>
+                  </p>
+                )}
               </div>
 
-              <span className="mt-3 inline-flex items-center gap-1 pt-1 text-xs font-bold text-champagne transition group-hover:gap-1.5">
+              <span className="mt-4 flex items-center justify-center gap-1.5 rounded-xl bg-navy/5 py-2 text-xs font-bold text-navy transition group-hover:bg-champagne group-hover:text-white">
                 Xem shop <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </div>

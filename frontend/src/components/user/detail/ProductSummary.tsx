@@ -136,9 +136,10 @@ export default function ProductSummary({
       </div>
 
       {shop && (
-        <div className="rounded-2xl border border-[#e9e3d8] bg-white p-4 shadow-luxe-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-champagne/10 text-champagne">
+        <div className="overflow-hidden rounded-2xl border border-[#e9e3d8] bg-white shadow-luxe-sm">
+          {/* Seller header */}
+          <div className="flex items-center gap-3 border-b border-[#f1ece2] bg-gradient-to-r from-cream/60 via-white to-white p-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy text-champagne shadow-sm">
               <Store className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
@@ -146,40 +147,45 @@ export default function ProductSummary({
               <button
                 type="button"
                 onClick={goToShop}
-                className="mt-0.5 line-clamp-1 text-left font-display text-sm font-bold text-navy transition hover:text-champagne"
+                className="line-clamp-1 text-left font-display text-base font-bold text-navy transition hover:text-champagne"
               >
                 {shop.name}
               </button>
-              <div className="mt-2 space-y-1.5 text-[11px] font-medium leading-4 text-gray-500">
-                {shop.address && (
-                  <p className="flex gap-1.5">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
-                    <span className="line-clamp-2">{shop.address}</span>
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {shop.phone && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5 text-champagne" /> {shop.phone}
-                    </span>
-                  )}
-                  {shop.hours && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-champagne" /> {shop.hours}
-                    </span>
-                  )}
-                </div>
-              </div>
-              {onOpenShop && (
-                <button
-                  type="button"
-                  onClick={goToShop}
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-champagne transition hover:gap-1.5"
-                >
-                  Xem shop <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              )}
             </div>
+            <span className="hidden shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-600 sm:inline-flex">
+              <ShieldCheck className="h-3 w-3" /> Chính hãng
+            </span>
+          </div>
+
+          {/* Seller details */}
+          <div className="space-y-2.5 p-4 text-xs font-medium leading-5 text-gray-600">
+            {shop.address && (
+              <div className="flex gap-2">
+                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                <span>{shop.address}</span>
+              </div>
+            )}
+            {shop.phone && (
+              <div className="flex gap-2">
+                <Phone className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                <span>{shop.phone}</span>
+              </div>
+            )}
+            {shop.hours && (
+              <div className="flex gap-2">
+                <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
+                <span>{shop.hours}</span>
+              </div>
+            )}
+            {onOpenShop && (
+              <button
+                type="button"
+                onClick={goToShop}
+                className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-champagne/40 bg-champagne/5 py-2.5 text-xs font-bold text-champagne transition hover:bg-champagne hover:text-white"
+              >
+                Xem cửa hàng <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
         </div>
       )}
