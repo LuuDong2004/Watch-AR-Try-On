@@ -214,7 +214,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate, onSelect
                   onClick={() => onSelectWatch(w.id)}
                   className="group rounded-2xl overflow-hidden border border-[#e5e0d8] bg-[#F6F4EF] shadow-sm hover:shadow-lg transition cursor-pointer"
                 >
-                  <div className="relative h-44 overflow-hidden">
+                  <div className="relative h-64 overflow-hidden">
                     <img src={w.image} alt={w.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                     {canTryAr(w) && (
                       <span className="absolute top-2 right-2 bg-[#B8924A] text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest">AR</span>

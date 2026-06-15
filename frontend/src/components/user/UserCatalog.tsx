@@ -290,7 +290,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
                   onClick={() => onSelectWatch(w.id)}
                 >
                   {/* Product Photo */}
-                  <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-56 overflow-hidden border-b border-[#e5e0d8]">
+                  <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-72 overflow-hidden border-b border-[#e5e0d8]">
                     <img
                       src={w.image}
                       alt={w.name}
