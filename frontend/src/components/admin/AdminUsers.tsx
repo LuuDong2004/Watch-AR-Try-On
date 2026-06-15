@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   Lock, ShieldCheck, Store, Unlock, User as UserIcon, Eye, Search,
   X, Calendar, Building2, Globe, Check, Mail, Hash, MoreVertical, Phone,
@@ -62,7 +62,13 @@ export default function AdminUsers() {
 
   // Unified row actions menu (fixed-positioned to avoid table clipping):
   // view details + change role + lock/unlock, all under one "⋮" button.
-  const [actionsMenu, setActionsMenu] = useState<{ user: User; x: number; y: number } | null>(null);
+  // We keep the trigger button's rect (top/bottom/right) so the menu can flip
+  // upward when there isn't room below — otherwise rows near the bottom of the
+  // viewport open a menu that spills off-screen and gets clipped.
+  const [actionsMenu, setActionsMenu] =
+    useState<{ user: User; right: number; top: number; bottom: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: -9999, left: -9999 });
   // Detail modal
   const [detailUser, setDetailUser] = useState<User | null>(null);
 
@@ -161,8 +167,31 @@ export default function AdminUsers() {
 
   const openActionsMenu = (e: React.MouseEvent, u: User) => {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setActionsMenu({ user: u, x: r.right, y: r.bottom + 6 });
+    setActionsMenu({ user: u, right: r.right, top: r.top, bottom: r.bottom });
   };
+
+  // Position the menu after it renders so we can measure its real height and
+  // decide whether to drop it below the button or flip it above. Runs before
+  // paint (useLayoutEffect) so the corrected position never flashes.
+  useLayoutEffect(() => {
+    if (!actionsMenu || !menuRef.current) return;
+    const M = 8; // viewport margin
+    const GAP = 6; // gap between button and menu
+    const { offsetHeight: h, offsetWidth: w } = menuRef.current;
+    const vh = window.innerHeight;
+
+    // Prefer below; flip above when the menu would overflow the bottom edge.
+    let top = actionsMenu.bottom + GAP;
+    if (top + h > vh - M) {
+      const above = actionsMenu.top - h - GAP;
+      top = above >= M ? above : Math.max(M, vh - h - M);
+    }
+
+    let left = actionsMenu.right - w;
+    if (left < M) left = M;
+
+    setMenuPos({ top, left });
+  }, [actionsMenu]);
 
   const formatDate = (ts?: number) => (ts ? new Date(ts).toLocaleDateString('vi-VN') : '—');
   const formatDateTime = (ts?: number) => (ts ? new Date(ts).toLocaleString('vi-VN') : '—');
@@ -339,8 +368,9 @@ export default function AdminUsers() {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setActionsMenu(null)} />
             <div
-              className="fixed z-50 w-56 bg-white rounded-xl border border-[#e5e0d8] shadow-xl py-1.5 text-xs"
-              style={{ top: actionsMenu.y, left: Math.max(8, actionsMenu.x - 224) }}
+              ref={menuRef}
+              className="fixed z-50 w-56 bg-white rounded-xl border border-[#e5e0d8] shadow-xl py-1.5 text-xs overflow-y-auto"
+              style={{ top: menuPos.top, left: menuPos.left, maxHeight: 'calc(100vh - 16px)' }}
             >
               <button
                 onClick={() => { setActionsMenu(null); setDetailUser(u); }}

@@ -6,6 +6,7 @@ import com.truewrist.backend.domain.LeadStatus;
 import com.truewrist.backend.domain.LeadType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 /** Request/response payloads for leads. */
 public final class LeadDtos {
@@ -45,7 +46,11 @@ public final class LeadDtos {
 
     public record LeadCreateRequest(
             @NotBlank String name,
-            @NotBlank String phone,
+            @NotBlank(message = "Vui lòng nhập số điện thoại.")
+                    @Pattern(
+                            regexp = "^(0|\\+84)\\d{9,10}$",
+                            message = "Số điện thoại không hợp lệ. Dùng định dạng 0xxxxxxxxx hoặc +84xxxxxxxxx.")
+                    String phone,
             String email,
             String watchId,
             String watchName,
@@ -53,8 +58,10 @@ public final class LeadDtos {
             @NotBlank String shopId,
             String shopName,
             @NotNull LeadType type,
-            String date,
-            String time,
+            @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", message = "Ngày hẹn không hợp lệ (yyyy-MM-dd).")
+                    String date,
+            @Pattern(regexp = "^\\d{2}:\\d{2}$", message = "Giờ hẹn không hợp lệ (HH:mm).")
+                    String time,
             String message,
             LeadChannel channel,
             Boolean hasTriedOn,
