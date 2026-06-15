@@ -2,6 +2,7 @@ package com.truewrist.backend.service;
 
 import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Shop;
+import com.truewrist.backend.domain.SubscriptionPlan;
 import com.truewrist.backend.domain.User;
 import com.truewrist.backend.dto.ShopDtos.ShopRequest;
 import com.truewrist.backend.exception.ApiException;
@@ -20,14 +21,17 @@ public class ShopService {
     private final ShopRepository shopRepository;
     private final WatchRepository watchRepository;
     private final UserRepository userRepository;
+    private final SubscriptionService subscriptionService;
 
     public ShopService(
             ShopRepository shopRepository,
             WatchRepository watchRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            SubscriptionService subscriptionService) {
         this.shopRepository = shopRepository;
         this.watchRepository = watchRepository;
         this.userRepository = userRepository;
+        this.subscriptionService = subscriptionService;
     }
 
     public List<Shop> findAll() {
@@ -85,6 +89,19 @@ public class ShopService {
      */
     @Transactional
     public Shop create(ShopRequest req, String ownerUserId) {
+        // Enforce the seller's subscription shop quota. Admins (ownerUserId == null)
+        // create unlinked shops and are exempt. -1 means unlimited.
+        if (ownerUserId != null) {
+            SubscriptionPlan plan = subscriptionService.activePlanForShopQuota(ownerUserId);
+            int max = plan.getMaxShops();
+            int current = shopRepository.findByOwnerId(ownerUserId).size();
+            if (max != -1 && current >= max) {
+                throw ApiException.forbidden(
+                        "Gói \"" + plan.getName() + "\" chỉ cho phép tối đa " + max
+                                + " cửa hàng (bạn đang có " + current
+                                + "). Vui lòng nâng cấp gói để tạo thêm.");
+            }
+        }
         Shop shop = Shop.builder()
                 .id(Ids.generate("s"))
                 .ownerId(ownerUserId)

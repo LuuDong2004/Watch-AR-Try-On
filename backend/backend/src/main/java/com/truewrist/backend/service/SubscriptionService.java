@@ -80,6 +80,24 @@ public class SubscriptionService {
         return buildResponse(subscription, now);
     }
 
+    /**
+     * The plan currently in effect for a user's shop quota. Throws if the paid
+     * subscription has lapsed, so an expired seller must renew before adding more
+     * shops. Falls back to the trial plan's limit when no subscription exists yet.
+     */
+    @Transactional(readOnly = true)
+    public SubscriptionPlan activePlanForShopQuota(String userId) {
+        ShopSubscription subscription = subscriptionRepository.findByUserId(userId).orElse(null);
+        if (subscription == null) {
+            return trialPlan();
+        }
+        if (subscription.getExpiresAt() <= System.currentTimeMillis()) {
+            throw ApiException.forbidden(
+                    "Gói dịch vụ của bạn đã hết hạn. Vui lòng gia hạn để tạo thêm cửa hàng.");
+        }
+        return planRepository.findById(subscription.getPlanCode()).orElseGet(this::trialPlan);
+    }
+
     @Transactional
     public SubscriptionResponse upgrade(AppUserPrincipal actor, String targetCode) {
         SubscriptionPlan target = planRepository.findById(targetCode)
