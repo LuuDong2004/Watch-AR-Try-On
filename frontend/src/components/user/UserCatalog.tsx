@@ -16,7 +16,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
   const [brands, setBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || 'all');
-  const [priceRange, setPriceRange] = useState<number>(350000000); // max price filter
+  const [priceRange, setPriceRange] = useState<number>(1000000000); // max price filter
   const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
   const [selectedDiameter, setSelectedDiameter] = useState<string>('all');
   const [onlyAR, setOnlyAR] = useState<boolean>(false);
@@ -127,7 +127,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
             <button
               onClick={() => {
                 setSelectedBrand('all');
-                setPriceRange(350000000);
+                setPriceRange(1000000000);
                 setSelectedMaterial('all');
                 setSelectedDiameter('all');
                 setOnlyAR(false);
@@ -165,7 +165,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
               <input
                 type="range"
                 min="5000000"
-                max="350000000"
+                max="1000000000"
                 step="5000000"
                 value={priceRange}
                 onChange={(e) => setPriceRange(Number(e.target.value))}
@@ -173,7 +173,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
               />
               <div className="flex justify-between text-[10px] text-gray-400 mt-1">
                 <span>5 Trđ</span>
-                <span>350 Trđ</span>
+                <span>1 Tỷ</span>
               </div>
             </div>
 
@@ -409,7 +409,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
               <button
                 onClick={() => {
                   setSelectedBrand('all');
-                  setPriceRange(350000000);
+                  setPriceRange(1000000000);
                   setSelectedMaterial('all');
                   setSelectedDiameter('all');
                   setOnlyAR(false);

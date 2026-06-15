@@ -3,6 +3,7 @@ package com.truewrist.backend.dto;
 import com.truewrist.backend.domain.ArReviewStatus;
 import com.truewrist.backend.domain.ListingStatus;
 import com.truewrist.backend.domain.Watch;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -63,8 +64,8 @@ public final class WatchDtos {
     public record WatchRequest(
             @NotBlank String name,
             @NotBlank String brand,
-            @PositiveOrZero long price,
-            Long originalPrice,
+            @PositiveOrZero @Max(value = 1_000_000_000, message = "Giá bán không được vượt quá 1 tỷ VND.") long price,
+            @Max(value = 1_000_000_000, message = "Giá niêm yết không được vượt quá 1 tỷ VND.") Long originalPrice,
             String description,
             Map<String, String> specs,
             @NotBlank String image,

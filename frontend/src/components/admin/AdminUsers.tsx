@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 're
 import {
   Lock, ShieldCheck, Store, Unlock, User as UserIcon, Eye, Search,
   X, Calendar, Building2, Globe, Check, Mail, Hash, MoreVertical, Phone,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
+
+const USERS_PER_PAGE = 10;
 import { userApi, ApiError } from '../../api';
 import type { User } from '../../api';
 import { useSession } from '../../auth/session';
@@ -99,6 +102,17 @@ export default function AdminUsers() {
       return true;
     });
   }, [users, search, roleFilter, statusFilter]);
+
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / USERS_PER_PAGE));
+  // Reset về trang 1 khi bộ lọc/tìm kiếm thay đổi.
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter]);
+  // Giữ trang hợp lệ khi danh sách rút ngắn (ví dụ sau khi khóa/xóa).
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE),
+    [filtered, page],
+  );
 
   const counts = useMemo(() => ({
     total: users.length,
@@ -295,7 +309,7 @@ export default function AdminUsers() {
                   {users.length === 0 ? 'Chưa có người dùng nào.' : 'Không tìm thấy tài khoản phù hợp.'}
                 </td></tr>
               )}
-              {!loading && !error && filtered.map((u) => {
+              {!loading && !error && paged.map((u) => {
                 const isActive = u.status !== 'locked';
                 const isSelf = u.id === currentUser?.id;
                 return (
@@ -357,6 +371,32 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
+
+        {!loading && !error && filtered.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+            <p className="text-[11px] text-gray-400 font-semibold">
+              Trang <span className="text-[#17140F] font-bold">{page}</span> / {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                aria-label="Trang trước"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#17140F] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                aria-label="Trang sau"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-[#17140F] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Unified row actions menu (fixed): view + role + lock/unlock */}

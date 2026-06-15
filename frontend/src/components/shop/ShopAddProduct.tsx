@@ -22,6 +22,7 @@ const WATCH_BRANDS = [
 const OTHER_BRAND_VALUE = '__other__';
 const CUSTOM_BRANDS_STORAGE_KEY = 'tw_custom_watch_brands';
 const MAX_PRODUCT_IMAGES = 10;
+const MAX_WATCH_PRICE = 1_000_000_000; // Giá đồng hồ tối đa: 1 tỷ VND
 
 type ProductField = 'shopId' | 'name' | 'brand' | 'image' | 'price' | 'originalPrice' | 'model';
 type ProductErrors = Partial<Record<ProductField, string>>;
@@ -374,8 +375,11 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
       nextErrors.image = `Mỗi sản phẩm chỉ được có tối đa ${MAX_PRODUCT_IMAGES} ảnh.`;
     }
     if (!Number.isFinite(price) || price <= 0) nextErrors.price = 'Giá bán phải lớn hơn 0.';
+    else if (price > MAX_WATCH_PRICE) nextErrors.price = 'Giá bán không được vượt quá 1 tỷ VND.';
     if (!Number.isFinite(originalPrice) || originalPrice < 0) {
       nextErrors.originalPrice = 'Giá niêm yết không được là số âm.';
+    } else if (originalPrice > MAX_WATCH_PRICE) {
+      nextErrors.originalPrice = 'Giá niêm yết không được vượt quá 1 tỷ VND.';
     } else if (originalPrice > 0 && originalPrice < price) {
       nextErrors.originalPrice = 'Giá niêm yết phải lớn hơn hoặc bằng giá bán.';
     }
