@@ -10,7 +10,12 @@ export default function ShopAnalytics() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.shopId) return;
+    if (!user?.shopId) {
+      setWatches([]);
+      setLeads([]);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     Promise.all([watchApi.list(user.shopId), leadApi.list()])
