@@ -13,9 +13,6 @@ import {
   Pencil,
   Trash2,
   X,
-  CalendarClock,
-  ArrowRightLeft,
-  Ban,
   Building2,
   Mail,
   type LucideIcon,
@@ -23,7 +20,6 @@ import {
 import { subscriptionApi, ApiError } from '../../api';
 import type { AdminPlanOverview, AdminSubscriberRow, PlanInput } from '../../api';
 import { toast } from '../../store/useToast';
-import { Dropdown } from '../ui/Dropdown';
 
 const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
@@ -75,7 +71,6 @@ export default function AdminPlans() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [planModal, setPlanModal] = useState<PlanModalState | null>(null);
-  const [subRow, setSubRow] = useState<AdminSubscriberRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -347,7 +342,6 @@ export default function AdminPlans() {
                   <th className="py-3 px-4 text-center">Trạng thái</th>
                   <th className="py-3 px-4 text-right">Ngày hết hạn</th>
                   <th className="py-3 px-4 text-center">Còn lại</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -378,15 +372,6 @@ export default function AdminPlans() {
                     </td>
                     <td className="py-3.5 px-4 text-right text-gray-500">{formatDate(s.expiresAt)}</td>
                     <td className="py-3.5 px-4 text-center font-semibold text-gray-700">{s.daysRemaining} ngày</td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => setSubRow(s)}
-                        disabled={busyId === s.userId}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e5e0d8] px-3 py-1.5 text-[11px] font-bold text-[#17140F] hover:border-[#B8924A] hover:text-[#9A7434] disabled:opacity-40"
-                      >
-                        <ArrowRightLeft className="h-3.5 w-3.5" /> Quản lý
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -410,17 +395,6 @@ export default function AdminPlans() {
         />
       )}
 
-      {subRow && (
-        <SubscriberModal
-          row={subRow}
-          plans={plans}
-          onClose={() => setSubRow(null)}
-          onDone={async () => {
-            setSubRow(null);
-            await loadData();
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -591,126 +565,6 @@ function PlanFormModal({
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-// --- Subscriber management modal --------------------------------------------
-
-function SubscriberModal({
-  row,
-  plans,
-  onClose,
-  onDone,
-}: {
-  row: AdminSubscriberRow;
-  plans: AdminPlanOverview[];
-  onClose: () => void;
-  onDone: () => Promise<void>;
-}) {
-  const paidPlans = plans.filter((p) => p.price > 0);
-  const [planCode, setPlanCode] = useState(row.planCode);
-  const [days, setDays] = useState(30);
-  const [busy, setBusy] = useState(false);
-
-  const run = async (fn: () => Promise<void>, okMsg: string) => {
-    try {
-      setBusy(true);
-      await fn();
-      toast.success(okMsg);
-      await onDone();
-    } catch (err) {
-      toast.error(err instanceof ApiError ? err.message : 'Có lỗi xảy ra.');
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md overflow-hidden rounded-3xl border border-[#e5e0d8] bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[#e5e0d8] px-6 py-4">
-          <div>
-            <h3 className="font-display text-lg font-bold text-[#17140F]">Quản lý gói cửa hàng</h3>
-            <p className="text-[11px] text-gray-500">{row.userName} · {row.shopName || 'Chưa có cửa hàng'}</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Đóng" className="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="space-y-5 p-6">
-          {/* Change plan */}
-          <div>
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Đổi gói</p>
-            <div className="flex gap-2">
-              <Dropdown
-                value={planCode}
-                onChange={setPlanCode}
-                wrapperClassName="flex-1"
-                ariaLabel="Đổi gói"
-                className="rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] px-3 py-2 text-sm focus:border-[#B8924A] focus:bg-white focus:outline-none"
-                options={paidPlans.map((p) => ({
-                  value: p.code,
-                  label: `${p.name} — ${formatVND(p.price)} / ${p.durationDays} ngày`,
-                }))}
-              />
-              <button
-                type="button"
-                disabled={busy || planCode === row.planCode}
-                onClick={() => void run(() => subscriptionApi.adminChangePlan(row.userId, planCode), 'Đã đổi gói cho cửa hàng.')}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#17140F] px-3 py-2 text-xs font-bold text-white hover:bg-black disabled:opacity-40"
-              >
-                <ArrowRightLeft className="h-3.5 w-3.5" /> Đổi
-              </button>
-            </div>
-            <p className="mt-1 text-[10px] text-gray-400">Đổi gói sẽ đặt lại chu kỳ theo thời hạn của gói mới.</p>
-          </div>
-
-          {/* Extend */}
-          <div>
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Gia hạn thêm</p>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min={1}
-                  value={String(days)}
-                  onChange={(e) => setDays(Math.max(1, Number(e.target.value) || 0))}
-                  className="w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] px-3 py-2 text-sm focus:border-[#B8924A] focus:bg-white focus:outline-none"
-                />
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-gray-400">ngày</span>
-              </div>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void run(() => subscriptionApi.adminExtend(row.userId, days), `Đã gia hạn thêm ${days} ngày.`)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[#B8924A] px-3 py-2 text-xs font-bold text-[#9A7434] hover:bg-[#B8924A]/10 disabled:opacity-40"
-              >
-                <CalendarClock className="h-3.5 w-3.5" /> Gia hạn
-              </button>
-            </div>
-            <p className="mt-1 text-[10px] text-gray-400">Hết hạn hiện tại: {formatDate(row.expiresAt)} ({row.daysRemaining} ngày còn lại).</p>
-          </div>
-
-          {/* Cancel */}
-          <div className="border-t border-[#e5e0d8] pt-4">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={async () => {
-                const ok = await toast.confirm(
-                  `Hủy gói trả phí của ${row.userName}? Cửa hàng sẽ mất quyền lợi gói ngay lập tức.`,
-                  { title: 'Hủy gói?', confirmText: 'Hủy gói', danger: true },
-                );
-                if (ok) void run(() => subscriptionApi.adminCancel(row.userId), 'Đã hủy gói của cửa hàng.');
-              }}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-red-200 px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-40"
-            >
-              <Ban className="h-4 w-4" /> Hủy gói trả phí
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
