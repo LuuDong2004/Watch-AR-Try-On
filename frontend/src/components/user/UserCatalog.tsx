@@ -3,6 +3,7 @@ import { Sparkles, Search, Star, ArrowLeft, ArrowRight } from 'lucide-react';
 import { shopApi, watchApi } from '../../api';
 import type { Watch } from '../../api';
 import { publicWatches, canTryAr } from '../../utils/publicListings';
+import { Dropdown } from '../ui/Dropdown';
 
 interface UserCatalogProps {
   onSelectWatch: (id: string) => void;
@@ -83,7 +84,8 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
       if (sortBy === 'price-asc') return a.price - b.price;
       if (sortBy === 'price-desc') return b.price - a.price;
       if (sortBy === 'rating') return (b.rating ?? 0) - (a.rating ?? 0);
-      return 0; // default / featured
+      // default / featured — AR Try-On models surface first, 2D after
+      return Number(canTryAr(b)) - Number(canTryAr(a));
     });
 
   // Reset to first page whenever the result set changes
@@ -144,16 +146,16 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
             {/* Brand Filter */}
             <div>
               <label className="text-xs uppercase tracking-wider text-gray-400 font-bold block mb-2">Thương Hiệu</label>
-              <select
+              <Dropdown
                 value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
-              >
-                <option value="all">Tất cả thương hiệu</option>
-                {brands.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
+                onChange={setSelectedBrand}
+                ariaLabel="Thương hiệu"
+                className="rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#B8924A]"
+                options={[
+                  { value: 'all', label: 'Tất cả thương hiệu' },
+                  ...brands.map((b) => ({ value: b, label: b })),
+                ]}
+              />
             </div>
 
             {/* Price Slider */}
@@ -262,16 +264,21 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
             </div>
             <div className="flex items-center gap-2">
               <span className="text-gray-400">Sắp xếp:</span>
-              <select
+              <Dropdown
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#F6F4EF] rounded-lg border border-[#e5e0d8] p-1.5 text-xs font-semibold focus:outline-none"
-              >
-                <option value="featured">Nổi bật / Mới nhất</option>
-                <option value="price-asc">Giá: Thấp đến Cao</option>
-                <option value="price-desc">Giá: Cao đến Thấp</option>
-                <option value="rating">Đánh giá cao nhất</option>
-              </select>
+                onChange={setSortBy}
+                fullWidth={false}
+                align="right"
+                ariaLabel="Sắp xếp"
+                className="bg-[#F6F4EF] rounded-lg border border-[#e5e0d8] px-3 py-1.5 text-xs font-semibold focus:outline-none"
+                panelClassName="min-w-[12rem]"
+                options={[
+                  { value: 'featured', label: 'Nổi bật / Mới nhất' },
+                  { value: 'price-asc', label: 'Giá: Thấp đến Cao' },
+                  { value: 'price-desc', label: 'Giá: Cao đến Thấp' },
+                  { value: 'rating', label: 'Đánh giá cao nhất' },
+                ]}
+              />
             </div>
           </div>
 
@@ -290,7 +297,7 @@ export default function UserCatalog({ onSelectWatch, onOpenAR, initialBrand }: U
                   onClick={() => onSelectWatch(w.id)}
                 >
                   {/* Product Photo */}
-                  <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-72 overflow-hidden border-b border-[#e5e0d8]">
+                  <div className="relative bg-gradient-to-br from-[#f3efe7] to-[#e9e3d8] h-56 overflow-hidden border-b border-[#e5e0d8]">
                     <img
                       src={w.image}
                       alt={w.name}

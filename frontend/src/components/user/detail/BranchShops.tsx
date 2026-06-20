@@ -68,7 +68,7 @@ export default function BranchShops({ brand, branches, onSelect }: BranchShopsPr
           <button
             key={shop.id}
             onClick={() => onSelect(shop.id)}
-            className="group flex w-[300px] max-w-[85vw] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:border-champagne/40 hover:shadow-luxe-lg"
+            className="group flex w-[300px] max-w-[85vw] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:border-champagne/40 hover:shadow-luxe-lg"
           >
             <div className="relative h-40 overflow-hidden bg-cream">
               {thumb ? (

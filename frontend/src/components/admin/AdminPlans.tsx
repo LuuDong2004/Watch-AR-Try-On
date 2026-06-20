@@ -23,6 +23,7 @@ import {
 import { subscriptionApi, ApiError } from '../../api';
 import type { AdminPlanOverview, AdminSubscriberRow, PlanInput } from '../../api';
 import { toast } from '../../store/useToast';
+import { Dropdown } from '../ui/Dropdown';
 
 const formatVND = (n: number) =>
   new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(n) + ' vnđ';
@@ -642,17 +643,17 @@ function SubscriberModal({
           <div>
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Đổi gói</p>
             <div className="flex gap-2">
-              <select
+              <Dropdown
                 value={planCode}
-                onChange={(e) => setPlanCode(e.target.value)}
-                className="flex-1 rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] px-3 py-2 text-sm focus:border-[#B8924A] focus:bg-white focus:outline-none"
-              >
-                {paidPlans.map((p) => (
-                  <option key={p.code} value={p.code}>
-                    {p.name} — {formatVND(p.price)} / {p.durationDays} ngày
-                  </option>
-                ))}
-              </select>
+                onChange={setPlanCode}
+                wrapperClassName="flex-1"
+                ariaLabel="Đổi gói"
+                className="rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] px-3 py-2 text-sm focus:border-[#B8924A] focus:bg-white focus:outline-none"
+                options={paidPlans.map((p) => ({
+                  value: p.code,
+                  label: `${p.name} — ${formatVND(p.price)} / ${p.durationDays} ngày`,
+                }))}
+              />
               <button
                 type="button"
                 disabled={busy || planCode === row.planCode}

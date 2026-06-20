@@ -274,7 +274,7 @@ export default function ShopPlanManagement() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_430px]">
-          <article className="relative overflow-hidden rounded-[2rem] bg-[#17140F] p-6 text-white shadow-luxe md:p-8">
+          <article className="relative overflow-hidden rounded-3xl bg-[#17140F] p-6 text-white shadow-luxe md:p-8">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[#B8924A]/25 blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
 
@@ -352,7 +352,7 @@ export default function ShopPlanManagement() {
             </div>
           </article>
 
-          <aside className="rounded-[2rem] border border-[#ded7ca] bg-white p-6 shadow-sm">
+          <aside className="rounded-3xl border border-[#ded7ca] bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9A7434]">Quota sử dụng</p>
@@ -474,7 +474,7 @@ export default function ShopPlanManagement() {
               return (
                 <article
                   key={plan.code}
-                  className={`relative flex min-h-full flex-col overflow-hidden rounded-[2rem] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-luxe ${
+                  className={`relative flex min-h-full flex-col overflow-hidden rounded-3xl bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-luxe ${
                     isCurrent
                       ? 'border-2 border-emerald-500 ring-2 ring-emerald-500/15'
                       : plan.recommended

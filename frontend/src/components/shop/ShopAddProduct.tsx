@@ -6,6 +6,7 @@ import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 import { IMAGE_FILE_ACCEPT, MAX_IMAGE_BYTES, validateImageFile } from '../../utils/uploads';
 import ImageAdjustModal from './ImageAdjustModal';
+import { Dropdown } from '../ui/Dropdown';
 
 const WATCH_BRANDS = [
   'Rolex',
@@ -508,10 +509,12 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
             {/* Brand */}
             <div>
               <label className="block text-gray-500 font-bold mb-1">Hãng sản xuất / Thương hiệu *</label>
-              <select
+              <Dropdown
                 value={usesCustomBrand ? OTHER_BRAND_VALUE : form.brand}
-                onChange={(e) => {
-                  if (e.target.value === OTHER_BRAND_VALUE) {
+                placeholder="Chọn hãng / thương hiệu"
+                ariaLabel="Hãng sản xuất / Thương hiệu"
+                onChange={(v) => {
+                  if (v === OTHER_BRAND_VALUE) {
                     setUsesCustomBrand(true);
                     setCustomBrandDraft('');
                     setForm({ ...form, brand: '' });
@@ -519,26 +522,16 @@ export default function ShopAddProduct({ editWatchId, shopId, onSuccess, onCance
                   }
                   setUsesCustomBrand(false);
                   setCustomBrandDraft('');
-                  setForm({ ...form, brand: e.target.value });
+                  setForm({ ...form, brand: v });
                   clearError('brand');
                 }}
                 className={fieldClass('brand', 'bg-white')}
-              >
-                <option value="" disabled>Chọn hãng / thương hiệu</option>
-                <optgroup label="Thương hiệu phổ biến">
-                  {WATCH_BRANDS.map((brand) => (
-                    <option key={brand} value={brand}>{brand}</option>
-                  ))}
-                </optgroup>
-                {customBrands.length > 0 && (
-                  <optgroup label="Thương hiệu đã thêm">
-                    {customBrands.map((brand) => (
-                      <option key={brand} value={brand}>{brand}</option>
-                    ))}
-                  </optgroup>
-                )}
-                <option value={OTHER_BRAND_VALUE}>+ Thêm thương hiệu khác</option>
-              </select>
+                options={[
+                  ...WATCH_BRANDS.map((brand) => ({ value: brand, label: brand })),
+                  ...customBrands.map((brand) => ({ value: brand, label: brand })),
+                  { value: OTHER_BRAND_VALUE, label: '+ Thêm thương hiệu khác' },
+                ]}
+              />
               {usesCustomBrand && (
                 <div className="mt-2 flex gap-2">
                   <input

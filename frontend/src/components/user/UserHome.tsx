@@ -122,7 +122,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate, onSelect
 
       {/* ============== DESIGN STUDIO — UPLOAD YOUR OWN (COMING SOON) ============== */}
       <section className="max-w-6xl mx-auto px-4 py-16 md:py-20">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17140F] text-white shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#17140F] text-white shadow-2xl">
           {/* ambient glow */}
           <div className="absolute inset-0 opacity-[0.10] bg-[radial-gradient(circle_at_78%_25%,#B8924A,transparent_55%)]" />
           <div className="absolute -top-px left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#B8924A]/60 to-transparent" />

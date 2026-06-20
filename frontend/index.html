@@ -24,6 +24,20 @@
               navy: '#17140F',
               cream: '#F6F4EF',
             },
+            // Unified modern radius scale — one source of truth for the whole app.
+            // Every `rounded-*` utility resolves here, so corners stay soft and
+            // consistent (min 8px, no dated 2–4px edges). Tweak here to reskin all.
+            borderRadius: {
+              none: '0px',
+              sm: '0.5rem',     // 8px  — chips, tags, tiny controls
+              DEFAULT: '0.625rem', // 10px — was a sharp 4px
+              md: '0.75rem',    // 12px — inputs, selects, small buttons
+              lg: '0.875rem',   // 14px
+              xl: '1rem',       // 16px — primary buttons, list rows
+              '2xl': '1.25rem', // 20px — cards, panels
+              '3xl': '1.75rem', // 28px — hero sections, large surfaces
+              full: '9999px',
+            },
             // Map every font utility onto the Vietnamese-capable webfonts we load.
             // The default `serif` stack (Georgia/Times) mis-stacks Vietnamese tone
             // marks (e.g. "đồ̀", "trố́ng"), so point it at Plus Jakarta Sans/Inter.

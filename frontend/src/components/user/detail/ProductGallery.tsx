@@ -88,7 +88,7 @@ export default function ProductGallery({ watch }: ProductGalleryProps) {
       </div>
 
       <div className="relative flex-1">
-        <div className="relative aspect-square w-full overflow-hidden rounded-[20px] border border-[#e9e3d8] bg-white shadow-luxe-sm">
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-[#e9e3d8] bg-white shadow-luxe-sm">
           {active === 'live3d' && has3D ? (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#f6f4ef] to-[#ece6da]">
               <Watch3DViewer modelUrl={watch.model} variant={watch.variant} height={520} />

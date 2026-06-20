@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from '../../store/useToast';
+import { Dropdown } from '../ui/Dropdown';
 
 export default function AdminSettings() {
   const [platformName, setPlatformName] = useState('TrueWrist AR Watch Studio');
@@ -32,15 +33,17 @@ export default function AdminSettings() {
 
           <div>
             <label className="block text-gray-500 font-bold mb-1">Đơn vị tiền tệ hiển thị</label>
-            <select
+            <Dropdown
               value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="w-full rounded-lg border border-[#e5e0d8] bg-white p-2.5 focus:outline-none"
-            >
-              <option value="VND">VND (Việt Nam Đồng)</option>
-              <option value="USD">USD (Đô la Mỹ)</option>
-              <option value="EUR">EUR (Euro)</option>
-            </select>
+              onChange={setCurrency}
+              ariaLabel="Đơn vị tiền tệ"
+              className="rounded-lg border border-[#e5e0d8] bg-white p-2.5 focus:outline-none"
+              options={[
+                { value: 'VND', label: 'VND (Việt Nam Đồng)' },
+                { value: 'USD', label: 'USD (Đô la Mỹ)' },
+                { value: 'EUR', label: 'EUR (Euro)' },
+              ]}
+            />
           </div>
 
           <div>

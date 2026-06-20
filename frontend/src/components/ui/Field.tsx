@@ -1,4 +1,5 @@
 import React from 'react';
+import { Dropdown, type DropdownOption } from './Dropdown';
 
 /**
  * Shared form primitives for a consistent, accessible look across the app.
@@ -48,20 +49,49 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 );
 TextArea.displayName = 'TextArea';
 
-export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ className = '', children, ...props }, ref) => (
-    <select ref={ref} {...props} className={`${inputBase} pr-9 appearance-none bg-no-repeat cursor-pointer ${className}`}
-      style={{
-        backgroundImage:
-          "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23B8924A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\")",
-        backgroundPosition: 'right 0.85rem center',
-        ...(props.style || {}),
-      }}
-    >
-      {children}
-    </select>
-  )
-);
+/** Flatten <option> children (incl. fragments / arrays / conditionals) to options. */
+function optionsFromChildren(children: React.ReactNode): DropdownOption[] {
+  const out: DropdownOption[] = [];
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    if (child.type === React.Fragment) {
+      out.push(...optionsFromChildren(child.props.children));
+      return;
+    }
+    if (child.type === 'option') {
+      const label = child.props.children;
+      out.push({
+        value: String(child.props.value ?? ''),
+        label,
+        text: typeof label === 'string' ? label : undefined,
+        disabled: child.props.disabled,
+      });
+    }
+  });
+  return out;
+}
+
+type FieldSelectProps = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> & {
+  onChange?: (e: { target: { value: string } }) => void;
+};
+
+/**
+ * Drop-in for a native <select> that renders the custom rounded {@link Dropdown}.
+ * Keeps the event-style `onChange(e => e.target.value)` API so existing call
+ * sites need no changes, while the popup list follows the app's rounded look.
+ */
+export function Select({ className = '', children, value, onChange, disabled }: FieldSelectProps) {
+  const options = optionsFromChildren(children);
+  return (
+    <Dropdown
+      value={value == null ? '' : String(value)}
+      onChange={(v) => onChange?.({ target: { value: v } })}
+      options={options}
+      disabled={disabled}
+      className={`${inputBase} cursor-pointer ${className}`}
+    />
+  );
+}
 Select.displayName = 'Select';
 
 /** A grouped section with an optional title — for breaking long forms into steps. */

@@ -1,12 +1,16 @@
 /** Shared, modern UI primitives for the storefront + dashboards (Tailwind). */
 import {
   ButtonHTMLAttributes,
+  Children,
+  Fragment,
   InputHTMLAttributes,
+  isValidElement,
   ReactNode,
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
   useEffect,
 } from 'react';
+import { Dropdown, type DropdownOption } from './Dropdown';
 
 /* --------------------------------------------------------------------- Button */
 
@@ -76,16 +80,43 @@ export function TextArea({ label, className = '', ...rest }: TextAreaProps) {
   );
 }
 
-interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
+function optionsFromChildren(children: ReactNode): DropdownOption[] {
+  const out: DropdownOption[] = [];
+  Children.forEach(children, (child) => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      out.push(...optionsFromChildren(child.props.children));
+      return;
+    }
+    if (child.type === 'option') {
+      const lbl = child.props.children;
+      out.push({
+        value: String(child.props.value ?? ''),
+        label: lbl,
+        text: typeof lbl === 'string' ? lbl : undefined,
+        disabled: child.props.disabled,
+      });
+    }
+  });
+  return out;
 }
-export function Select({ label, className = '', children, ...rest }: SelectProps) {
+
+interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+  label?: string;
+  onChange?: (e: { target: { value: string } }) => void;
+}
+/** Native-<select> drop-in backed by the custom rounded {@link Dropdown}. */
+export function Select({ label, className = '', children, value, onChange, disabled }: SelectProps) {
   return (
     <label className="block">
       <Label label={label} />
-      <select className={`${fieldBase} ${className}`} {...rest}>
-        {children}
-      </select>
+      <Dropdown
+        value={value == null ? '' : String(value)}
+        onChange={(v) => onChange?.({ target: { value: v } })}
+        options={optionsFromChildren(children)}
+        disabled={disabled}
+        className={`${fieldBase} cursor-pointer`}
+      />
     </label>
   );
 }

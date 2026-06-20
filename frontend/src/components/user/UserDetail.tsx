@@ -142,7 +142,43 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
 
         {/* SECTION 1 — Hero product (gallery 60% · summary 40%) */}
         <section className="grid items-start gap-10 lg:grid-cols-[1.5fr_1fr]">
-          <ProductGallery watch={watch} />
+          <div className="flex flex-col gap-3">
+            <ProductGallery watch={watch} />
+
+            {/* Secondary info — sits under the gallery to fill the empty space; opens as popups.
+                On md+ the gallery has a 64px thumbnail rail + 20px gap on the left, so offset
+                these buttons by 84px to line them up flush with the big image. */}
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 md:ml-[84px]">
+              <button
+                onClick={() => setInfo('specs')}
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-[#e9e3d8] bg-white px-5 py-4 text-left shadow-luxe-sm transition hover:-translate-y-0.5 hover:shadow-luxe"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-champagne/10 text-champagne"><ClipboardList className="h-5 w-5" /></span>
+                  <span>
+                    <span className="block font-display text-sm font-bold text-navy">Thông số kỹ thuật</span>
+                    <span className="block text-xs text-gray-500">Chi tiết chế tác & cấu hình</span>
+                  </span>
+                </span>
+                <span className="text-champagne transition group-hover:translate-x-0.5"><ArrowRight className="h-4 w-4" /></span>
+              </button>
+
+              <button
+                onClick={() => setInfo('story')}
+                className="group flex items-center justify-between gap-3 rounded-2xl border border-[#e9e3d8] bg-white px-5 py-4 text-left shadow-luxe-sm transition hover:-translate-y-0.5 hover:shadow-luxe"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-champagne/10 text-champagne"><BookOpen className="h-5 w-5" /></span>
+                  <span>
+                    <span className="block font-display text-sm font-bold text-navy">Câu chuyện sản phẩm</span>
+                    <span className="block text-xs text-gray-500">Di sản & nghệ thuật chế tác</span>
+                  </span>
+                </span>
+                <span className="text-champagne transition group-hover:translate-x-0.5"><ArrowRight className="h-4 w-4" /></span>
+              </button>
+            </div>
+          </div>
+
           <div className="lg:sticky lg:top-24">
             <ProductSummary
               watch={watch}
@@ -162,37 +198,6 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
             <BranchShops brand={watch.brand} branches={branches} onSelect={onSelectShop} />
           </section>
         )}
-
-        {/* Secondary info — opened as popups to keep the page compact */}
-        <div className="mt-12 grid gap-3 sm:grid-cols-2">
-          <button
-            onClick={() => setInfo('specs')}
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-[#e9e3d8] bg-white px-5 py-4 text-left shadow-luxe-sm transition hover:-translate-y-0.5 hover:shadow-luxe"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-champagne/10 text-champagne"><ClipboardList className="h-5 w-5" /></span>
-              <span>
-                <span className="block font-display text-sm font-bold text-navy">Thông số kỹ thuật</span>
-                <span className="block text-xs text-gray-500">Chi tiết chế tác & cấu hình</span>
-              </span>
-            </span>
-            <span className="text-champagne transition group-hover:translate-x-0.5"><ArrowRight className="h-4 w-4" /></span>
-          </button>
-
-          <button
-            onClick={() => setInfo('story')}
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-[#e9e3d8] bg-white px-5 py-4 text-left shadow-luxe-sm transition hover:-translate-y-0.5 hover:shadow-luxe"
-          >
-            <span className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-champagne/10 text-champagne"><BookOpen className="h-5 w-5" /></span>
-              <span>
-                <span className="block font-display text-sm font-bold text-navy">Câu chuyện sản phẩm</span>
-                <span className="block text-xs text-gray-500">Di sản & nghệ thuật chế tác</span>
-              </span>
-            </span>
-            <span className="text-champagne transition group-hover:translate-x-0.5"><ArrowRight className="h-4 w-4" /></span>
-          </button>
-        </div>
 
         {/* Similar watches carousel */}
         <section className="pt-16">

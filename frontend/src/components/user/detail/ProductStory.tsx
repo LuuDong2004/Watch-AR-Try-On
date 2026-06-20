@@ -15,7 +15,7 @@ export default function ProductStory({ watch }: ProductStoryProps) {
   const glass = watch.specs?.['Chất liệu kính'];
 
   return (
-    <div className="overflow-hidden rounded-[24px] border border-[#e9e3d8] bg-white shadow-luxe-sm">
+    <div className="overflow-hidden rounded-2xl border border-[#e9e3d8] bg-white shadow-luxe-sm">
       <div className="grid items-stretch lg:grid-cols-2">
         {/* Editorial copy */}
         <div className="flex flex-col justify-center p-8 md:p-12">

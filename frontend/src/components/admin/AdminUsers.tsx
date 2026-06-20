@@ -10,6 +10,7 @@ import { userApi, ApiError } from '../../api';
 import type { User } from '../../api';
 import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
+import { Dropdown } from '../ui/Dropdown';
 
 const ROLE_LABELS: Record<User['role'], string> = {
   customer: 'Khách hàng',
@@ -265,15 +266,19 @@ export default function AdminUsers() {
           </div>
 
           {/* Status filter */}
-          <select
+          <Dropdown
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+            onChange={(v) => setStatusFilter(v as StatusFilter)}
+            fullWidth={false}
+            ariaLabel="Lọc trạng thái"
             className="py-2.5 px-3 rounded-xl border border-[#e5e0d8] bg-white text-xs font-semibold text-gray-600 focus:outline-none focus:border-[#B8924A] cursor-pointer"
-          >
-            <option value="all">Mọi trạng thái</option>
-            <option value="active">Đang hoạt động</option>
-            <option value="locked">Đã khóa ({counts.locked})</option>
-          </select>
+            panelClassName="min-w-[12rem]"
+            options={[
+              { value: 'all', label: 'Mọi trạng thái' },
+              { value: 'active', label: 'Đang hoạt động' },
+              { value: 'locked', label: `Đã khóa (${counts.locked})` },
+            ]}
+          />
         </div>
       </section>
 

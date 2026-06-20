@@ -112,7 +112,7 @@ export default function CustomerReviews({ watch, shop }: CustomerReviewsProps) {
   };
 
   return (
-    <div className="rounded-[24px] border border-[#e9e3d8] bg-white p-6 shadow-luxe-sm md:p-8">
+    <div className="rounded-2xl border border-[#e9e3d8] bg-white p-6 shadow-luxe-sm md:p-8">
       <div className="mb-5 flex items-center gap-2 text-sm font-bold text-navy">
         <MessageCircle className="h-4 w-4 text-champagne" />
         {total} bình luận

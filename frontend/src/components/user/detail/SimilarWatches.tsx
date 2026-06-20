@@ -49,7 +49,7 @@ export default function SimilarWatches({ watches, onSelect }: SimilarWatchesProp
           <button
             key={w.id}
             onClick={() => onSelect(w.id)}
-            className="group flex w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-luxe-lg"
+            className="group flex w-[260px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-[#e9e3d8] bg-white text-left shadow-luxe-sm transition duration-300 hover:-translate-y-1.5 hover:shadow-luxe-lg"
           >
             <div className="relative h-52 overflow-hidden">
               <img

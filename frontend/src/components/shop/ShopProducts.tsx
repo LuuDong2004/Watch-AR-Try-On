@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -22,6 +21,7 @@ import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 import ShopAddProduct from './ShopAddProduct';
 import ShopProductDetail from './ShopProductDetail';
+import { Dropdown } from '../ui/Dropdown';
 
 type ProductView =
   | { kind: 'list' }
@@ -256,22 +256,22 @@ export default function ShopProducts() {
         <div className="border-b border-[#e9e4dc] px-4 py-3.5 md:px-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="relative w-full sm:w-64">
-                <Store className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#B8924A]" />
-                <select
+              <div className="w-full sm:w-64">
+                <Dropdown
                   value={selectedShopId}
-                  onChange={(event) => handleShopChange(event.target.value)}
-                  aria-label="Chọn cửa hàng"
-                  className="w-full appearance-none rounded-lg border border-[#ddd7ce] bg-white py-2.5 pl-9 pr-9 text-xs font-bold outline-none transition focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/15"
-                >
-                  {myShops.length === 0 && <option value="">Chưa có cửa hàng</option>}
-                  {myShops.map((shop) => (
-                    <option key={shop.id} value={shop.id}>
-                      {shop.name}{shop.id === user?.shopId ? ' (chính)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  onChange={handleShopChange}
+                  ariaLabel="Chọn cửa hàng"
+                  leadingIcon={<Store className="h-4 w-4 text-[#B8924A]" />}
+                  className="rounded-lg border border-[#ddd7ce] bg-white px-3 py-2.5 text-xs font-bold outline-none transition focus:border-[#B8924A] focus:ring-2 focus:ring-[#B8924A]/15"
+                  options={
+                    myShops.length === 0
+                      ? [{ value: '', label: 'Chưa có cửa hàng' }]
+                      : myShops.map((shop) => ({
+                          value: shop.id,
+                          label: `${shop.name}${shop.id === user?.shopId ? ' (chính)' : ''}`,
+                        }))
+                  }
+                />
               </div>
               <span className="whitespace-nowrap text-[11px] text-gray-400">
                 <strong className="text-gray-700">{watches.length}</strong> sản phẩm
@@ -300,16 +300,19 @@ export default function ShopProducts() {
                 )}
               </div>
 
-              <select
+              <Dropdown
                 value={filterStatus}
-                onChange={(event) => setFilterStatus(event.target.value as StatusFilter)}
-                aria-label="Lọc trạng thái"
+                onChange={(v) => setFilterStatus(v as StatusFilter)}
+                fullWidth={false}
+                ariaLabel="Lọc trạng thái"
                 className="rounded-lg border border-[#ddd7ce] bg-white px-3 py-2.5 text-xs font-semibold text-gray-600 outline-none transition focus:border-[#B8924A]"
-              >
-                <option value="all">Tất cả trạng thái</option>
-                <option value="active">Đang bán</option>
-                <option value="locked">Ngừng bán</option>
-              </select>
+                panelClassName="min-w-[11rem]"
+                options={[
+                  { value: 'all', label: 'Tất cả trạng thái' },
+                  { value: 'active', label: 'Đang bán' },
+                  { value: 'locked', label: 'Ngừng bán' },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -491,15 +494,16 @@ export default function ShopProducts() {
               </span>
               <label className="flex items-center gap-1.5">
                 Số dòng
-                <select
-                  value={pageSize}
-                  onChange={(event) => setPageSize(Number(event.target.value))}
+                <Dropdown
+                  value={String(pageSize)}
+                  onChange={(v) => setPageSize(Number(v))}
+                  fullWidth={false}
+                  align="right"
+                  ariaLabel="Số dòng mỗi trang"
                   className="rounded-md border border-[#ddd7ce] bg-white px-2 py-1 text-[11px] font-semibold outline-none"
-                >
-                  {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>{size}</option>
-                  ))}
-                </select>
+                  panelClassName="min-w-[5rem]"
+                  options={PAGE_SIZE_OPTIONS.map((size) => ({ value: String(size), label: String(size) }))}
+                />
               </label>
             </div>
 
