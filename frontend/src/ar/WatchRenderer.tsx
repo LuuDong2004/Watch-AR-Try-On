@@ -19,11 +19,22 @@ const WATCH_SCALE_FACTOR = 1.0;
 /** Seat the watch this many wrist-widths down the forearm. */
 const FOREARM_OFFSET = 0.25;
 /**
- * How strongly the watch follows the wrist's real roll (0..1). A high value lets
- * the user inspect the watch at a tilted/side angle; the remaining weight on the
- * camera-facing reference keeps it readable and damps MediaPipe depth noise.
+ * How strongly the watch follows the wrist's real roll (0..1). At 1 the watch is
+ * fully glued to the hand plane, so rolling the wrist reveals the side and the
+ * caseback. Lower it toward 0 if depth noise makes the orientation feel shaky.
  */
-const TILT_STRENGTH = 0.7;
+const TILT_STRENGTH = 1.0;
+
+/* ----------------------------------------------------- Tracking-quality gate */
+
+/** Minimum detection score below which the frame is treated as untrusted. */
+const MIN_TRACK_SCORE = 0.5;
+/** Consecutive trustworthy frames required before the watch appears. */
+const SHOW_AFTER_GOOD = 3;
+/** Consecutive bad frames tolerated (pose held) before the watch is hidden. */
+const HIDE_AFTER_BAD = 5;
+/** Reject a frame whose position teleports more than this × wrist width. */
+const MAX_POSE_JUMP = 1.6;
 
 /* ------------------------------------------------------------------ GLB load */
 
@@ -154,7 +165,10 @@ export function WatchRenderer() {
   const scaleSmoother = useMemo(() => new ScalarSmoother(0.15), []);
 
   const lastT = useRef(performance.now());
-  const wasVisible = useRef(false);
+  const shown = useRef(false);
+  const goodStreak = useRef(0);
+  const badStreak = useRef(0);
+  const lastPos = useMemo(() => new Vector3(), []);
 
   useFrame(({ camera }) => {
     const group = groupRef.current;
@@ -172,13 +186,42 @@ export function WatchRenderer() {
       pose,
     );
 
-    if (ok && pose.valid) {
-      if (!wasVisible.current) {
-        // Re-acquire: snap smoothers to avoid a long lerp from a stale pose.
-        posSmoother.reset();
-        quatSmoother.reset();
-        scaleSmoother.reset();
-      }
+    // Only trust a frame when the solve succeeded, the detection score clears the
+    // bar, the numbers are finite and (while already shown) the pose didn't
+    // teleport. Everything else is a misdetection we must NOT render.
+    let good =
+      ok &&
+      pose.valid &&
+      frame.score >= MIN_TRACK_SCORE &&
+      Number.isFinite(pose.position.x) &&
+      Number.isFinite(pose.position.y) &&
+      Number.isFinite(pose.scale) &&
+      pose.scale > 1e-4;
+    if (good && shown.current && pose.position.distanceTo(lastPos) > MAX_POSE_JUMP * pose.scale) {
+      good = false; // sudden teleport → glitch frame
+    }
+
+    if (good) {
+      goodStreak.current++;
+      badStreak.current = 0;
+    } else {
+      badStreak.current++;
+      goodStreak.current = 0;
+    }
+
+    // Hysteresis: appear only after a few solid frames; disappear only after a
+    // short bad run. Kills flicker and the "giật giật" on shaky detections.
+    if (!shown.current && goodStreak.current >= SHOW_AFTER_GOOD) {
+      shown.current = true;
+      // Snap smoothers so the watch doesn't lerp in from a stale pose.
+      posSmoother.reset();
+      quatSmoother.reset();
+      scaleSmoother.reset();
+    } else if (shown.current && badStreak.current >= HIDE_AFTER_BAD) {
+      shown.current = false;
+    }
+
+    if (shown.current && good) {
       const sp = posSmoother.update(pose.position, dt);
       const sq = quatSmoother.update(pose.quaternion, dt);
       const ss = scaleSmoother.update(pose.scale, dt);
@@ -187,10 +230,13 @@ export function WatchRenderer() {
       group.quaternion.copy(sq);
       group.scale.setScalar(ss * config.scale * WATCH_SCALE_FACTOR * scaleAdjust);
       group.visible = true;
-      wasVisible.current = true;
+      lastPos.copy(pose.position);
+    } else if (shown.current) {
+      // Within the hide grace period on a bad frame — hold the last good pose
+      // (no update) so the watch stays put instead of jittering.
+      group.visible = true;
     } else {
       group.visible = false;
-      wasVisible.current = false;
     }
   });
 

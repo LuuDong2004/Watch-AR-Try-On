@@ -138,26 +138,32 @@ export class WristAnchor {
     this.camUp.normalize();
 
     // Real back-of-hand normal from the live hand plane. The across-wrist vector
-    // (index↔pinky knuckles) crossed with the forearm gives the surface the
-    // watch sits on; this is what makes the dial TILT when the wrist rolls to a
-    // side/angled view instead of staying flat to the camera.
+    // (index↔pinky knuckles) crossed with the forearm points out of the back of
+    // the hand. Crucially its sign flips ON ITS OWN as the wrist rolls, so the
+    // watch shows its DIAL, EDGE or CASEBACK to match the real hand rotation —
+    // rather than being forced to always face the camera.
     this.across.copy(this.pinkyV).sub(this.indexV);
     this.across.addScaledVector(this.zAxis, -this.across.dot(this.zAxis)); // ⟂ forearm
     if (this.across.lengthSq() > 1e-6) {
       this.across.normalize();
-      this.normal.copy(this.zAxis).cross(this.across).normalize();
-      if (this.normal.z < 0) this.normal.negate(); // keep the dial toward camera
-      // Blend the stable camera-facing up with the real wrist normal. This is
-      // continuous (no snapping) and lets the user inspect the watch at an angle
-      // while heavy depth noise stays damped by the partial weight.
+      this.normal.copy(this.across).cross(this.zAxis).normalize();
+      // Base convention: orient the normal out of the BACK of the hand (where the
+      // watch is worn) using handedness + mirroring. From here the geometry alone
+      // decides which face shows; flipDial corrects any residual global swap.
+      let sign = frame.handedness === 'Left' ? -1 : 1;
+      if (mirrored) sign = -sign;
+      this.normal.multiplyScalar(sign);
+      // tiltStrength blends toward the stable camera-up reference:
+      //   0 → dial always flat to camera; 1 → fully follow the wrist roll
+      //   (lets the user see the side and underside of the watch).
       const t = Math.max(0, Math.min(1, tiltStrength));
       this.yAxis.copy(this.camUp).multiplyScalar(1 - t).addScaledVector(this.normal, t);
-      if (this.yAxis.lengthSq() < 1e-6) this.yAxis.copy(this.camUp);
+      if (this.yAxis.lengthSq() < 1e-6) this.yAxis.copy(this.normal);
       this.yAxis.normalize();
     } else {
       this.yAxis.copy(this.camUp);
     }
-    if (flipDial) this.yAxis.negate(); // show the caseback / underside instead
+    if (flipDial) this.yAxis.negate(); // manual dial/caseback swap if inverted
 
     // Across-wrist axis completes a right-handed basis: x = y × z.
     this.xAxis.copy(this.yAxis).cross(this.zAxis).normalize();
