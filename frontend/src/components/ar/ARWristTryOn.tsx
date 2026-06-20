@@ -62,7 +62,7 @@ function TopControls({ watchName, onClose }: { watchName?: string; onClose?: () 
       <div className="pointer-events-auto flex items-center gap-2">
         <CloseButton onClose={onClose} />
         <div className="leading-tight">
-          <p className="text-[9px] uppercase tracking-[0.2em] text-[#B8924A] font-bold">AR TRY-ON · LUXURY</p>
+          <p className="text-[9px] uppercase tracking-[0.2em] text-[#B8924A] font-bold">ĐEO THỬ AR · CAO CẤP</p>
           {watchName && <p className="text-xs font-semibold text-white/95 truncate max-w-[150px]">{watchName}</p>}
         </div>
         {debug && (
@@ -74,7 +74,7 @@ function TopControls({ watchName, onClose }: { watchName?: string; onClose?: () 
       <div className="pointer-events-auto flex gap-2">
         <button
           onClick={toggleCamera}
-          aria-label="Flip camera"
+          aria-label="Đổi camera trước/sau"
           className="glass flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition active:scale-95 hover:bg-white/20"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
@@ -85,7 +85,7 @@ function TopControls({ watchName, onClose }: { watchName?: string; onClose?: () 
         </button>
         <button
           onClick={toggleDebug}
-          aria-label="Toggle debug overlay"
+          aria-label="Bật/tắt lớp gỡ lỗi"
           className={`glass flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95 hover:bg-white/20 ${
             debug ? 'text-yellow-400' : 'text-white/60'
           }`}
@@ -323,7 +323,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
           <button
             onClick={handleCapture}
             disabled={busy}
-            aria-label="Capture photo"
+            aria-label="Chụp ảnh"
             className="pointer-events-auto absolute bottom-32 left-1/2 z-30 flex h-[68px] w-[68px] -translate-x-1/2 items-center justify-center rounded-full ring-2 ring-white/70 backdrop-blur-sm transition active:scale-95 hover:ring-white"
           >
             <span
@@ -348,7 +348,7 @@ export default function ARWristTryOn({ watchName: initialWatchName, watchId, onC
           <div className="flex justify-between items-center border-b border-white/10 pb-3">
             <div>
               <h3 className="font-serif text-lg font-bold text-[#F6F4EF]">Tác phẩm đeo thử AR</h3>
-              <p className="text-[10px] text-[#B8924A] font-bold uppercase tracking-wider">Review photo Try-on</p>
+              <p className="text-[10px] text-[#B8924A] font-bold uppercase tracking-wider">Xem lại ảnh đeo thử</p>
             </div>
             <button
               onClick={handleResetCapture}

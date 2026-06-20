@@ -43,12 +43,25 @@ export interface AnchorOptions {
   forearmOffset: number;
   /** Flip the dial to the other side of the wrist (corrects the sign if needed). */
   flipDial: boolean;
+  /**
+   * How strongly the watch follows the wrist's real roll (0..1).
+   *   0 → dial always flat to the camera (old behaviour);
+   *   1 → dial fully glued to the back-of-hand plane, so tilting the wrist to a
+   *       side/angled view tilts the watch with it.
+   * A mid value keeps the angled view while damping noisy depth.
+   */
+  tiltStrength: number;
 }
 
 export class WristAnchor {
   // Scratch objects — reused every frame to avoid per-frame allocations.
   private readonly w3 = new Vector3();
   private readonly m3 = new Vector3();
+  private readonly indexV = new Vector3();
+  private readonly pinkyV = new Vector3();
+  private readonly across = new Vector3();
+  private readonly camUp = new Vector3();
+  private readonly normal = new Vector3();
   private readonly toHand = new Vector3();
   private readonly xAxis = new Vector3();
   private readonly yAxis = new Vector3();
@@ -100,31 +113,50 @@ export class WristAnchor {
     const middle = frame.landmarks[LM.MIDDLE_MCP];
     if (!wrist || !index || !pinky || !middle) return false;
 
-    const { mirrored, forearmOffset, flipDial } = options;
+    const { mirrored, forearmOffset, flipDial, tiltStrength } = options;
 
     // ---- Orientation (relative 3D geometry) ------------------------------
     this.to3D(wrist, mirrored, this.w3);
     this.to3D(middle, mirrored, this.m3);
+    this.to3D(index, mirrored, this.indexV);
+    this.to3D(pinky, mirrored, this.pinkyV);
 
     this.toHand.copy(this.m3).sub(this.w3); // wrist -> knuckles : along the forearm
     if (this.toHand.lengthSq() < 1e-8) return false;
     this.zAxis.copy(this.toHand).normalize(); // 12–6 axis runs along the forearm
 
-    // Dial-up faces the CAMERA, kept perpendicular to the forearm. The watch
-    // therefore always presents its face toward the viewer while still tilting
-    // and moving with the arm (12–6 stays glued along the forearm). This is the
-    // readable "product try-on" behaviour, and — unlike a binary dorsal flip —
-    // it is fully continuous, so there is no snapping/swivel. The camera looks
-    // down -Z, so the direction "toward camera" ≈ world +Z = (0, 0, 1):
-    //   yAxis = camDir - zAxis (camDir · zAxis),  camDir = (0,0,1)
+    // Stable reference up-axis: dial-up faces the CAMERA, kept perpendicular to
+    // the forearm. The camera looks down -Z, so "toward camera" ≈ world +Z:
+    //   camUp = camDir - zAxis (camDir · zAxis),  camDir = (0, 0, 1)
     const zz = this.zAxis.z;
-    this.yAxis.set(-this.zAxis.x * zz, -this.zAxis.y * zz, 1 - zz * zz);
-    if (this.yAxis.lengthSq() < 1e-6) {
+    this.camUp.set(-this.zAxis.x * zz, -this.zAxis.y * zz, 1 - zz * zz);
+    if (this.camUp.lengthSq() < 1e-6) {
       // Forearm points (almost) straight at/away from camera — fall back to up.
       const zy = this.zAxis.y;
-      this.yAxis.set(-this.zAxis.x * zy, 1 - zy * zy, -this.zAxis.z * zy);
+      this.camUp.set(-this.zAxis.x * zy, 1 - zy * zy, -this.zAxis.z * zy);
     }
-    this.yAxis.normalize();
+    this.camUp.normalize();
+
+    // Real back-of-hand normal from the live hand plane. The across-wrist vector
+    // (index↔pinky knuckles) crossed with the forearm gives the surface the
+    // watch sits on; this is what makes the dial TILT when the wrist rolls to a
+    // side/angled view instead of staying flat to the camera.
+    this.across.copy(this.pinkyV).sub(this.indexV);
+    this.across.addScaledVector(this.zAxis, -this.across.dot(this.zAxis)); // ⟂ forearm
+    if (this.across.lengthSq() > 1e-6) {
+      this.across.normalize();
+      this.normal.copy(this.zAxis).cross(this.across).normalize();
+      if (this.normal.z < 0) this.normal.negate(); // keep the dial toward camera
+      // Blend the stable camera-facing up with the real wrist normal. This is
+      // continuous (no snapping) and lets the user inspect the watch at an angle
+      // while heavy depth noise stays damped by the partial weight.
+      const t = Math.max(0, Math.min(1, tiltStrength));
+      this.yAxis.copy(this.camUp).multiplyScalar(1 - t).addScaledVector(this.normal, t);
+      if (this.yAxis.lengthSq() < 1e-6) this.yAxis.copy(this.camUp);
+      this.yAxis.normalize();
+    } else {
+      this.yAxis.copy(this.camUp);
+    }
     if (flipDial) this.yAxis.negate(); // show the caseback / underside instead
 
     // Across-wrist axis completes a right-handed basis: x = y × z.

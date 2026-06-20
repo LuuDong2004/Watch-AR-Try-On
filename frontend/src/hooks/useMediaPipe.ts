@@ -52,9 +52,12 @@ export function useMediaPipe(videoRef: React.RefObject<HTMLVideoElement>, enable
           },
           runningMode: 'VIDEO',
           numHands: 1,
+          // Higher presence/tracking confidence keeps the same hand locked frame
+          // to frame (steadier watch), while a moderate detection threshold still
+          // re-acquires quickly. Detection is the looser gate; tracking is tight.
           minHandDetectionConfidence: 0.5,
-          minHandPresenceConfidence: 0.5,
-          minTrackingConfidence: 0.5,
+          minHandPresenceConfidence: 0.6,
+          minTrackingConfidence: 0.6,
         }).catch(async (gpuErr) => {
           // Some mobile GPUs/drivers reject the GPU delegate — fall back to CPU.
           console.warn('[MediaPipe] GPU delegate failed, falling back to CPU', gpuErr);
@@ -62,6 +65,9 @@ export function useMediaPipe(videoRef: React.RefObject<HTMLVideoElement>, enable
             baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
             runningMode: 'VIDEO',
             numHands: 1,
+            minHandDetectionConfidence: 0.5,
+            minHandPresenceConfidence: 0.6,
+            minTrackingConfidence: 0.6,
           });
         });
         if (cancelled) {
@@ -73,7 +79,7 @@ export function useMediaPipe(videoRef: React.RefObject<HTMLVideoElement>, enable
         startLoop();
       } catch (e) {
         console.error('[MediaPipe] init failed', e);
-        if (!cancelled) setError('Failed to load hand-tracking model. Check your connection.');
+        if (!cancelled) setError('Không tải được mô hình nhận diện bàn tay. Vui lòng kiểm tra kết nối mạng.');
       }
     }
 

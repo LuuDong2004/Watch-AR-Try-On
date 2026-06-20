@@ -18,6 +18,12 @@ import { useARStore } from '../store/useARStore';
 const WATCH_SCALE_FACTOR = 1.0;
 /** Seat the watch this many wrist-widths down the forearm. */
 const FOREARM_OFFSET = 0.25;
+/**
+ * How strongly the watch follows the wrist's real roll (0..1). A high value lets
+ * the user inspect the watch at a tilted/side angle; the remaining weight on the
+ * camera-facing reference keeps it readable and damps MediaPipe depth noise.
+ */
+const TILT_STRENGTH = 0.7;
 
 /* ------------------------------------------------------------------ GLB load */
 
@@ -141,9 +147,11 @@ export function WatchRenderer() {
 
   const anchor = useMemo(() => new WristAnchor(), []);
   const pose = useMemo(() => createWristPose(), []);
-  const posSmoother = useMemo(() => new Vector3Smoother(1.4, 0.03), []);
-  const quatSmoother = useMemo(() => new QuaternionSmoother(0.25, 1.8), []);
-  const scaleSmoother = useMemo(() => new ScalarSmoother(0.18), []);
+  // Steadier "lock": lower the One-Euro rest cutoff to kill resting jitter while
+  // beta keeps fast moves responsive; gentler scale easing stops size pulsing.
+  const posSmoother = useMemo(() => new Vector3Smoother(1.0, 0.02), []);
+  const quatSmoother = useMemo(() => new QuaternionSmoother(0.22, 1.6), []);
+  const scaleSmoother = useMemo(() => new ScalarSmoother(0.15), []);
 
   const lastT = useRef(performance.now());
   const wasVisible = useRef(false);
@@ -160,7 +168,7 @@ export function WatchRenderer() {
     const ok = anchor.compute(
       frame,
       camera,
-      { mirrored, forearmOffset: FOREARM_OFFSET, flipDial },
+      { mirrored, forearmOffset: FOREARM_OFFSET, flipDial, tiltStrength: TILT_STRENGTH },
       pose,
     );
 

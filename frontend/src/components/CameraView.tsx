@@ -147,7 +147,7 @@ export function CameraView() {
       } catch (e) {
         console.error('[camera] getUserMedia failed', e);
         if (!cancelled) {
-          setError('Camera access was blocked. Enable camera permission and reload.');
+          setError('Không truy cập được camera. Hãy cấp quyền camera rồi tải lại trang.');
           setStatus('denied');
         }
       }
@@ -204,14 +204,14 @@ export function CameraView() {
 
       {debug && <DebugOverlay />}
 
-      {/* "Show your wrist" hint */}
+      {/* Gợi ý "đưa cổ tay vào khung hình" */}
       {!handVisible && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 animate-fade-in">
           <div className="glass rounded-2xl px-5 py-3 text-center">
             <p className="text-sm font-medium tracking-wide text-white/90">
-              Point the camera at your wrist
+              Hướng camera vào cổ tay của bạn
             </p>
-            <p className="mt-1 text-xs text-white/50">Hold your hand ~30&nbsp;cm away</p>
+            <p className="mt-1 text-xs text-white/50">Giữ bàn tay cách camera khoảng 30&nbsp;cm</p>
           </div>
         </div>
       )}
