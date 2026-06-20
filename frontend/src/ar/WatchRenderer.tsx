@@ -14,16 +14,25 @@ import { ProceduralWatch } from './ProceduralWatch';
 import { getWatch, type WatchConfig } from '../config/watches';
 import { useARStore } from '../store/useARStore';
 
-/** Maps world-space wrist width → watch local-unit scale (case ≈ 1 unit). */
-const WATCH_SCALE_FACTOR = 1.0;
-/** Seat the watch this many wrist-widths down the forearm. */
-const FOREARM_OFFSET = 0.25;
 /**
- * How strongly the watch follows the wrist's real roll (0..1). At 1 the watch is
- * fully glued to the hand plane, so rolling the wrist reveals the side and the
- * caseback. Lower it toward 0 if depth noise makes the orientation feel shaky.
+ * Maps world-space wrist width → watch local-unit scale. Slightly under 1 so the
+ * case hugs the wrist instead of overhanging it (the raw solve tends to read a
+ * touch wide), which looks more natural on the arm.
  */
-const TILT_STRENGTH = 1.0;
+const WATCH_SCALE_FACTOR = 0.86;
+/** Seat the watch this many wrist-widths down the forearm. */
+const FOREARM_OFFSET = 0.28;
+/**
+ * How strongly the watch follows the wrist's real roll (0..1).
+ *
+ * Kept LOW on purpose: with MediaPipe hand landmarks (noisy depth) and a generic
+ * model, fully following the roll (1.0) turns the watch edge-on and ugly when the
+ * palm faces the camera or the hand makes a fist. A small value keeps the dial
+ * facing the viewer — so it always reads as a watch and stays stable — while
+ * still tilting a touch with the forearm for realism. This is the trade-off that
+ * makes it look like a clean AR filter instead of a flipping sliver.
+ */
+const TILT_STRENGTH = 0.3;
 
 /* ----------------------------------------------------- Tracking-quality gate */
 
@@ -161,8 +170,8 @@ export function WatchRenderer() {
   // Steadier "lock": lower the One-Euro rest cutoff to kill resting jitter while
   // beta keeps fast moves responsive; gentler scale easing stops size pulsing.
   const posSmoother = useMemo(() => new Vector3Smoother(1.0, 0.02), []);
-  const quatSmoother = useMemo(() => new QuaternionSmoother(0.22, 1.6), []);
-  const scaleSmoother = useMemo(() => new ScalarSmoother(0.15), []);
+  const quatSmoother = useMemo(() => new QuaternionSmoother(0.2, 1.5), []);
+  const scaleSmoother = useMemo(() => new ScalarSmoother(0.12), []);
 
   const lastT = useRef(performance.now());
   const shown = useRef(false);
