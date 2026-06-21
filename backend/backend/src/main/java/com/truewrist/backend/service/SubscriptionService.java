@@ -239,10 +239,7 @@ public class SubscriptionService {
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy người dùng."));
 
         // Grant selling permission, apply the plan, and revive any expiry-locked shops.
-        user.assignRoles(Set.of(Role.SHOP));
-        userRepository.save(user);
-        changeSubscriberPlan(user.getId(), plan.getCode());
-        unlockExpiryLockedShops(user.getId());
+        activatePaidPlan(user.getId(), plan.getCode());
 
         long now = System.currentTimeMillis();
         request.setStatus(UpgradeRequestStatus.APPROVED);
@@ -275,6 +272,49 @@ public class SubscriptionService {
                 user == null ? null : user.getName(),
                 user == null ? null : user.getEmail(),
                 plan);
+    }
+
+    /**
+     * Apply a paid plan to a user and grant the SHOP role ("lên quyền"). Shared by
+     * the manual admin-approval flow and the PayOS auto-activation on payment.
+     */
+    @Transactional
+    public void activatePaidPlan(String userId, String planCode) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy người dùng."));
+        user.assignRoles(Set.of(Role.SHOP));
+        userRepository.save(user);
+        changeSubscriberPlan(userId, planCode);
+        unlockExpiryLockedShops(userId);
+    }
+
+    /**
+     * Validate that {@code targetCode} is a plan the user may buy right now, and
+     * return it. Mirrors the rules in {@link #requestUpgrade}: the trial plan is
+     * never purchasable, and while a paid plan is still active only a strictly
+     * higher tier may be bought (same/lower tiers wait until expiry). Throws an
+     * {@link ApiException} otherwise.
+     */
+    @Transactional(readOnly = true)
+    public SubscriptionPlan validatePurchasablePlan(String userId, String targetCode) {
+        SubscriptionPlan target = planRepository.findById(targetCode)
+                .orElseThrow(() -> ApiException.badRequest("Gói dịch vụ không tồn tại."));
+        if (target.isTrial()) {
+            throw ApiException.badRequest("Không thể mua gói dùng thử.");
+        }
+        long now = System.currentTimeMillis();
+        subscriptionRepository.findByUserId(userId).ifPresent(sub -> {
+            if (sub.getExpiresAt() <= now) {
+                return; // expired → any paid plan may be bought
+            }
+            SubscriptionPlan current = planRepository.findById(sub.getPlanCode()).orElse(null);
+            if (current != null && target.getSortOrder() < current.getSortOrder()) {
+                throw ApiException.badRequest(
+                        "Gói \"" + current.getName() + "\" của bạn vẫn còn hiệu lực. "
+                        + "Bạn chỉ có thể nâng lên gói cao hơn cho đến khi gói hiện tại hết hạn.");
+            }
+        });
+        return target;
     }
 
     private Map<String, SubscriptionPlan> planByCode() {

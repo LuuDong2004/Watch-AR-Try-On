@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutGrid, Hexagon, Mail, BarChart3, Store, LogOut, CreditCard,
-  Home, PanelLeftClose, PanelLeftOpen, type LucideIcon,
+  MessageSquare, Home, PanelLeftClose, PanelLeftOpen, type LucideIcon,
 } from 'lucide-react';
 import type { User } from '../../api';
 import BrandLogo from '../ui/BrandLogo';
@@ -10,6 +10,8 @@ interface ShopSidebarProps {
   currentPage: string;
   onChangePage: (page: string) => void;
   newLeadsCount: number;
+  /** Unread inbox messages for this seller's shops. */
+  inboxUnreadCount?: number;
   user: User | null;
   onLogout: () => void;
   /** Switch to the customer storefront (view as a normal user). */
@@ -21,13 +23,15 @@ const MENU: { id: string; name: string; icon: LucideIcon; badge?: boolean }[] = 
   { id: 'settings', name: 'Quản lý cửa hàng', icon: Store },
   { id: 'products', name: 'Sản phẩm', icon: Hexagon },
   { id: 'leads', name: 'Khách hàng liên hệ', icon: Mail, badge: true },
+  { id: 'inbox', name: 'Hộp thư', icon: MessageSquare, badge: true },
   { id: 'analytics', name: 'Thống kê', icon: BarChart3 },
   { id: 'plans', name: 'Quản lý gói', icon: CreditCard },
 ];
 
 const COLLAPSE_KEY = 'tw_shop_sidebar_collapsed';
 
-export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, user, onLogout, onGoHome }: ShopSidebarProps) {
+export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, inboxUnreadCount = 0, user, onLogout, onGoHome }: ShopSidebarProps) {
+  const badgeCountFor = (id: string) => (id === 'leads' ? newLeadsCount : id === 'inbox' ? inboxUnreadCount : 0);
   const avatar = (user?.name || 'S').trim().charAt(0).toUpperCase();
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1');
 
@@ -67,6 +71,7 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
         {MENU.map((item) => {
           const isActive = currentPage === item.id;
           const Ic = item.icon;
+          const badgeCount = item.badge ? badgeCountFor(item.id) : 0;
           return (
             <button
               key={item.id}
@@ -80,12 +85,12 @@ export default function ShopSidebar({ currentPage, onChangePage, newLeadsCount, 
                 <Ic className={`h-5 w-5 ${isActive ? 'text-white' : 'text-[#B8924A]'}`} />
                 {!collapsed && item.name}
               </span>
-              {!collapsed && item.badge && newLeadsCount > 0 && (
+              {!collapsed && badgeCount > 0 && (
                 <span className={`px-1.5 min-w-[18px] text-center py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-white text-[#B8924A]' : 'bg-[#B8924A] text-white'}`}>
-                  {newLeadsCount}
+                  {badgeCount}
                 </span>
               )}
-              {collapsed && item.badge && newLeadsCount > 0 && (
+              {collapsed && badgeCount > 0 && (
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#B8924A]" />
               )}
             </button>

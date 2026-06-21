@@ -10,15 +10,24 @@ import { validateImageFile } from '../utils/uploads';
 import type {
   AdminPlanOverview,
   AdminSubscriberRow,
+  AdminTransaction,
+  AppNotification,
   ClosetItem,
+  ConversationSummary,
+  ConversationThread,
+  ConversationMessage,
   Feedback,
   Lead,
+  PaymentCheckout,
+  PaymentStatus,
   PlanInput,
   PlanUpgradeRequest,
   ProductComment,
+  RevenueStats,
   Role,
   Shop,
   ShopSubscription,
+  StartConversationInput,
   SubscriptionPlan,
   SubscriptionPlanCode,
   User,
@@ -575,6 +584,96 @@ export const subscriptionApi = {
   /** Admin: cancel a seller's plan (expires it immediately). */
   async adminCancel(userId: string): Promise<void> {
     await http.post(`/api/subscription/admin/subscribers/${userId}/cancel`, {});
+  },
+};
+
+// --- Payments (PayOS QR gateway) -------------------------------------------
+
+export const paymentApi = {
+  /** Start a QR payment for a plan; returns the QR + checkout details. */
+  async checkout(plan: SubscriptionPlanCode): Promise<PaymentCheckout> {
+    return http.post<PaymentCheckout>('/api/payment/checkout', { plan });
+  },
+  /** Poll the status of one of the caller's transactions. */
+  async status(orderCode: number): Promise<PaymentStatus> {
+    const d = await http.get<{ orderCode: number; status: PaymentStatus }>(
+      `/api/payment/status/${orderCode}`,
+    );
+    return d.status;
+  },
+  /** Fallback mode only: manually confirm payment (no PayOS configured). */
+  async devConfirm(orderCode: number): Promise<PaymentStatus> {
+    const d = await http.post<{ orderCode: number; status: PaymentStatus }>(
+      `/api/payment/dev/confirm/${orderCode}`,
+    );
+    return d.status;
+  },
+  /** Admin: all transactions, newest first. */
+  async adminTransactions(): Promise<AdminTransaction[]> {
+    return http.get<AdminTransaction[]>('/api/payment/admin/transactions');
+  },
+  /** Admin: revenue dashboard stats. */
+  async adminRevenue(): Promise<RevenueStats> {
+    return http.get<RevenueStats>('/api/payment/admin/revenue');
+  },
+  /** Admin: manually mark a transaction as paid (and activate the plan). */
+  async adminMarkPaid(id: string): Promise<AdminTransaction> {
+    return http.post<AdminTransaction>(`/api/payment/admin/transactions/${id}/mark-paid`, {});
+  },
+  /** Admin: cancel a pending transaction. */
+  async adminCancel(id: string, note?: string): Promise<AdminTransaction> {
+    return http.post<AdminTransaction>(`/api/payment/admin/transactions/${id}/cancel`, { note });
+  },
+  /** Admin: refund a paid transaction. */
+  async adminRefund(id: string, note?: string): Promise<AdminTransaction> {
+    return http.post<AdminTransaction>(`/api/payment/admin/transactions/${id}/refund`, { note });
+  },
+};
+
+// --- Messaging (inbox) ------------------------------------------------------
+
+export const messagingApi = {
+  /** The signed-in customer's own threads. */
+  async myConversations(): Promise<ConversationSummary[]> {
+    return http.get<ConversationSummary[]>('/api/conversations');
+  },
+  /** Open a new thread to the admins or a shop. */
+  async start(input: StartConversationInput): Promise<ConversationThread> {
+    return http.post<ConversationThread>('/api/conversations', { ...input });
+  },
+  /** A thread's full history (marks the viewer's side read). */
+  async thread(id: string): Promise<ConversationThread> {
+    return http.get<ConversationThread>(`/api/conversations/${id}`);
+  },
+  /** Append a message to a thread. */
+  async reply(id: string, body: string): Promise<ConversationMessage> {
+    return http.post<ConversationMessage>(`/api/conversations/${id}/messages`, { body });
+  },
+  /** Seller inbox: threads addressed to the seller's shops. */
+  async shopInbox(): Promise<ConversationSummary[]> {
+    return http.get<ConversationSummary[]>('/api/conversations/inbox/shop');
+  },
+  /** Admin inbox: threads addressed to the platform. */
+  async adminInbox(): Promise<ConversationSummary[]> {
+    return http.get<ConversationSummary[]>('/api/conversations/inbox/admin');
+  },
+};
+
+// --- Notifications (bell) ---------------------------------------------------
+
+export const notificationApi = {
+  async list(): Promise<AppNotification[]> {
+    return http.get<AppNotification[]>('/api/notifications');
+  },
+  async unreadCount(): Promise<number> {
+    const d = await http.get<{ count: number }>('/api/notifications/unread-count');
+    return d.count;
+  },
+  async markRead(id: string): Promise<void> {
+    await http.post(`/api/notifications/${id}/read`, {});
+  },
+  async markAllRead(): Promise<void> {
+    await http.post('/api/notifications/read-all', {});
   },
 };
 

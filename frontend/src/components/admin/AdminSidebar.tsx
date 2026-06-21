@@ -8,8 +8,10 @@ interface AdminSidebarProps {
   currentPage: string;
   onChangePage: (page: string) => void;
   pendingAuditsCount: number;
-  /** Pending plan-upgrade requests awaiting admin approval. */
+  /** Pending payment transactions awaiting confirmation. */
   pendingUpgradesCount?: number;
+  /** Unread admin inbox messages. */
+  inboxUnreadCount?: number;
   user: User | null;
   onLogout: () => void;
   /** Switch to the customer storefront (view as a normal user). */
@@ -18,9 +20,9 @@ interface AdminSidebarProps {
 
 const COLLAPSE_KEY = 'tw_admin_sidebar_collapsed';
 
-export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsCount, pendingUpgradesCount = 0, user, onLogout, onGoHome }: AdminSidebarProps) {
+export default function AdminSidebar({ currentPage, onChangePage, pendingAuditsCount, pendingUpgradesCount = 0, inboxUnreadCount = 0, user, onLogout, onGoHome }: AdminSidebarProps) {
   const badgeFor = (id: string) =>
-    id === 'audit' ? pendingAuditsCount : id === 'requests' ? pendingUpgradesCount : 0;
+    id === 'audit' ? pendingAuditsCount : id === 'transactions' ? pendingUpgradesCount : id === 'inbox' ? inboxUnreadCount : 0;
   const initials = (user?.name || 'SA')
     .split(' ')
     .map((p) => p[0])

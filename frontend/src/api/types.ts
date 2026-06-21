@@ -234,6 +234,139 @@ export interface PlanInput {
   features: string[];
 }
 
+// --- Payments (PayOS QR gateway) -------------------------------------------
+
+export type PaymentStatus =
+  | 'PENDING'
+  | 'PAID'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'FAILED'
+  | 'REFUNDED';
+
+/** Everything the client needs to render the QR payment screen. */
+export interface PaymentCheckout {
+  orderCode: number;
+  planCode: string;
+  planName: string;
+  amount: number;
+  description: string;
+  status: PaymentStatus;
+  /** PayOS hosted checkout page (null in fallback mode). */
+  checkoutUrl?: string | null;
+  /** Raw EMVCo QR string from PayOS — render as an image client-side. */
+  qrCode?: string | null;
+  /** Ready-to-use VietQR image URL (fallback mode). */
+  qrImageUrl?: string | null;
+  bankName?: string | null;
+  accountNumber?: string | null;
+  accountName?: string | null;
+  /** When true, show the manual "I have paid" confirm button (no PayOS). */
+  devMode: boolean;
+}
+
+/** One row in the admin transaction table. */
+export interface AdminTransaction {
+  id: string;
+  orderCode: number;
+  userId: string;
+  userName?: string | null;
+  userEmail?: string | null;
+  planCode: string;
+  planName: string;
+  amount: number;
+  status: PaymentStatus;
+  providerRef?: string | null;
+  payerName?: string | null;
+  createdAt: number;
+  paidAt?: number | null;
+  note?: string | null;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  revenue: number;
+  count: number;
+}
+
+export interface PlanRevenue {
+  planCode: string;
+  planName: string;
+  revenue: number;
+  count: number;
+}
+
+/** Admin revenue dashboard payload. */
+export interface RevenueStats {
+  totalRevenue: number;
+  revenueThisMonth: number;
+  revenueLast30Days: number;
+  paidCount: number;
+  pendingCount: number;
+  monthly: MonthlyRevenue[];
+  byPlan: PlanRevenue[];
+}
+
+// --- Messaging (inbox) & notifications -------------------------------------
+
+export type ConversationTarget = 'ADMIN' | 'SHOP';
+export type MessageSenderRole = 'CUSTOMER' | 'SHOP' | 'ADMIN';
+
+/** One thread row in an inbox (fields resolved for the viewer's perspective). */
+export interface ConversationSummary {
+  id: string;
+  targetType: ConversationTarget;
+  shopId?: string | null;
+  shopName?: string | null;
+  customerId: string;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  /** Display name of the other side, from the viewer's perspective. */
+  counterpartName: string;
+  subject: string;
+  lastMessage?: string | null;
+  lastSenderRole?: MessageSenderRole | null;
+  /** Unread messages for the viewer. */
+  unread: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ConversationMessage {
+  id: string;
+  senderId: string;
+  senderName?: string | null;
+  senderRole: MessageSenderRole;
+  body: string;
+  createdAt: number;
+}
+
+export interface ConversationThread {
+  conversation: ConversationSummary;
+  messages: ConversationMessage[];
+}
+
+/** Payload to open a new thread. */
+export interface StartConversationInput {
+  target: ConversationTarget;
+  shopId?: string | null;
+  subject: string;
+  body: string;
+}
+
+export type NotificationType = 'MESSAGE' | 'PAYMENT';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  /** Deep-link reference (conversation id for MESSAGE, transaction id for PAYMENT). */
+  refId?: string | null;
+  read: boolean;
+  createdAt: number;
+}
+
 /** A seller currently on a paid plan, for the admin subscriber table. */
 export interface AdminSubscriberRow {
   userId: string;

@@ -12,9 +12,43 @@ public record AppProperties(
         Storage storage,
         Mail mail,
         Frontend frontend,
-        PasswordReset passwordReset) {
+        PasswordReset passwordReset,
+        PayOs payos) {
 
     public record Jwt(String secret, long expirationMs) {}
+
+    /**
+     * PayOS QR payment gateway. When {@code enabled} is false (or credentials are
+     * blank) the backend runs in a fallback mode: a static VietQR image is shown
+     * and payment is confirmed manually (handy for local dev without PayOS).
+     */
+    public record PayOs(
+            boolean enabled,
+            String clientId,
+            String apiKey,
+            String checksumKey,
+            String apiBaseUrl,
+            String returnUrl,
+            String cancelUrl,
+            FallbackBank fallbackBank) {
+
+        public String resolvedApiBaseUrl() {
+            String base = (apiBaseUrl == null || apiBaseUrl.isBlank())
+                    ? "https://api-merchant.payos.vn" : apiBaseUrl;
+            return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+        }
+
+        /** True only when all three credentials are present. */
+        public boolean isConfigured() {
+            return enabled
+                    && clientId != null && !clientId.isBlank()
+                    && apiKey != null && !apiKey.isBlank()
+                    && checksumKey != null && !checksumKey.isBlank();
+        }
+    }
+
+    /** Bank account used to render a static VietQR in fallback (no-PayOS) mode. */
+    public record FallbackBank(String bin, String accountNumber, String accountName) {}
 
     /** Outgoing email settings. When {@code enabled} is false, reset links are
      *  logged instead of emailed (handy for local dev without SMTP). */

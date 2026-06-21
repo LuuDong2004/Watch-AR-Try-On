@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   User, Heart, LogIn, LogOut, ChevronDown, Home, Hexagon, Store,
-  LayoutDashboard, ShieldCheck,
+  LayoutDashboard, ShieldCheck, MessageSquare,
 } from 'lucide-react';
 import BrandLogo from '../ui/BrandLogo';
+import NotificationBell from '../notifications/NotificationBell';
 import type { User as SessionUser } from '../../api';
 
 interface UserHeaderProps {
@@ -15,6 +16,8 @@ interface UserHeaderProps {
   onLogout?: () => void;
   /** Enter the shop/admin management panel (shown only for staff accounts). */
   onGoDashboard?: () => void;
+  /** Open the customer inbox, optionally selecting a conversation (from the bell). */
+  onOpenInbox?: (conversationId?: string | null) => void;
 }
 
 const NAV_ITEMS: { key: string; label: string; match: string[] }[] = [
@@ -25,7 +28,7 @@ const NAV_ITEMS: { key: string; label: string; match: string[] }[] = [
   { key: 'feedback', label: 'Góp ý', match: ['feedback'] },
 ];
 
-export default function UserHeader({ currentPage, onChangePage, favoritesCount, user, onLogin, onLogout, onGoDashboard }: UserHeaderProps) {
+export default function UserHeader({ currentPage, onChangePage, favoritesCount, user, onLogin, onLogout, onGoDashboard, onOpenInbox }: UserHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -99,6 +102,8 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount, 
             )}
           </button>
 
+          {user && <NotificationBell onOpenInbox={onOpenInbox} />}
+
           {user ? (
             <div className="relative" ref={menuRef}>
               {/* Account trigger */}
@@ -165,6 +170,9 @@ export default function UserHeader({ currentPage, onChangePage, favoritesCount, 
                   <div className="p-2 border-t border-[#e5e0d8]">
                     <p className="px-3 pt-1 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">Tài khoản</p>
                     <button onClick={() => go('account')} className={itemCls}><User className="h-5 w-5 text-[#B8924A]" /> Hồ sơ của tôi</button>
+                    <button onClick={() => { setMenuOpen(false); onOpenInbox ? onOpenInbox() : go('inbox'); }} className={itemCls}>
+                      <MessageSquare className="h-5 w-5 text-[#B8924A]" /> Hộp thư của tôi
+                    </button>
                     <button onClick={() => go('favorites')} className={itemCls}>
                       <Heart className="h-5 w-5 text-[#B8924A]" /> Sản phẩm yêu thích
                       {favoritesCount > 0 && <span className="ml-auto bg-[#B8924A] text-white text-[9px] font-bold h-4 min-w-4 px-1 rounded-full flex items-center justify-center">{favoritesCount}</span>}

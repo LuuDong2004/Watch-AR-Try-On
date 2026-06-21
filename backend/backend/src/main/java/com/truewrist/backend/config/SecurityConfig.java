@@ -80,6 +80,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/watches/**", "/api/shops/**").permitAll()
                         // Public pricing catalogue (the "become a partner" page)
                         .requestMatchers(HttpMethod.GET, "/api/subscription/plans").permitAll()
+                        // PayOS payment webhook — public; authenticity is enforced by
+                        // verifying the HMAC signature inside the handler.
+                        .requestMatchers(HttpMethod.POST, "/api/payment/webhook").permitAll()
                         // Public storefront submissions (contact form / feedback); user id
                         // is attached automatically when the visitor happens to be signed in.
                         .requestMatchers(HttpMethod.POST, "/api/leads", "/api/feedback").permitAll()

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Zap, Crown, Check, Gift, Sparkles, Building2, Boxes, Clock3, Loader2, UserPlus, ClipboardCheck, BadgeCheck, Store } from 'lucide-react';
-import { subscriptionApi, ApiError } from '../../api';
-import type { PlanUpgradeRequest, SubscriptionPlan } from '../../api';
+import { Zap, Crown, Check, ShieldCheck, Sparkles, Building2, Boxes, Loader2, UserPlus, QrCode, BadgeCheck, Store } from 'lucide-react';
+import { authApi, subscriptionApi } from '../../api';
+import type { SubscriptionPlan } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
 import { toast } from '../../store/useToast';
+import PaymentQRModal from '../payment/PaymentQRModal';
 
 interface UserPricingProps {
   onBackToCatalog: () => void;
@@ -15,17 +16,17 @@ const formatVND = (value: number) =>
 
 const formatLimit = (value: number) => (value < 0 ? 'không giới hạn' : value.toLocaleString('vi-VN'));
 
-/** Customer-facing "become a partner" pricing. Picking a plan submits an upgrade
- *  request to the admin (no payment gateway yet); admin approval grants the SHOP
- *  role and activates the plan. */
+/** Customer-facing "become a partner" pricing. Picking a plan opens a QR payment
+ *  (PayOS); a confirmed payment activates the plan and grants the SHOP role
+ *  automatically. */
 export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   const user = useSession((s) => s.user);
+  const setUser = useSession((s) => s.setUser);
   const showLogin = useLoginPrompt((s) => s.show);
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<string | null>(null);
-  const [pending, setPending] = useState<PlanUpgradeRequest | null>(null);
+  const [payingPlan, setPayingPlan] = useState<SubscriptionPlan | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,34 +43,20 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
     return () => { cancelled = true; };
   }, []);
 
-  // Resolve the signed-in user's pending request (if any) to lock the CTAs.
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) { setPending(null); return; }
-    subscriptionApi
-      .myRequests()
-      .then((reqs) => { if (!cancelled) setPending(reqs.find((r) => r.status === 'pending') ?? null); })
-      .catch(() => { if (!cancelled) setPending(null); });
-    return () => { cancelled = true; };
-  }, [user]);
-
-  const handleChoose = async (plan: SubscriptionPlan) => {
+  const handleChoose = (plan: SubscriptionPlan) => {
     if (!user) { showLogin('login'); return; }
-    if (pending) return;
-    const ok = await toast.confirm(
-      `Gửi yêu cầu đăng ký gói ${plan.name} (${formatVND(plan.price)}) đến quản trị viên?`,
-      { title: 'Trở thành đối tác bán hàng', confirmText: 'Gửi yêu cầu' },
-    );
-    if (!ok) return;
-    setSubmitting(plan.code);
+    setPayingPlan(plan);
+  };
+
+  const handlePaid = async () => {
+    setPayingPlan(null);
+    toast.success('Thanh toán thành công! Quyền bán hàng đã được kích hoạt.');
+    // Refresh the session so the new SHOP role takes effect immediately.
     try {
-      const request = await subscriptionApi.requestUpgrade(plan.code);
-      setPending(request);
-      toast.success('Đã gửi yêu cầu! Quản trị viên sẽ duyệt và cấp quyền bán hàng cho bạn.');
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Không thể gửi yêu cầu. Vui lòng thử lại.');
-    } finally {
-      setSubmitting(null);
+      const me = await authApi.me();
+      setUser(me);
+    } catch {
+      /* the app shell will pick up the new role on next load */
     }
   };
 
@@ -95,8 +82,8 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {[
               { icon: UserPlus, title: 'Đăng ký tài khoản', desc: 'Tạo và đăng nhập tài khoản TrueWrist.' },
-              { icon: ClipboardCheck, title: 'Chọn gói & gửi yêu cầu', desc: 'Chọn gói đối tác phù hợp rồi gửi đăng ký.' },
-              { icon: BadgeCheck, title: 'Chờ admin duyệt', desc: 'Quản trị viên xác nhận và cấp quyền bán hàng.' },
+              { icon: QrCode, title: 'Chọn gói & quét QR', desc: 'Chọn gói đối tác rồi quét mã QR thanh toán.' },
+              { icon: BadgeCheck, title: 'Kích hoạt tự động', desc: 'Thanh toán xong, quyền bán hàng được cấp ngay.' },
               { icon: Store, title: 'Mở cửa hàng', desc: 'Tạo cửa hàng, đăng đồng hồ với thử AR 1:1.' },
             ].map((step, i) => (
               <div key={step.title} className="relative rounded-2xl border border-[#e5e0d8] bg-white p-4 shadow-sm">
@@ -111,17 +98,6 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
           </div>
         </div>
 
-        {/* Pending request banner */}
-        {pending && (
-          <div className="mx-auto mb-8 flex max-w-3xl items-start gap-3 rounded-2xl border border-[#B8924A]/40 bg-white p-4 shadow-sm">
-            <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-[#B8924A]" />
-            <p className="text-xs leading-5 text-[#7a5e28]">
-              <span className="font-bold">Yêu cầu gói “{pending.planName}” của bạn đang chờ duyệt.</span>{' '}
-              Quản trị viên sẽ xác nhận và cấp quyền bán hàng. Bạn sẽ nhận được quyền truy cập trang quản lý cửa hàng sau khi được duyệt.
-            </p>
-          </div>
-        )}
-
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-20 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin text-[#B8924A]" /> Đang tải bảng giá…
@@ -131,8 +107,6 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
             {plans.map((plan) => {
               const isTop = plan.sortOrder >= maxSort && plans.length > 1;
               const Icon = isTop ? Crown : Zap;
-              const isBusy = submitting === plan.code;
-              const isPendingPlan = pending?.planCode === plan.code;
               return (
                 <div
                   key={plan.code}
@@ -167,19 +141,18 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
 
                   {/* CTA */}
                   <button
-                    onClick={() => void handleChoose(plan)}
-                    disabled={isBusy || pending !== null}
-                    className={`w-full py-3 rounded-xl font-bold text-sm transition active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center justify-center gap-2 ${
+                    onClick={() => handleChoose(plan)}
+                    className={`w-full py-3 rounded-xl font-bold text-sm transition active:scale-[0.99] inline-flex items-center justify-center gap-2 ${
                       isTop
                         ? 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow'
                         : 'border border-[#B8924A] text-[#B8924A] hover:bg-[#B8924A]/10'
                     }`}
                   >
-                    {isBusy && <Loader2 className="h-4 w-4 animate-spin" />}
-                    {isPendingPlan ? 'Đang chờ duyệt' : `Đăng ký gói ${plan.name}`}
+                    <QrCode className="h-4 w-4" />
+                    {`Thanh toán gói ${plan.name}`}
                   </button>
                   {!user && (
-                    <p className="text-center text-[11px] text-gray-400 mt-2">Đăng nhập để gửi yêu cầu đăng ký</p>
+                    <p className="text-center text-[11px] text-gray-400 mt-2">Đăng nhập để thanh toán & đăng ký</p>
                   )}
 
                   {/* Divider */}
@@ -214,8 +187,8 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
 
         {/* Footnote */}
         <p className="mx-auto mt-12 flex max-w-xl items-start justify-center gap-1.5 text-center text-[11px] leading-relaxed text-gray-400">
-          <Gift className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Chưa có cổng thanh toán — yêu cầu đăng ký sẽ được quản trị viên duyệt thủ công để kích hoạt quyền bán hàng.</span>
+          <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>Thanh toán an toàn qua mã QR (PayOS / VietQR). Quyền bán hàng được kích hoạt tự động ngay khi nhận được thanh toán.</span>
         </p>
         <div className="text-center mt-4">
           <button onClick={onBackToCatalog} className="text-xs font-semibold text-[#B8924A] hover:underline">
@@ -223,6 +196,14 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
           </button>
         </div>
       </div>
+
+      {payingPlan && (
+        <PaymentQRModal
+          plan={payingPlan}
+          onClose={() => setPayingPlan(null)}
+          onSuccess={handlePaid}
+        />
+      )}
     </div>
   );
 }

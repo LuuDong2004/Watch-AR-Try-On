@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowUpCircle,
   Building2,
   CalendarDays,
   Check,
@@ -8,6 +7,7 @@ import {
   CreditCard,
   Crown,
   Package,
+  QrCode,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -16,17 +16,18 @@ import {
 } from 'lucide-react';
 import {
   ApiError,
+  authApi,
   shopApi,
   subscriptionApi,
   watchApi,
 } from '../../api';
 import type {
-  PlanUpgradeRequest,
   ShopSubscription,
   SubscriptionPlan,
-  SubscriptionPlanCode,
 } from '../../api';
+import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
+import PaymentQRModal from '../payment/PaymentQRModal';
 
 const formatVND = (value: number) =>
   new Intl.NumberFormat('vi-VN', {
@@ -66,25 +67,23 @@ const planIcon = (plan: SubscriptionPlan, isTop: boolean): LucideIcon => {
 };
 
 export default function ShopPlanManagement() {
+  const setUser = useSession((s) => s.setUser);
   const [subscription, setSubscription] = useState<ShopSubscription | null>(null);
   const [usage, setUsage] = useState({ shops: 0, products: 0 });
   const [loading, setLoading] = useState(true);
-  const [upgradingPlan, setUpgradingPlan] = useState<SubscriptionPlanCode | null>(null);
-  const [pendingRequest, setPendingRequest] = useState<PlanUpgradeRequest | null>(null);
+  const [payingPlan, setPayingPlan] = useState<SubscriptionPlan | null>(null);
   const [loadError, setLoadError] = useState('');
 
   const loadData = async () => {
     setLoading(true);
     setLoadError('');
     try {
-      const [subscriptionData, shops, myRequests] = await Promise.all([
+      const [subscriptionData, shops] = await Promise.all([
         subscriptionApi.get(),
         shopApi.mine(),
-        subscriptionApi.myRequests().catch(() => [] as PlanUpgradeRequest[]),
       ]);
       const productLists = await Promise.all(shops.map((shop) => watchApi.list(shop.id)));
       setSubscription(subscriptionData);
-      setPendingRequest(myRequests.find((r) => r.status === 'pending') ?? null);
       setUsage({
         shops: shops.length,
         products: productLists.reduce((total, products) => total + products.length, 0),
@@ -108,29 +107,20 @@ export default function ShopPlanManagement() {
     return Math.min(100, Math.max(0, (elapsed / total) * 100));
   }, [subscription]);
 
-  const handleUpgrade = async (plan: SubscriptionPlan) => {
-    if (!subscription) return;
-    const isRenewal = plan.code === subscription.plan;
-    const confirmed = await toast.confirm(
-      isRenewal
-        ? `Gửi yêu cầu gia hạn gói ${plan.name} (${plan.durationDays} ngày · ${formatPlanPrice(plan.price)}) đến quản trị viên?`
-        : `Gửi yêu cầu nâng cấp lên gói ${plan.name} (${formatPlanPrice(plan.price)}) đến quản trị viên?`,
-      {
-        title: isRenewal ? 'Xác nhận gửi yêu cầu gia hạn' : 'Xác nhận gửi yêu cầu nâng cấp',
-        confirmText: 'Gửi yêu cầu',
-      },
-    );
-    if (!confirmed) return;
+  const handleUpgrade = (plan: SubscriptionPlan) => {
+    setPayingPlan(plan);
+  };
 
-    setUpgradingPlan(plan.code);
+  const handlePaid = async () => {
+    setPayingPlan(null);
+    toast.success('Thanh toán thành công! Gói của bạn đã được kích hoạt.');
+    await loadData();
+    // Refresh the session in case this was the user's first paid plan (new SHOP role).
     try {
-      const request = await subscriptionApi.requestUpgrade(plan.code);
-      setPendingRequest(request);
-      toast.success('Đã gửi yêu cầu. Quản trị viên sẽ duyệt và kích hoạt gói cho bạn.');
-    } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Không thể gửi yêu cầu nâng cấp.');
-    } finally {
-      setUpgradingPlan(null);
+      const me = await authApi.me();
+      setUser(me);
+    } catch {
+      /* ignore — role already in effect for existing sellers */
     }
   };
 
@@ -442,34 +432,20 @@ export default function ShopPlanManagement() {
             </div>
           </div>
 
-          {pendingRequest && (
-            <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[#B8924A]/40 bg-[#B8924A]/5 p-4">
-              <Clock3 className="mt-0.5 h-5 w-5 shrink-0 text-[#B8924A]" />
-              <p className="text-xs leading-5 text-[#7a5e28]">
-                <span className="font-bold">Yêu cầu gói “{pendingRequest.planName}” đang chờ quản trị viên duyệt.</span>{' '}
-                Chưa có cổng thanh toán nên gói sẽ được kích hoạt sau khi admin xác nhận. Bạn không thể gửi yêu cầu mới khi yêu cầu này còn chờ xử lý.
-              </p>
-            </div>
-          )}
-
           <div className="grid gap-5 lg:grid-cols-3">
             {subscription.plans.map((plan) => {
               const isTop = plan.sortOrder >= maxSort;
               const Icon = planIcon(plan, isTop);
               const isCurrent = plan.code === subscription.plan;
               // While the plan is still active, the current plan and any lower plan
-              // are locked — only higher tiers can be requested (until expiry).
+              // are locked — only higher tiers can be bought (until expiry).
               const blockedWhileActive = !isExpired && plan.sortOrder <= currentRank;
-              const isPendingPlan = pendingRequest?.planCode === plan.code;
-              const actionLabel = isPendingPlan
-                ? 'Đang chờ duyệt'
-                : isCurrent
-                  ? (isExpired ? 'Gia hạn gói' : 'Đang sử dụng')
-                  : plan.sortOrder > currentRank || isExpired
-                    ? 'Nâng cấp ngay'
-                    : 'Gói thấp hơn';
+              const actionLabel = isCurrent
+                ? (isExpired ? 'Gia hạn ngay' : 'Đang sử dụng')
+                : plan.sortOrder > currentRank || isExpired
+                  ? 'Thanh toán nâng cấp'
+                  : 'Gói thấp hơn';
               const isPremium = isTop;
-              const isBusy = upgradingPlan === plan.code;
 
               return (
                 <article
@@ -550,8 +526,8 @@ export default function ShopPlanManagement() {
 
                   <button
                     type="button"
-                    onClick={() => void handleUpgrade(plan)}
-                    disabled={blockedWhileActive || upgradingPlan !== null || pendingRequest !== null}
+                    onClick={() => handleUpgrade(plan)}
+                    disabled={blockedWhileActive}
                     className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                       isPremium
                         ? 'bg-[#17140F] text-white hover:bg-black'
@@ -560,14 +536,8 @@ export default function ShopPlanManagement() {
                           : 'border border-[#B8924A] text-[#9A7434] hover:bg-[#B8924A]/5'
                     }`}
                   >
-                    {isBusy ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : isCurrent ? (
-                      <Clock3 className="h-4 w-4" />
-                    ) : (
-                      <ArrowUpCircle className="h-4 w-4" />
-                    )}
-                    {isBusy ? 'Đang cập nhật…' : actionLabel}
+                    {isCurrent && !isExpired ? <Clock3 className="h-4 w-4" /> : <QrCode className="h-4 w-4" />}
+                    {actionLabel}
                   </button>
                 </article>
               );
@@ -575,6 +545,15 @@ export default function ShopPlanManagement() {
           </div>
         </section>
       </div>
+
+      {payingPlan && (
+        <PaymentQRModal
+          plan={payingPlan}
+          isRenewal={payingPlan.code === subscription.plan}
+          onClose={() => setPayingPlan(null)}
+          onSuccess={handlePaid}
+        />
+      )}
     </div>
   );
 }

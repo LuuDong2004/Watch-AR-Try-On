@@ -11,7 +11,7 @@ import ResetPasswordScreen from './components/auth/ResetPasswordScreen';
 import VerifyEmailScreen from './components/auth/VerifyEmailScreen';
 import ToastHost from './components/ToastHost';
 import AppErrorPage from './components/AppErrorPage.jsx';
-import { setToken, watchApi, favoriteApi, leadApi, shopApi, subscriptionApi } from './api';
+import { setToken, watchApi, favoriteApi, leadApi, shopApi, paymentApi, messagingApi } from './api';
 import { normalizePath, parseAppRoute, routePathForState } from './utils/router.js';
 
 // User (Customer) Components
@@ -25,9 +25,11 @@ import UserFeedback from './components/user/UserFeedback';
 import UserCatalog from './components/user/UserCatalog';
 import UserDetail from './components/user/UserDetail';
 import UserAccount from './components/user/UserAccount';
+import UserInbox from './components/user/UserInbox';
 
 // Shop (Seller) Components
 import ShopSidebar from './components/shop/ShopSidebar';
+import ShopInbox from './components/shop/ShopInbox';
 import ShopDashboard from './components/shop/ShopDashboard';
 import ShopProducts from './components/shop/ShopProducts';
 import ShopLeads from './components/shop/ShopLeads';
@@ -44,7 +46,8 @@ import AdminUsers from './components/admin/AdminUsers';
 import AdminFeedback from './components/admin/AdminFeedback';
 import AdminPlans from './components/admin/AdminPlans';
 import AdminSettings from './components/admin/AdminSettings';
-import AdminUpgradeRequests from './components/admin/AdminUpgradeRequests';
+import AdminTransactions from './components/admin/AdminTransactions';
+import AdminInbox from './components/admin/AdminInbox';
 
 // Lazy loaded MediaPipe AR try-on overlay
 const ARWristTryOn = lazy(() => import('./components/ar/ARWristTryOn'));
@@ -118,6 +121,8 @@ export default function App() {
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [lockedShops, setLockedShops] = useState([]);
   const [pendingUpgradesCount, setPendingUpgradesCount] = useState(0);
+  const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [inboxConversationId, setInboxConversationId] = useState(null);
   const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
 
   // Boot: capture an OAuth callback token, restore the session, handle AR deep link.
@@ -196,9 +201,18 @@ export default function App() {
         } else if (!cancelled) setLockedShops([]);
 
         if (user && role === 'admin') {
-          const reqs = await subscriptionApi.adminRequests();
-          if (!cancelled) setPendingUpgradesCount(reqs.length);
+          const rev = await paymentApi.adminRevenue();
+          if (!cancelled) setPendingUpgradesCount(rev.pendingCount);
         } else if (!cancelled) setPendingUpgradesCount(0);
+
+        // Inbox unread badge (sum of per-thread unread for the staff side).
+        if (user && role === 'shop') {
+          const convs = await messagingApi.shopInbox();
+          if (!cancelled) setInboxUnreadCount(convs.reduce((n, c) => n + (c.unread || 0), 0));
+        } else if (user && role === 'admin') {
+          const convs = await messagingApi.adminInbox();
+          if (!cancelled) setInboxUnreadCount(convs.reduce((n, c) => n + (c.unread || 0), 0));
+        } else if (!cancelled) setInboxUnreadCount(0);
       } catch {
         /* ignore badge fetch errors */
       }
@@ -288,6 +302,8 @@ export default function App() {
         );
       case 'pricing':
         return <UserPricing onBackToCatalog={() => setPage('catalog')} />;
+      case 'inbox':
+        return <UserInbox initialConversationId={inboxConversationId} onBackToCatalog={() => setPage('catalog')} />;
       case 'feedback':
         return <UserFeedback onBackToCatalog={() => setPage('catalog')} />;
       case 'favorites':
@@ -333,6 +349,8 @@ export default function App() {
         return <ShopAnalytics />;
       case 'plans':
         return <ShopPlanManagement />;
+      case 'inbox':
+        return <ShopInbox />;
       case 'settings':
         return <ShopSettings />;
       default:
@@ -360,8 +378,10 @@ export default function App() {
         return <AdminAudit />;
       case 'users':
         return <AdminUsers />;
-      case 'requests':
-        return <AdminUpgradeRequests />;
+      case 'transactions':
+        return <AdminTransactions />;
+      case 'inbox':
+        return <AdminInbox />;
       case 'feedback':
         return <AdminFeedback />;
       case 'plans':
@@ -412,6 +432,13 @@ export default function App() {
             onLogin={() => showLogin('login')}
             onLogout={handleLogout}
             onGoDashboard={exitStorefront}
+            onOpenInbox={(conversationId) => {
+              setInboxConversationId(conversationId ?? null);
+              setSelectedShopId(null);
+              setCatalogBrand(null);
+              setStorefront(true);
+              setPage('inbox');
+            }}
           />
           <main className="flex-1">{renderUserPages()}</main>
           <UserFooter onChangePage={(p) => { setSelectedShopId(null); setCatalogBrand(null); setPage(p); }} />
@@ -424,6 +451,7 @@ export default function App() {
             currentPage={page}
             onChangePage={(p) => setPage(p)}
             newLeadsCount={newLeadsCount}
+            inboxUnreadCount={inboxUnreadCount}
             user={user}
             onLogout={handleLogout}
             onGoHome={goStorefront}
@@ -459,6 +487,7 @@ export default function App() {
             onChangePage={(p) => setPage(p)}
             pendingAuditsCount={0}
             pendingUpgradesCount={pendingUpgradesCount}
+            inboxUnreadCount={inboxUnreadCount}
             user={user}
             onLogout={handleLogout}
             onGoHome={goStorefront}
