@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MessageSquare, Search, Star, Store, Globe, X, Quote } from 'lucide-react';
+import { MessageSquare, Search, Star, Store, Globe, X, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { feedbackApi, ApiError } from '../../api';
 import type { Feedback } from '../../api';
+
+const PAGE_SIZE = 12;
+
+/** Build a compact page list with ellipses, e.g. [1, '…', 4, 5, 6, '…', 10]. */
+const pageItems = (current: number, total: number): (number | '…')[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const items: (number | '…')[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) items.push('…');
+  for (let i = start; i <= end; i++) items.push(i);
+  if (end < total - 1) items.push('…');
+  items.push(total);
+  return items;
+};
 
 const TARGET_LABELS: Record<Feedback['target'], string> = {
   shop: 'Góp ý cửa hàng',
@@ -37,6 +52,7 @@ export default function AdminFeedback() {
 
   const [search, setSearch] = useState('');
   const [targetFilter, setTargetFilter] = useState<TargetFilter>('all');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +77,18 @@ export default function AdminFeedback() {
       return true;
     });
   }, [items, search, targetFilter]);
+
+  // Reset to the first page whenever the result set changes.
+  useEffect(() => { setPage(1); }, [search, targetFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const paged = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+  const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(currentPage * PAGE_SIZE, filtered.length);
 
   const stats = useMemo(() => {
     const total = items.length;
@@ -187,7 +215,11 @@ export default function AdminFeedback() {
         {/* Body */}
         <div className="p-5 md:p-6">
           <p className="text-[11px] text-gray-400 font-semibold mb-5">
-            Hiển thị <span className="text-[#17140F] font-bold">{filtered.length}</span> / {items.length} góp ý
+            {filtered.length > 0 ? (
+              <>Hiển thị <span className="text-[#17140F] font-bold">{rangeStart}–{rangeEnd}</span> trong {filtered.length} góp ý{filtered.length !== items.length ? ` (lọc từ ${items.length})` : ''}</>
+            ) : (
+              <>Hiển thị <span className="text-[#17140F] font-bold">0</span> / {items.length} góp ý</>
+            )}
           </p>
 
           {loading && <p className="py-12 text-center text-gray-400 text-xs">Đang tải…</p>}
@@ -207,7 +239,7 @@ export default function AdminFeedback() {
           )}
 
           <div className="grid lg:grid-cols-2 gap-5">
-            {!loading && !error && filtered.map((f) => (
+            {!loading && !error && paged.map((f) => (
               <article
                 key={f.id}
                 className="group relative bg-[#F6F4EF]/50 rounded-2xl border border-[#e5e0d8] p-6 transition hover:bg-white hover:border-[#B8924A]/60 hover:shadow-md"
@@ -258,6 +290,45 @@ export default function AdminFeedback() {
               </article>
             ))}
           </div>
+
+          {/* Pagination */}
+          {!loading && !error && pageCount > 1 && (
+            <div className="mt-7 flex items-center justify-center gap-1.5">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#e5e0d8] bg-white text-gray-500 transition hover:border-[#B8924A] hover:text-[#17140F] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang trước"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {pageItems(currentPage, pageCount).map((it, i) =>
+                it === '…' ? (
+                  <span key={`e${i}`} className="px-1.5 text-xs text-gray-400">…</span>
+                ) : (
+                  <button
+                    key={it}
+                    onClick={() => setPage(it)}
+                    className={`inline-flex h-9 min-w-9 items-center justify-center rounded-xl px-2 text-xs font-bold transition ${
+                      it === currentPage
+                        ? 'bg-[#17140F] text-white shadow-sm'
+                        : 'border border-[#e5e0d8] bg-white text-gray-600 hover:border-[#B8924A] hover:text-[#17140F]'
+                    }`}
+                  >
+                    {it}
+                  </button>
+                ),
+              )}
+              <button
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={currentPage === pageCount}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#e5e0d8] bg-white text-gray-500 transition hover:border-[#B8924A] hover:text-[#17140F] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang sau"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       </section>
     </div>
