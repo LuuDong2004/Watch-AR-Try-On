@@ -15,10 +15,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * One attempt to pay for a subscription plan through the PayOS QR gateway. Created
- * PENDING when the buyer opens the QR; flipped to PAID by the PayOS webhook, which
- * then applies the plan and grants the SHOP role. Also the source of truth for the
- * admin transaction list and revenue reporting.
+ * One attempt to pay for a subscription plan through the SePay VietQR gateway.
+ * Created PENDING when the buyer opens the QR; flipped to PAID by the SePay webhook
+ * (matched by the transfer content), which then applies the plan and grants the
+ * SHOP role. Also the source of truth for the admin transaction list and revenue
+ * reporting.
  */
 @Entity
 @Table(
@@ -39,7 +40,8 @@ public class PaymentTransaction {
     @Column(length = 64)
     private String id;
 
-    /** PayOS order code — a unique positive number we generate per attempt. */
+    /** Order code — a unique positive number we generate and embed in the transfer
+     *  content (e.g. {@code TW<orderCode>}) so the webhook can match the payment. */
     @Column(name = "order_code", nullable = false)
     private long orderCode;
 
@@ -58,19 +60,19 @@ public class PaymentTransaction {
     @Column(nullable = false, length = 16)
     private PaymentStatus status;
 
-    /** Transfer content / PayOS description shown to the payer. */
+    /** Transfer content shown to the payer (the SePay QR {@code des}). */
     @Column(length = 64)
     private String description;
 
-    /** PayOS hosted checkout page URL. */
+    /** Unused (kept for back-compat with the old hosted-checkout gateway). */
     @Column(name = "checkout_url", length = 512)
     private String checkoutUrl;
 
-    /** Raw EMVCo QR string from PayOS (rendered as an image on the client). */
+    /** SePay VietQR image URL rendered to the buyer. */
     @Column(name = "qr_code", length = 2048)
     private String qrCode;
 
-    /** PayOS payment-link id (for status look-ups / cancellation). */
+    /** Unused (kept for back-compat with the old hosted-checkout gateway). */
     @Column(name = "payment_link_id", length = 128)
     private String paymentLinkId;
 

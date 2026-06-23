@@ -4,6 +4,7 @@ import com.truewrist.backend.dto.MessagingDtos.ConversationResponse;
 import com.truewrist.backend.dto.MessagingDtos.MessageResponse;
 import com.truewrist.backend.dto.MessagingDtos.SendMessageRequest;
 import com.truewrist.backend.dto.MessagingDtos.StartConversationRequest;
+import com.truewrist.backend.dto.MessagingDtos.StartShopAdminRequest;
 import com.truewrist.backend.dto.MessagingDtos.ThreadResponse;
 import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.service.MessagingService;
@@ -38,6 +39,16 @@ public class MessagingController {
             @Valid @RequestBody StartConversationRequest req,
             @AuthenticationPrincipal AppUserPrincipal actor) {
         return messagingService.startConversation(actor, req.target(), req.shopId(), req.subject(), req.body());
+    }
+
+    /** A seller opens a thread to the platform admins (partner support). */
+    @PostMapping("/shop-to-admin")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('SHOP')")
+    public ThreadResponse startShopToAdmin(
+            @Valid @RequestBody StartShopAdminRequest req,
+            @AuthenticationPrincipal AppUserPrincipal actor) {
+        return messagingService.startShopToAdmin(actor, req.shopId(), req.subject(), req.body());
     }
 
     /** The signed-in customer's own threads. */

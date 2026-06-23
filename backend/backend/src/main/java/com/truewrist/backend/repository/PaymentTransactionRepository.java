@@ -14,6 +14,8 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     List<PaymentTransaction> findByUserIdOrderByCreatedAtDesc(String userId);
 
+    List<PaymentTransaction> findByStatus(PaymentStatus status);
+
     List<PaymentTransaction> findAllByOrderByCreatedAtDesc();
 
     /** Total confirmed revenue (sum of PAID amounts) since the given epoch millis. */

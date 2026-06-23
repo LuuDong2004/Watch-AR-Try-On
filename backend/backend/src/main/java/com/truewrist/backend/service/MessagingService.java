@@ -75,6 +75,7 @@ public class MessagingService {
         Conversation conv = Conversation.builder()
                 .id(Ids.generate("conv"))
                 .customerId(actor.getId())
+                .initiatorRole(MessageSenderRole.CUSTOMER)
                 .targetType(target)
                 .shopId(resolvedShopId)
                 .subject(subject.trim())
@@ -89,7 +90,50 @@ public class MessagingService {
 
         Message message = saveMessage(conv.getId(), actor.getId(), senderName, MessageSenderRole.CUSTOMER, body, now);
         return new ThreadResponse(
-                toResponse(conv, true),
+                toResponse(conv, actor.getId()),
+                List.of(MessageResponse.from(message)));
+    }
+
+    /**
+     * A seller opens a thread to the platform admins (partner support). The seller
+     * is the initiator (role SHOP); the thread is ADMIN-targeted and tagged with the
+     * initiating shop so it surfaces in both the seller's and the admin's inbox.
+     */
+    @Transactional
+    public ThreadResponse startShopToAdmin(AppUserPrincipal actor, String shopId, String subject, String body) {
+        Shop shop;
+        if (shopId != null && !shopId.isBlank()) {
+            shop = shopRepository.findById(shopId)
+                    .orElseThrow(() -> ApiException.notFound("Không tìm thấy cửa hàng."));
+            if (!actor.getId().equals(shop.getOwnerId())) {
+                throw ApiException.forbidden("Cửa hàng này không thuộc về bạn.");
+            }
+        } else {
+            shop = shopRepository.findByOwnerId(actor.getId()).stream().findFirst()
+                    .orElseThrow(() -> ApiException.badRequest("Bạn chưa có cửa hàng nào."));
+        }
+
+        long now = System.currentTimeMillis();
+        String senderName = userName(actor.getId());
+        Conversation conv = Conversation.builder()
+                .id(Ids.generate("conv"))
+                .customerId(actor.getId())
+                .initiatorRole(MessageSenderRole.SHOP)
+                .targetType(ConversationTarget.ADMIN)
+                .shopId(shop.getId())
+                .subject(subject.trim())
+                .lastMessage(preview(body))
+                .lastSenderRole(MessageSenderRole.SHOP)
+                .customerUnread(0)
+                .staffUnread(1)
+                .createdAt(now)
+                .updatedAt(now)
+                .build();
+        conversationRepository.save(conv);
+
+        Message message = saveMessage(conv.getId(), actor.getId(), senderName, MessageSenderRole.SHOP, body, now);
+        return new ThreadResponse(
+                toResponse(conv, actor.getId()),
                 List.of(MessageResponse.from(message)));
     }
 
@@ -108,13 +152,15 @@ public class MessagingService {
         conv.setLastMessage(preview(body));
         conv.setLastSenderRole(role);
         conv.setUpdatedAt(now);
-        if (role == MessageSenderRole.CUSTOMER) {
+        boolean senderIsInitiator = actor.getId().equals(conv.getCustomerId());
+        if (senderIsInitiator) {
+            // Initiator wrote → the staff/responder side now has an unread.
             conv.setStaffUnread(conv.getStaffUnread() + 1);
             conv.setCustomerUnread(0);
         } else {
+            // Responder (admin/shop) replied → bell the initiator.
             conv.setCustomerUnread(conv.getCustomerUnread() + 1);
             conv.setStaffUnread(0);
-            // Bell the customer that staff replied.
             notificationService.notify(
                     conv.getCustomerId(),
                     NotificationType.MESSAGE,
@@ -132,12 +178,12 @@ public class MessagingService {
     public ThreadResponse getThread(AppUserPrincipal actor, String conversationId) {
         Conversation conv = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy hội thoại."));
-        boolean isCustomer = actor.getId().equals(conv.getCustomerId());
-        if (!isCustomer) {
+        boolean isInitiator = actor.getId().equals(conv.getCustomerId());
+        if (!isInitiator) {
             authorizeStaff(actor, conv); // throws if not a permitted staff participant
         }
         // Reset the viewer's unread counter.
-        if (isCustomer) {
+        if (isInitiator) {
             conv.setCustomerUnread(0);
         } else {
             conv.setStaffUnread(0);
@@ -148,15 +194,18 @@ public class MessagingService {
                 .findByConversationIdOrderByCreatedAtAsc(conversationId).stream()
                 .map(MessageResponse::from)
                 .toList();
-        return new ThreadResponse(toResponse(conv, isCustomer), messages);
+        return new ThreadResponse(toResponse(conv, actor.getId()), messages);
     }
 
     // --- Inbox lists ---------------------------------------------------------
 
     @Transactional(readOnly = true)
     public List<ConversationResponse> listForCustomer(AppUserPrincipal actor) {
+        // Only the user's own customer-started threads; their shop→admin threads
+        // surface in the seller inbox instead.
         return conversationRepository.findByCustomerIdOrderByUpdatedAtDesc(actor.getId()).stream()
-                .map(c -> toResponse(c, true))
+                .filter(c -> c.getInitiatorRole() != MessageSenderRole.SHOP)
+                .map(c -> toResponse(c, actor.getId()))
                 .toList();
     }
 
@@ -168,15 +217,17 @@ public class MessagingService {
         if (shopIds.isEmpty()) {
             return List.of();
         }
+        // Includes both customer→shop threads (shop is responder) and the shop's own
+        // shop→admin threads (shop is initiator); toResponse resolves the perspective.
         return conversationRepository.findByShopIdInOrderByUpdatedAtDesc(shopIds).stream()
-                .map(c -> toResponse(c, false))
+                .map(c -> toResponse(c, actor.getId()))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<ConversationResponse> listForAdmin(AppUserPrincipal actor) {
         return conversationRepository.findByTargetTypeOrderByUpdatedAtDesc(ConversationTarget.ADMIN).stream()
-                .map(c -> toResponse(c, false))
+                .map(c -> toResponse(c, actor.getId()))
                 .toList();
     }
 
@@ -200,10 +251,14 @@ public class MessagingService {
     /** Verify the actor may participate and return the role their message carries. */
     private MessageSenderRole authorizeAndResolveRole(AppUserPrincipal actor, Conversation conv) {
         if (actor.getId().equals(conv.getCustomerId())) {
-            return MessageSenderRole.CUSTOMER;
+            return initiatorRoleOf(conv); // CUSTOMER, or SHOP for a seller's admin thread
         }
         authorizeStaff(actor, conv);
         return isAdmin(actor) ? MessageSenderRole.ADMIN : MessageSenderRole.SHOP;
+    }
+
+    private static MessageSenderRole initiatorRoleOf(Conversation conv) {
+        return conv.getInitiatorRole() == null ? MessageSenderRole.CUSTOMER : conv.getInitiatorRole();
     }
 
     /** Throw unless the actor is a staff participant of this thread. */
@@ -238,23 +293,28 @@ public class MessagingService {
         return (shopName == null ? "Cửa hàng" : shopName) + " đã trả lời";
     }
 
-    private ConversationResponse toResponse(Conversation c, boolean viewerIsCustomer) {
+    private ConversationResponse toResponse(Conversation c, String actorId) {
+        boolean viewerIsInitiator = actorId != null && actorId.equals(c.getCustomerId());
+        MessageSenderRole initiatorRole = initiatorRoleOf(c);
+
         User customer = userRepository.findById(c.getCustomerId()).orElse(null);
         String customerName = customer == null ? null : customer.getName();
         String customerEmail = customer == null ? null : customer.getEmail();
         String shopName = c.getShopId() == null ? null
                 : shopRepository.findById(c.getShopId()).map(Shop::getName).orElse(null);
 
-        String counterpart;
-        if (viewerIsCustomer) {
-            counterpart = c.getTargetType() == ConversationTarget.ADMIN
-                    ? "TrueWrist · Quản trị"
-                    : (shopName == null ? "Cửa hàng" : shopName);
-        } else {
-            counterpart = customerName != null ? customerName
-                    : (customerEmail != null ? customerEmail : "Khách hàng");
-        }
-        int unread = viewerIsCustomer ? c.getCustomerUnread() : c.getStaffUnread();
+        // Label of the thread initiator (shown to the responding side).
+        String initiatorLabel = initiatorRole == MessageSenderRole.SHOP
+                ? (shopName == null ? "Cửa hàng" : shopName)
+                : (customerName != null ? customerName
+                        : (customerEmail != null ? customerEmail : "Khách hàng"));
+        // Label of the target side (shown to the initiator).
+        String targetLabel = c.getTargetType() == ConversationTarget.ADMIN
+                ? "TrueWrist · Quản trị"
+                : (shopName == null ? "Cửa hàng" : shopName);
+
+        String counterpart = viewerIsInitiator ? targetLabel : initiatorLabel;
+        int unread = viewerIsInitiator ? c.getCustomerUnread() : c.getStaffUnread();
 
         return new ConversationResponse(
                 c.getId(),
@@ -269,6 +329,8 @@ public class MessagingService {
                 c.getLastMessage(),
                 c.getLastSenderRole(),
                 unread,
+                initiatorRole,
+                viewerIsInitiator,
                 c.getCreatedAt(),
                 c.getUpdatedAt());
     }

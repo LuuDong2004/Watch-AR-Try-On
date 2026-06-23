@@ -89,25 +89,27 @@ app:
   password-reset:
     # How long a reset link stays valid, in minutes.
     token-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:60}
-  payos:
-    # PayOS QR payment gateway (https://payos.vn). Leave PAYOS_ENABLED=false (or the
-    # credentials blank) to run in fallback mode: a static VietQR is shown and the
-    # buyer confirms payment manually — handy for local dev without PayOS.
-    enabled: ${PAYOS_ENABLED:false}
-    client-id: ${PAYOS_CLIENT_ID:}
-    api-key: ${PAYOS_API_KEY:}
-    checksum-key: ${PAYOS_CHECKSUM_KEY:}
-    api-base-url: ${PAYOS_API_BASE_URL:https://api-merchant.payos.vn}
-    # Where PayOS sends the buyer back after success/cancel (the SPA just polls,
-    # so these are mostly placeholders PayOS requires).
-    return-url: ${PAYOS_RETURN_URL:}
-    cancel-url: ${PAYOS_CANCEL_URL:}
-    fallback-bank:
-      # Bank account used to render the static VietQR in fallback mode.
-      # bin = VietQR bank code (e.g. 970415 = VietinBank, 970436 = Vietcombank).
-      bin: ${PAYOS_FALLBACK_BANK_BIN:}
-      account-number: ${PAYOS_FALLBACK_ACCOUNT_NUMBER:}
-      account-name: ${PAYOS_FALLBACK_ACCOUNT_NAME:}
+  sepay:
+    # SePay payment gateway (https://sepay.vn). We render a VietQR (qr.sepay.vn)
+    # pointing at our bank account; SePay fires a webhook when a matching transfer
+    # lands. Leave SEPAY_ENABLED=false (or account/bank blank) to run in dev mode:
+    # no QR + a manual "I have paid" confirm button (local dev without SePay).
+    enabled: ${SEPAY_ENABLED:false}
+    # Bank account that receives the transfers (registered with SePay).
+    account-number: ${SEPAY_ACCOUNT_NUMBER:}
+    # Bank code or short name per qr.sepay.vn/banks.json (e.g. MBBank, Vietcombank, ACB).
+    bank: ${SEPAY_BANK:}
+    account-name: ${SEPAY_ACCOUNT_NAME:}
+    # VietQR image base + template (compact | qronly | standee | blank).
+    qr-base-url: ${SEPAY_QR_BASE_URL:https://qr.sepay.vn/img}
+    qr-template: ${SEPAY_QR_TEMPLATE:compact}
+    # Prefix prepended to the order code in the transfer content (e.g. TW123456).
+    code-prefix: ${SEPAY_CODE_PREFIX:TW}
+    # Webhook security. Preferred: HMAC-SHA256 secret (SePay signs {timestamp}.{body}
+    # → X-SePay-Signature). Alternatively an API key sent as "Authorization: Apikey <key>".
+    # At least one MUST be set in production — the webhook fails closed otherwise.
+    webhook-secret: ${SEPAY_WEBHOOK_SECRET:}
+    webhook-api-key: ${SEPAY_WEBHOOK_API_KEY:}
   storage:
     # MinIO / S3-compatible object storage for uploaded images.
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

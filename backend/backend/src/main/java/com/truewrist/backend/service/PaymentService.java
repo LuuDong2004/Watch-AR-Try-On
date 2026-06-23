@@ -14,22 +14,21 @@ import com.truewrist.backend.dto.PaymentDtos.PlanRevenue;
 import com.truewrist.backend.dto.PaymentDtos.RevenueStats;
 import com.truewrist.backend.dto.PaymentDtos.StatusResponse;
 import com.truewrist.backend.exception.ApiException;
-import com.truewrist.backend.payment.PayOsClient;
+import com.truewrist.backend.payment.SePayClient;
 import com.truewrist.backend.repository.PaymentTransactionRepository;
 import com.truewrist.backend.repository.SubscriptionPlanRepository;
 import com.truewrist.backend.repository.UserRepository;
 import com.truewrist.backend.security.AppUserPrincipal;
 import com.truewrist.backend.util.Ids;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +47,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
     private final NotificationService notificationService;
-    private final PayOsClient payOs;
+    private final SePayClient sePay;
     private final AppProperties props;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -58,14 +57,14 @@ public class PaymentService {
             UserRepository userRepository,
             SubscriptionService subscriptionService,
             NotificationService notificationService,
-            PayOsClient payOs,
+            SePayClient sePay,
             AppProperties props) {
         this.transactionRepository = transactionRepository;
         this.planRepository = planRepository;
         this.userRepository = userRepository;
         this.subscriptionService = subscriptionService;
         this.notificationService = notificationService;
-        this.payOs = payOs;
+        this.sePay = sePay;
         this.props = props;
     }
 
@@ -73,8 +72,9 @@ public class PaymentService {
 
     /**
      * Start a payment for the given plan. Validates the user may buy it, creates a
-     * PENDING transaction, and either asks PayOS for a QR link or (when PayOS isn't
-     * configured) builds a static VietQR for manual confirmation.
+     * PENDING transaction, and renders a SePay VietQR (with a unique transfer
+     * content) for the buyer to pay. When SePay isn't configured it falls back to a
+     * manual-confirm dev mode.
      */
     @Transactional
     public CheckoutResponse createCheckout(AppUserPrincipal actor, String planCode) {
@@ -85,10 +85,8 @@ public class PaymentService {
 
         long now = System.currentTimeMillis();
         long orderCode = nextOrderCode();
-        String description = ("TW" + orderCode);
-        if (description.length() > 25) {
-            description = description.substring(0, 25);
-        }
+        // Transfer content SePay echoes back in the webhook so we can match the order.
+        String description = props.sepay().resolvedCodePrefix() + orderCode;
 
         PaymentTransaction tx = PaymentTransaction.builder()
                 .id(Ids.generate("pay"))
@@ -102,34 +100,24 @@ public class PaymentService {
                 .updatedAt(now)
                 .build();
 
-        boolean devMode = !payOs.isConfigured();
+        boolean devMode = !sePay.isConfigured();
         if (devMode) {
-            // Fallback: static VietQR image + manual confirm (local dev / no PayOS).
-            tx.setQrCode(null);
-            tx.setCheckoutUrl(null);
+            // No SePay account configured → manual confirm (local dev).
             transactionRepository.save(tx);
-            AppProperties.FallbackBank bank = props.payos() == null ? null : props.payos().fallbackBank();
             return new CheckoutResponse(
                     orderCode, plan.getCode(), plan.getName(), plan.getPrice(), description,
-                    PaymentStatus.PENDING, null, null,
-                    fallbackQrImageUrl(bank, plan.getPrice(), description),
-                    bank == null ? null : "VietQR",
-                    bank == null ? null : bank.accountNumber(),
-                    bank == null ? null : bank.accountName(),
-                    true);
+                    PaymentStatus.PENDING, null, null, null, null, null, null, true);
         }
 
-        PayOsClient.CreatedLink link = payOs.createPaymentLink(
-                orderCode, plan.getPrice(), description, returnUrl(orderCode), cancelUrl(orderCode));
-        tx.setCheckoutUrl(link.checkoutUrl());
-        tx.setQrCode(link.qrCode());
-        tx.setPaymentLinkId(link.paymentLinkId());
+        String qrImageUrl = sePay.buildQrImageUrl(plan.getPrice(), description);
+        tx.setQrCode(qrImageUrl);
         transactionRepository.save(tx);
 
+        AppProperties.SePay cfg = props.sepay();
         return new CheckoutResponse(
                 orderCode, plan.getCode(), plan.getName(), plan.getPrice(), description,
-                PaymentStatus.PENDING, link.checkoutUrl(), link.qrCode(), null,
-                null, link.accountNumber(), null, false);
+                PaymentStatus.PENDING, null, null, qrImageUrl,
+                cfg.bank(), cfg.accountNumber(), cfg.accountName(), false);
     }
 
     /** Poll the status of one of the caller's transactions (drives the QR modal). */
@@ -143,53 +131,100 @@ public class PaymentService {
         return new StatusResponse(orderCode, tx.getStatus());
     }
 
-    // --- Webhook (PayOS → us) ------------------------------------------------
+    // --- Webhook (SePay → us) ------------------------------------------------
 
     /**
-     * Handle a PayOS webhook. Always succeeds (returns normally) so PayOS gets a
-     * 2xx ack even for its registration test ping or an unknown order; only a
-     * valid, signed, successful payment for a PENDING transaction is applied.
+     * Handle a SePay webhook. Always returns normally so SePay gets a 2xx ack even
+     * for an unmatched transfer; only a verified, incoming ("in") transfer whose
+     * content matches a PENDING transaction (with sufficient amount) is applied.
+     *
+     * @param rawBody       the exact raw request body (needed for HMAC verification)
+     * @param signature     {@code X-SePay-Signature} header (HMAC mode)
+     * @param timestamp     {@code X-SePay-Timestamp} header (HMAC mode)
+     * @param authorization {@code Authorization} header (API-key mode)
      */
     @Transactional
-    public void handleWebhook(String rawBody) {
+    public void handleWebhook(String rawBody, String signature, String timestamp, String authorization) {
+        long nowSeconds = System.currentTimeMillis() / 1000L;
+        if (!sePay.verifyWebhook(rawBody, signature, timestamp, authorization, nowSeconds)) {
+            log.warn("SePay webhook failed verification — ignored.");
+            return;
+        }
         JsonNode webhook;
         try {
             webhook = mapper.readTree(rawBody);
         } catch (Exception e) {
-            log.warn("Unparseable PayOS webhook body.");
+            log.warn("Unparseable SePay webhook body.");
             return;
         }
-        if (!payOs.verifyWebhookSignature(webhook)) {
-            log.warn("PayOS webhook with invalid signature — ignored.");
+
+        // Only incoming credits ("in") fund a plan; ignore outgoing transfers.
+        if (!"in".equalsIgnoreCase(webhook.path("transferType").asText(""))) {
             return;
         }
-        JsonNode data = webhook.path("data");
-        long orderCode = data.path("orderCode").asLong(0);
-        if (orderCode <= 0) {
-            return; // registration test ping
-        }
-        PaymentTransaction tx = transactionRepository.findByOrderCode(orderCode).orElse(null);
+
+        PaymentTransaction tx = matchTransaction(webhook);
         if (tx == null) {
-            log.info("Webhook for unknown orderCode {} — ignored.", orderCode);
+            log.info("SePay webhook (ref {}) matched no transaction — ignored.",
+                    webhook.path("referenceCode").asText(""));
             return;
         }
-        boolean success = "00".equals(data.path("code").asText());
-        if (!success) {
-            if (tx.getStatus() == PaymentStatus.PENDING) {
-                markStatus(tx, PaymentStatus.FAILED);
+        if (tx.getStatus() == PaymentStatus.PAID) {
+            return; // idempotent — SePay may retry the same transfer
+        }
+        long amount = webhook.path("transferAmount").asLong(0);
+        if (amount < tx.getAmount()) {
+            log.warn("SePay transfer {} < expected {} for order {} — ignored.",
+                    amount, tx.getAmount(), tx.getOrderCode());
+            return;
+        }
+        applyPaid(tx, webhook.path("referenceCode").asText(null), null);
+    }
+
+    /**
+     * Match a SePay transfer to a transaction. First looks for the configured
+     * prefix + order code in the (normalized) {@code code}/{@code content}/
+     * {@code description} fields; if a bank stripped the prefix, falls back to
+     * scanning PENDING orders for their bare order code in the content.
+     */
+    private PaymentTransaction matchTransaction(JsonNode webhook) {
+        String prefix = props.sepay().resolvedCodePrefix().toUpperCase();
+        String combined = field(webhook, "code") + " " + field(webhook, "content")
+                + " " + field(webhook, "description");
+        String norm = combined.toUpperCase().replaceAll("[^A-Z0-9]", "");
+
+        Matcher m = Pattern.compile(Pattern.quote(prefix) + "(\\d{6,})").matcher(norm);
+        while (m.find()) {
+            try {
+                PaymentTransaction tx = transactionRepository
+                        .findByOrderCode(Long.parseLong(m.group(1))).orElse(null);
+                if (tx != null) {
+                    return tx;
+                }
+            } catch (NumberFormatException ignore) {
+                // group too large for long — not one of our order codes
             }
-            return;
         }
-        applyPaid(tx, data.path("reference").asText(null), data.path("counterAccountName").asText(null));
+        for (PaymentTransaction tx : transactionRepository.findByStatus(PaymentStatus.PENDING)) {
+            if (norm.contains(Long.toString(tx.getOrderCode()))) {
+                return tx;
+            }
+        }
+        return null;
+    }
+
+    private static String field(JsonNode node, String name) {
+        JsonNode v = node.path(name);
+        return v.isMissingNode() || v.isNull() ? "" : v.asText();
     }
 
     // --- Dev / manual --------------------------------------------------------
 
-    /** Manually confirm a fallback (no-PayOS) transaction has been paid. */
+    /** Manually confirm a fallback (no-SePay) transaction has been paid. */
     @Transactional
     public StatusResponse devConfirm(AppUserPrincipal actor, long orderCode) {
-        if (payOs.isConfigured()) {
-            throw ApiException.badRequest("Xác nhận thủ công chỉ dùng khi chưa cấu hình PayOS.");
+        if (sePay.isConfigured()) {
+            throw ApiException.badRequest("Xác nhận thủ công chỉ dùng khi chưa cấu hình SePay.");
         }
         PaymentTransaction tx = transactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy giao dịch."));
@@ -378,39 +413,6 @@ public class PaymentService {
             }
         }
         throw ApiException.badRequest("Không tạo được mã giao dịch. Vui lòng thử lại.");
-    }
-
-    private String returnUrl(long orderCode) {
-        return appendOrder(configuredOr(
-                props.payos() == null ? null : props.payos().returnUrl(),
-                props.frontend().resolvedBaseUrl() + "/payment/return"), orderCode);
-    }
-
-    private String cancelUrl(long orderCode) {
-        return appendOrder(configuredOr(
-                props.payos() == null ? null : props.payos().cancelUrl(),
-                props.frontend().resolvedBaseUrl() + "/payment/cancel"), orderCode);
-    }
-
-    private static String configuredOr(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
-    }
-
-    private static String appendOrder(String url, long orderCode) {
-        return url + (url.contains("?") ? "&" : "?") + "orderCode=" + orderCode;
-    }
-
-    /** Build a scannable VietQR image URL for the fallback (no-PayOS) flow. */
-    private static String fallbackQrImageUrl(AppProperties.FallbackBank bank, long amount, String addInfo) {
-        if (bank == null || bank.bin() == null || bank.bin().isBlank()
-                || bank.accountNumber() == null || bank.accountNumber().isBlank()) {
-            return null;
-        }
-        String info = URLEncoder.encode(addInfo, StandardCharsets.UTF_8);
-        String name = bank.accountName() == null ? ""
-                : URLEncoder.encode(bank.accountName(), StandardCharsets.UTF_8);
-        return "https://img.vietqr.io/image/" + bank.bin() + "-" + bank.accountNumber()
-                + "-compact2.png?amount=" + amount + "&addInfo=" + info + "&accountName=" + name;
     }
 
     private static String trimToNull(String s) {

@@ -13,42 +13,51 @@ public record AppProperties(
         Mail mail,
         Frontend frontend,
         PasswordReset passwordReset,
-        PayOs payos) {
+        SePay sepay) {
 
     public record Jwt(String secret, long expirationMs) {}
 
     /**
-     * PayOS QR payment gateway. When {@code enabled} is false (or credentials are
-     * blank) the backend runs in a fallback mode: a static VietQR image is shown
-     * and payment is confirmed manually (handy for local dev without PayOS).
+     * SePay payment gateway (https://sepay.vn). Unlike a hosted-checkout gateway,
+     * SePay works by watching a real bank account: we render a VietQR (via
+     * {@code qr.sepay.vn}) pointing at our account with a unique transfer content,
+     * and SePay fires a webhook the moment a matching transfer lands. When the
+     * account/bank are not configured the backend falls back to a manual-confirm
+     * dev mode (handy for local dev without a SePay account).
+     *
+     * <p>Webhook authenticity is enforced by HMAC-SHA256 when {@code webhookSecret}
+     * is set (SePay signs {@code {timestamp}.{rawBody}} → {@code X-SePay-Signature}),
+     * otherwise by the API key ({@code Authorization: Apikey <webhookApiKey>}).</p>
      */
-    public record PayOs(
+    public record SePay(
             boolean enabled,
-            String clientId,
-            String apiKey,
-            String checksumKey,
-            String apiBaseUrl,
-            String returnUrl,
-            String cancelUrl,
-            FallbackBank fallbackBank) {
+            String accountNumber,
+            String bank,
+            String accountName,
+            String qrBaseUrl,
+            String qrTemplate,
+            String codePrefix,
+            String webhookSecret,
+            String webhookApiKey) {
 
-        public String resolvedApiBaseUrl() {
-            String base = (apiBaseUrl == null || apiBaseUrl.isBlank())
-                    ? "https://api-merchant.payos.vn" : apiBaseUrl;
+        public String resolvedQrBaseUrl() {
+            String base = (qrBaseUrl == null || qrBaseUrl.isBlank())
+                    ? "https://qr.sepay.vn/img" : qrBaseUrl;
             return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
         }
 
-        /** True only when all three credentials are present. */
+        /** Transfer-content prefix prepended to the order code (e.g. {@code TW123…}). */
+        public String resolvedCodePrefix() {
+            return (codePrefix == null || codePrefix.isBlank()) ? "TW" : codePrefix.trim();
+        }
+
+        /** True when enough is configured to render a real SePay VietQR. */
         public boolean isConfigured() {
             return enabled
-                    && clientId != null && !clientId.isBlank()
-                    && apiKey != null && !apiKey.isBlank()
-                    && checksumKey != null && !checksumKey.isBlank();
+                    && accountNumber != null && !accountNumber.isBlank()
+                    && bank != null && !bank.isBlank();
         }
     }
-
-    /** Bank account used to render a static VietQR in fallback (no-PayOS) mode. */
-    public record FallbackBank(String bin, String accountNumber, String accountName) {}
 
     /** Outgoing email settings. When {@code enabled} is false, reset links are
      *  logged instead of emailed (handy for local dev without SMTP). */

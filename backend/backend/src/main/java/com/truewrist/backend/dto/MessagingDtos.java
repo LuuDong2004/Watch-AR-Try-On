@@ -19,6 +19,13 @@ public final class MessagingDtos {
             @NotBlank @Size(max = 200) String subject,
             @NotBlank @Size(max = 4000) String body) {}
 
+    /** A seller opens a thread to the platform admins ({@code shopId} optional —
+     *  defaults to the seller's first shop). */
+    public record StartShopAdminRequest(
+            String shopId,
+            @NotBlank @Size(max = 200) String subject,
+            @NotBlank @Size(max = 4000) String body) {}
+
     /** Append a message to an existing thread. */
     public record SendMessageRequest(@NotBlank @Size(max = 4000) String body) {}
 
@@ -58,6 +65,10 @@ public final class MessagingDtos {
             String lastMessage,
             MessageSenderRole lastSenderRole,
             int unread,
+            /** Role the initiator plays (CUSTOMER, or SHOP for shop→admin threads). */
+            MessageSenderRole initiatorRole,
+            /** True when the viewer is the thread initiator (drives icon/labels). */
+            boolean viewerIsInitiator,
             long createdAt,
             long updatedAt) {}
 

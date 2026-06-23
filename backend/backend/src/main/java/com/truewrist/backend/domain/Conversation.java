@@ -38,15 +38,28 @@ public class Conversation {
     @Column(length = 64)
     private String id;
 
-    /** The customer (always the initiating side). */
+    /** The initiating user's id (a customer, or a shop owner for SHOP→ADMIN threads). */
     @Column(name = "customer_id", nullable = false, length = 64)
     private String customerId;
+
+    /**
+     * The role the initiator plays: CUSTOMER for customer-started threads, or SHOP
+     * when a seller opens a thread to the platform admins. Null on legacy rows is
+     * treated as CUSTOMER. Drives who is "staff" vs the initiator.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "initiator_role", length = 16)
+    @Builder.Default
+    private MessageSenderRole initiatorRole = MessageSenderRole.CUSTOMER;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false, length = 16)
     private ConversationTarget targetType;
 
-    /** Target shop id when {@link #targetType} is SHOP; null for ADMIN threads. */
+    /**
+     * Shop id this thread concerns: the target shop for CUSTOMER→SHOP threads, or
+     * the initiating shop for SHOP→ADMIN threads; null for plain CUSTOMER→ADMIN.
+     */
     @Column(name = "shop_id", length = 64)
     private String shopId;
 

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -59,14 +60,18 @@ public class PaymentController {
         return paymentService.devConfirm(actor, orderCode);
     }
 
-    // --- PayOS webhook (public; verified by signature) -----------------------
+    // --- SePay webhook (public; verified by HMAC-SHA256 / API key) -----------
 
     @PostMapping("/webhook")
-    public Map<String, Object> webhook(@RequestBody(required = false) String rawBody) {
+    public Map<String, Object> webhook(
+            @RequestBody(required = false) String rawBody,
+            @RequestHeader(value = "X-SePay-Signature", required = false) String signature,
+            @RequestHeader(value = "X-SePay-Timestamp", required = false) String timestamp,
+            @RequestHeader(value = "Authorization", required = false) String authorization) {
         if (rawBody != null && !rawBody.isBlank()) {
-            paymentService.handleWebhook(rawBody);
+            paymentService.handleWebhook(rawBody, signature, timestamp, authorization);
         }
-        // Always ack with 2xx so PayOS accepts the endpoint (incl. its test ping).
+        // Always ack with 2xx so SePay accepts the endpoint (and stops retrying).
         return Map.of("success", true);
     }
 
