@@ -3,9 +3,9 @@ import {
   BadgeCheck,
   Building2,
   CheckCircle2,
+  Clock,
   Copy,
   CreditCard,
-  ExternalLink,
   Loader2,
   ShieldCheck,
   X,
@@ -26,6 +26,14 @@ interface PaymentQRModalProps {
 
 const formatVND = (value: number) => new Intl.NumberFormat('vi-VN').format(value) + ' đ';
 
+/** Format a millisecond duration as m:ss. */
+const formatCountdown = (ms: number) => {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+};
+
 /** Render a scannable QR image from either a raw EMV string or a ready image URL. */
 const qrImageFor = (checkout: PaymentCheckout): string | null => {
   if (checkout.qrImageUrl) return checkout.qrImageUrl;
@@ -42,24 +50,36 @@ export default function PaymentQRModal({ plan, isRenewal, onClose, onSuccess }: 
   const [status, setStatus] = useState<PaymentStatus>('PENDING');
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Create the payment when the modal opens.
+  // Countdown is derived from the server's expiresAt (absolute time), so a page
+  // reload continues the same clock instead of restarting from 30:00.
+  const remainingMs =
+    checkout?.expiresAt != null ? Math.max(0, checkout.expiresAt - now) : null;
+
+  // Create the payment when the modal opens. The checkout request is cached in a
+  // ref so React 18 StrictMode's double-invoked effect (and any re-render) reuses
+  // the SAME in-flight POST instead of creating a second transaction in the BE.
+  const checkoutRef = useRef<{ code: string; promise: Promise<PaymentCheckout> } | null>(null);
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        const data = await paymentApi.checkout(plan.code);
+    if (checkoutRef.current?.code !== plan.code) {
+      checkoutRef.current = { code: plan.code, promise: paymentApi.checkout(plan.code) };
+    }
+    checkoutRef.current.promise
+      .then((data) => {
         if (!cancelled) {
           setCheckout(data);
           setStatus(data.status);
         }
-      } catch (err) {
+      })
+      .catch((err) => {
         if (!cancelled) {
           setError(err instanceof ApiError ? err.message : 'Không thể tạo giao dịch thanh toán.');
         }
-      }
-    })();
+      });
     return () => { cancelled = true; };
   }, [plan.code]);
 
@@ -76,6 +96,21 @@ export default function PaymentQRModal({ plan, isRenewal, onClose, onSuccess }: 
     }, 3000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [checkout, status]);
+
+  // Tick the countdown once a second while pending.
+  useEffect(() => {
+    if (checkout?.expiresAt == null || status !== 'PENDING') return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [checkout?.expiresAt, status]);
+
+  // Flip to EXPIRED locally the moment the window lapses (the server agrees on
+  // the next poll); stops the QR from lingering past its deadline.
+  useEffect(() => {
+    if (status === 'PENDING' && remainingMs === 0 && checkout?.expiresAt != null) {
+      setStatus('EXPIRED');
+    }
+  }, [remainingMs, status, checkout?.expiresAt]);
 
   // On success, stop polling and notify the parent after a short beat.
   useEffect(() => {
@@ -102,6 +137,19 @@ export default function PaymentQRModal({ plan, isRenewal, onClose, onSuccess }: 
       toast.error(err instanceof ApiError ? err.message : 'Không thể xác nhận thanh toán.');
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!checkout) return;
+    setCancelling(true);
+    try {
+      const next = await paymentApi.cancel(checkout.orderCode);
+      setStatus(next);
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Không thể hủy giao dịch.');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -266,23 +314,27 @@ export default function PaymentQRModal({ plan, isRenewal, onClose, onSuccess }: 
                 )}
               </div>
 
+              {/* Countdown — QR expires after the server-set window (30 phút). */}
+              {remainingMs != null && (
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold tabular-nums ${
+                      remainingMs <= 60_000
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-[#FAF3E4] text-[#9A7434]'
+                    }`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    Mã QR hết hạn sau {formatCountdown(remainingMs)}
+                  </span>
+                </div>
+              )}
+
               {/* Waiting indicator */}
-              <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-[#9A7434]">
+              <div className="mt-3 flex items-center justify-center gap-2 text-xs font-semibold text-[#9A7434]">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Đang chờ thanh toán…
               </div>
-
-              {/* PayOS hosted checkout link */}
-              {checkout.checkoutUrl && (
-                <a
-                  href={checkout.checkoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#B8924A] px-4 py-3 text-xs font-bold text-[#9A7434] transition hover:bg-[#B8924A]/5"
-                >
-                  <ExternalLink className="h-4 w-4" /> Mở trang thanh toán PayOS
-                </a>
-              )}
 
               {/* Dev/manual confirm (fallback mode) */}
               {checkout.devMode && (
@@ -295,6 +347,16 @@ export default function PaymentQRModal({ plan, isRenewal, onClose, onSuccess }: 
                   Tôi đã thanh toán (xác nhận thủ công)
                 </button>
               )}
+
+              {/* Cancel the pending payment */}
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-[#e5e0d8] px-4 py-2.5 text-xs font-bold text-gray-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              >
+                {cancelling ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                Hủy thanh toán
+              </button>
 
               <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[10px] text-gray-400">
                 <ShieldCheck className="h-3 w-3" /> Giao dịch được bảo mật. Không đóng cửa sổ cho đến khi hoàn tất.

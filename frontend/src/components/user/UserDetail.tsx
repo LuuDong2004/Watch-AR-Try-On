@@ -22,6 +22,8 @@ interface UserDetailProps {
   onBack: () => void;
   onSelectWatch: (id: string) => void;
   onSelectShop?: (shopId: string) => void;
+  /** Start an in-app chat with the seller of this watch. */
+  onContactShop?: (shopId: string, shopName?: string | null) => void;
 }
 
 /**
@@ -34,7 +36,7 @@ interface UserDetailProps {
  * "Liên hệ người bán" links straight to the seller's shop page (no inline form).
  * State (watch, shop, favorites, popups) lives here; children are pure.
  */
-export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, onSelectShop }: UserDetailProps) {
+export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, onSelectShop, onContactShop }: UserDetailProps) {
   const user = useSession((s) => s.user);
   const showLogin = useLoginPrompt((s) => s.show);
 
@@ -188,6 +190,7 @@ export default function UserDetail({ watchId, onOpenAR, onBack, onSelectWatch, o
               onOpenAR={() => onOpenAR(watch.id)}
               onOpenContact={() => setContactOpen(true)}
               onOpenShop={onSelectShop}
+              onChatShop={shop && onContactShop ? () => onContactShop(shop.id, shop.name) : undefined}
             />
           </div>
         </section>

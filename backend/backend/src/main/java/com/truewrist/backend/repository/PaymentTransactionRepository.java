@@ -16,6 +16,10 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     List<PaymentTransaction> findByStatus(PaymentStatus status);
 
+    /** Newest transaction for a user+plan in a given status (reuse an open PENDING). */
+    Optional<PaymentTransaction> findFirstByUserIdAndPlanCodeAndStatusOrderByCreatedAtDesc(
+            String userId, String planCode, PaymentStatus status);
+
     List<PaymentTransaction> findAllByOrderByCreatedAtDesc();
 
     /** Total confirmed revenue (sum of PAID amounts) since the given epoch millis. */

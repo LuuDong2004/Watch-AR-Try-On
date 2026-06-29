@@ -2,21 +2,34 @@ import React, { useEffect, useState } from 'react';
 import { Loader2, PenSquare, ShieldCheck, Store, X } from 'lucide-react';
 import { messagingApi, shopApi, ApiError } from '../../api';
 import type { ConversationSummary, ConversationTarget, Shop } from '../../api';
+import { useSession } from '../../auth/session';
 import { toast } from '../../store/useToast';
 import InboxView from '../messaging/InboxView';
+
+/** Pre-fill the compose modal (e.g. "Nhắn cửa hàng" from a shop/watch page). */
+export interface ComposePreset {
+  target: ConversationTarget;
+  shopId?: string | null;
+  shopName?: string | null;
+  subject?: string;
+}
 
 interface UserInboxProps {
   /** Pre-open a thread (e.g. from a notification). */
   initialConversationId?: string | null;
+  /** Auto-open the compose modal with these defaults (e.g. contact a shop). */
+  initialCompose?: ComposePreset | null;
   onBackToCatalog?: () => void;
 }
 
-export default function UserInbox({ initialConversationId, onBackToCatalog }: UserInboxProps) {
+export default function UserInbox({ initialConversationId, initialCompose, onBackToCatalog }: UserInboxProps) {
+  const userId = useSession((s) => s.user?.id);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(initialConversationId ?? null);
   const [composing, setComposing] = useState(false);
+  const [preset, setPreset] = useState<ComposePreset | null>(initialCompose ?? null);
 
   const load = async () => {
     try {
@@ -31,6 +44,9 @@ export default function UserInbox({ initialConversationId, onBackToCatalog }: Us
 
   useEffect(() => { load(); }, []);
   useEffect(() => { if (initialConversationId) setSelectedId(initialConversationId); }, [initialConversationId]);
+  useEffect(() => {
+    if (initialCompose) { setPreset(initialCompose); setComposing(true); }
+  }, [initialCompose]);
 
   return (
     <div className="min-h-screen w-full bg-[#F6F4EF] p-4 font-sans text-[#17140F] md:p-8">
@@ -50,6 +66,7 @@ export default function UserInbox({ initialConversationId, onBackToCatalog }: Us
         <InboxView
           conversations={conversations}
           viewerSide="customer"
+          currentUserId={userId}
           loadingList={loading}
           error={error}
           emptyText="Bạn chưa có hội thoại nào. Bấm “Soạn tin” để bắt đầu."
@@ -59,7 +76,7 @@ export default function UserInbox({ initialConversationId, onBackToCatalog }: Us
           onRefresh={load}
           headerExtra={
             <button
-              onClick={() => setComposing(true)}
+              onClick={() => { setPreset(null); setComposing(true); }}
               className="inline-flex items-center gap-1.5 rounded-full bg-[#17140F] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-black"
             >
               <PenSquare className="h-3.5 w-3.5" /> Soạn tin
@@ -70,8 +87,9 @@ export default function UserInbox({ initialConversationId, onBackToCatalog }: Us
 
       {composing && (
         <ComposeModal
-          onClose={() => setComposing(false)}
-          onCreated={(id) => { setComposing(false); setSelectedId(id); load(); }}
+          preset={preset}
+          onClose={() => { setComposing(false); setPreset(null); }}
+          onCreated={(id) => { setComposing(false); setPreset(null); setSelectedId(id); load(); }}
         />
       )}
     </div>
@@ -80,11 +98,19 @@ export default function UserInbox({ initialConversationId, onBackToCatalog }: Us
 
 // --- Compose new thread modal ----------------------------------------------
 
-function ComposeModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
-  const [target, setTarget] = useState<ConversationTarget>('ADMIN');
+function ComposeModal({
+  preset,
+  onClose,
+  onCreated,
+}: {
+  preset?: ComposePreset | null;
+  onClose: () => void;
+  onCreated: (id: string) => void;
+}) {
+  const [target, setTarget] = useState<ConversationTarget>(preset?.target ?? 'ADMIN');
   const [shops, setShops] = useState<Shop[]>([]);
-  const [shopId, setShopId] = useState('');
-  const [subject, setSubject] = useState('');
+  const [shopId, setShopId] = useState(preset?.shopId ?? '');
+  const [subject, setSubject] = useState(preset?.subject ?? '');
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
 

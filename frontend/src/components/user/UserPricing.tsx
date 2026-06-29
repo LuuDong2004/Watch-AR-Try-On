@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Zap, Crown, Check, ShieldCheck, Sparkles, Building2, Boxes, Loader2, UserPlus, QrCode, BadgeCheck, Store } from 'lucide-react';
 import { authApi, subscriptionApi } from '../../api';
-import type { SubscriptionPlan } from '../../api';
+import type { ShopSubscription, SubscriptionPlan } from '../../api';
 import { useSession } from '../../auth/session';
 import { useLoginPrompt } from '../../auth/loginPrompt';
 import { toast } from '../../store/useToast';
@@ -17,7 +17,7 @@ const formatVND = (value: number) =>
 const formatLimit = (value: number) => (value < 0 ? 'không giới hạn' : value.toLocaleString('vi-VN'));
 
 /** Customer-facing "become a partner" pricing. Picking a plan opens a QR payment
- *  (PayOS); a confirmed payment activates the plan and grants the SHOP role
+ *  (SePay); a confirmed payment activates the plan and grants the SHOP role
  *  automatically. */
 export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   const user = useSession((s) => s.user);
@@ -25,6 +25,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
   const showLogin = useLoginPrompt((s) => s.show);
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [sub, setSub] = useState<ShopSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [payingPlan, setPayingPlan] = useState<SubscriptionPlan | null>(null);
 
@@ -43,8 +44,34 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
     return () => { cancelled = true; };
   }, []);
 
+  // Load the caller's current subscription so we can disable buying the same or a
+  // lower-tier plan while it's still active (matches the backend's purchase rule).
+  useEffect(() => {
+    if (!user) { setSub(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const s = await subscriptionApi.get();
+        if (!cancelled) setSub(s);
+      } catch {
+        if (!cancelled) setSub(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // The active plan blocks same/lower tiers until it expires. A paid plan only;
+  // an expired (or trial-only) subscription leaves everything purchasable.
+  const now = Date.now();
+  const activeSub = sub && sub.expiresAt > now && (sub.currentPlan?.price ?? 0) > 0 ? sub : null;
+  const currentSort = activeSub?.currentPlan?.sortOrder ?? -Infinity;
+
+  /** Is this plan blocked because the caller already holds it or a higher tier? */
+  const isLockedPlan = (plan: SubscriptionPlan) => !!activeSub && plan.sortOrder <= currentSort;
+
   const handleChoose = (plan: SubscriptionPlan) => {
     if (!user) { showLogin('login'); return; }
+    if (isLockedPlan(plan)) return; // guarded by the disabled button; defensive
     setPayingPlan(plan);
   };
 
@@ -140,19 +167,44 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
                   </div>
 
                   {/* CTA */}
-                  <button
-                    onClick={() => handleChoose(plan)}
-                    className={`w-full py-3 rounded-xl font-bold text-sm transition active:scale-[0.99] inline-flex items-center justify-center gap-2 ${
-                      isTop
-                        ? 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow'
-                        : 'border border-[#B8924A] text-[#B8924A] hover:bg-[#B8924A]/10'
-                    }`}
-                  >
-                    <QrCode className="h-4 w-4" />
-                    {`Thanh toán gói ${plan.name}`}
-                  </button>
+                  {(() => {
+                    const locked = isLockedPlan(plan);
+                    const isCurrent = !!activeSub && plan.sortOrder === currentSort;
+                    return (
+                      <button
+                        onClick={() => handleChoose(plan)}
+                        disabled={locked}
+                        className={`w-full py-3 rounded-xl font-bold text-sm transition inline-flex items-center justify-center gap-2 ${
+                          locked
+                            ? 'cursor-not-allowed border border-[#e5e0d8] bg-gray-50 text-gray-400'
+                            : isTop
+                              ? 'bg-[#B8924A] text-white hover:bg-[#a6803f] shadow active:scale-[0.99]'
+                              : 'border border-[#B8924A] text-[#B8924A] hover:bg-[#B8924A]/10 active:scale-[0.99]'
+                        }`}
+                      >
+                        {locked ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            {isCurrent ? 'Gói hiện tại của bạn' : 'Đã có gói cao hơn'}
+                          </>
+                        ) : (
+                          <>
+                            <QrCode className="h-4 w-4" />
+                            {`Thanh toán gói ${plan.name}`}
+                          </>
+                        )}
+                      </button>
+                    );
+                  })()}
                   {!user && (
                     <p className="text-center text-[11px] text-gray-400 mt-2">Đăng nhập để thanh toán & đăng ký</p>
+                  )}
+                  {isLockedPlan(plan) && (
+                    <p className="text-center text-[11px] text-gray-400 mt-2">
+                      {activeSub && plan.sortOrder === currentSort
+                        ? `Còn ${activeSub.daysRemaining} ngày — có thể gia hạn khi hết hạn.`
+                        : 'Bạn đang dùng gói cao hơn. Chỉ có thể nâng cấp, không thể mua gói thấp hơn.'}
+                    </p>
                   )}
 
                   {/* Divider */}
@@ -188,7 +240,7 @@ export default function UserPricing({ onBackToCatalog }: UserPricingProps) {
         {/* Footnote */}
         <p className="mx-auto mt-12 flex max-w-xl items-start justify-center gap-1.5 text-center text-[11px] leading-relaxed text-gray-400">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>Thanh toán an toàn qua mã QR (PayOS / VietQR). Quyền bán hàng được kích hoạt tự động ngay khi nhận được thanh toán.</span>
+          <span>Thanh toán an toàn qua mã QR (SePay / VietQR). Quyền bán hàng được kích hoạt tự động ngay khi nhận được thanh toán.</span>
         </p>
         <div className="text-center mt-4">
           <button onClick={onBackToCatalog} className="text-xs font-semibold text-[#B8924A] hover:underline">

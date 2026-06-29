@@ -41,6 +41,8 @@ public class PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
     private static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final long THIRTY_DAYS = 30L * 86_400_000L;
+    /** How long a QR / payment window stays valid before auto-expiring. */
+    private static final long CHECKOUT_TTL_MS = 30L * 60L * 1000L;
 
     private final PaymentTransactionRepository transactionRepository;
     private final SubscriptionPlanRepository planRepository;
@@ -84,6 +86,18 @@ public class PaymentService {
         }
 
         long now = System.currentTimeMillis();
+        boolean devMode = !sePay.isConfigured();
+
+        // Reuse an open (still-valid PENDING) transaction so a reload continues the
+        // same QR + countdown instead of restarting from 30:00 with a new order code.
+        PaymentTransaction existing = transactionRepository
+                .findFirstByUserIdAndPlanCodeAndStatusOrderByCreatedAtDesc(
+                        actor.getId(), plan.getCode(), PaymentStatus.PENDING)
+                .orElse(null);
+        if (existing != null && existing.getExpiresAt() != null && existing.getExpiresAt() > now) {
+            return toCheckoutResponse(existing, plan, devMode);
+        }
+
         long orderCode = nextOrderCode();
         // Transfer content SePay echoes back in the webhook so we can match the order.
         String description = props.sepay().resolvedCodePrefix() + orderCode;
@@ -98,35 +112,65 @@ public class PaymentService {
                 .description(description)
                 .createdAt(now)
                 .updatedAt(now)
+                .expiresAt(now + CHECKOUT_TTL_MS)
                 .build();
-
-        boolean devMode = !sePay.isConfigured();
-        if (devMode) {
-            // No SePay account configured → manual confirm (local dev).
-            transactionRepository.save(tx);
-            return new CheckoutResponse(
-                    orderCode, plan.getCode(), plan.getName(), plan.getPrice(), description,
-                    PaymentStatus.PENDING, null, null, null, null, null, null, true);
+        if (!devMode) {
+            tx.setQrCode(sePay.buildQrImageUrl(plan.getPrice(), description));
         }
-
-        String qrImageUrl = sePay.buildQrImageUrl(plan.getPrice(), description);
-        tx.setQrCode(qrImageUrl);
         transactionRepository.save(tx);
+        return toCheckoutResponse(tx, plan, devMode);
+    }
 
+    /** Build the buyer-facing checkout payload from a transaction. */
+    private CheckoutResponse toCheckoutResponse(
+            PaymentTransaction tx, SubscriptionPlan plan, boolean devMode) {
+        if (devMode) {
+            return new CheckoutResponse(
+                    tx.getOrderCode(), plan.getCode(), plan.getName(), tx.getAmount(),
+                    tx.getDescription(), tx.getStatus(), null, null, null, null, null, null,
+                    true, tx.getExpiresAt());
+        }
         AppProperties.SePay cfg = props.sepay();
         return new CheckoutResponse(
-                orderCode, plan.getCode(), plan.getName(), plan.getPrice(), description,
-                PaymentStatus.PENDING, null, null, qrImageUrl,
-                cfg.bank(), cfg.accountNumber(), cfg.accountName(), false);
+                tx.getOrderCode(), plan.getCode(), plan.getName(), tx.getAmount(),
+                tx.getDescription(), tx.getStatus(), null, null, tx.getQrCode(),
+                cfg.bank(), cfg.accountNumber(), cfg.accountName(), false, tx.getExpiresAt());
     }
 
     /** Poll the status of one of the caller's transactions (drives the QR modal). */
-    @Transactional(readOnly = true)
+    @Transactional
     public StatusResponse getStatus(AppUserPrincipal actor, long orderCode) {
         PaymentTransaction tx = transactionRepository.findByOrderCode(orderCode)
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy giao dịch."));
         if (!tx.getUserId().equals(actor.getId())) {
             throw ApiException.forbidden("Giao dịch không thuộc về bạn.");
+        }
+        expireIfLapsed(tx);
+        return new StatusResponse(orderCode, tx.getStatus());
+    }
+
+    /** Flip a PENDING transaction to EXPIRED once its window has lapsed. */
+    private void expireIfLapsed(PaymentTransaction tx) {
+        if (tx.getStatus() == PaymentStatus.PENDING
+                && tx.getExpiresAt() != null
+                && System.currentTimeMillis() > tx.getExpiresAt()) {
+            markStatus(tx, PaymentStatus.EXPIRED);
+        }
+    }
+
+    /** Buyer cancels their own still-open transaction (closes the QR modal). */
+    @Transactional
+    public StatusResponse cancel(AppUserPrincipal actor, long orderCode) {
+        PaymentTransaction tx = transactionRepository.findByOrderCode(orderCode)
+                .orElseThrow(() -> ApiException.notFound("Không tìm thấy giao dịch."));
+        if (!tx.getUserId().equals(actor.getId())) {
+            throw ApiException.forbidden("Giao dịch không thuộc về bạn.");
+        }
+        if (tx.getStatus() == PaymentStatus.PAID) {
+            throw ApiException.badRequest("Giao dịch đã thanh toán, không thể hủy.");
+        }
+        if (tx.getStatus() == PaymentStatus.PENDING) {
+            markStatus(tx, PaymentStatus.CANCELLED);
         }
         return new StatusResponse(orderCode, tx.getStatus());
     }
@@ -237,8 +281,20 @@ public class PaymentService {
 
     // --- Admin ---------------------------------------------------------------
 
-    @Transactional(readOnly = true)
+    /** Flip every PENDING transaction whose window has lapsed to EXPIRED. Keeps the
+     *  admin list + pending count honest even for orders the buyer never polled. */
+    private void sweepExpired() {
+        long now = System.currentTimeMillis();
+        for (PaymentTransaction tx : transactionRepository.findByStatus(PaymentStatus.PENDING)) {
+            if (tx.getExpiresAt() != null && tx.getExpiresAt() < now) {
+                markStatus(tx, PaymentStatus.EXPIRED);
+            }
+        }
+    }
+
+    @Transactional
     public List<AdminTransactionRow> adminTransactions() {
+        sweepExpired();
         Map<String, SubscriptionPlan> plans = planByCode();
         return transactionRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(t -> {
@@ -252,8 +308,9 @@ public class PaymentService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public RevenueStats revenueStats() {
+        sweepExpired();
         Map<String, SubscriptionPlan> plans = planByCode();
         List<PaymentTransaction> paid = transactionRepository.findAllByOrderByCreatedAtDesc().stream()
                 .filter(t -> t.getStatus() == PaymentStatus.PAID && t.getPaidAt() != null)
@@ -312,12 +369,14 @@ public class PaymentService {
                 monthly, byPlan);
     }
 
-    /** Admin manually confirms a transaction (e.g. a verified bank transfer). */
+    /** Admin manually confirms a transaction (e.g. a verified bank transfer). Only
+     *  an open (PENDING) or provider-FAILED order can be activated — a CANCELLED or
+     *  EXPIRED order is terminal and cannot be acted on. */
     @Transactional
     public AdminTransactionRow adminMarkPaid(String id) {
         PaymentTransaction tx = requireTx(id);
-        if (tx.getStatus() == PaymentStatus.PAID) {
-            throw ApiException.badRequest("Giao dịch đã ở trạng thái đã thanh toán.");
+        if (tx.getStatus() != PaymentStatus.PENDING && tx.getStatus() != PaymentStatus.FAILED) {
+            throw ApiException.badRequest("Giao dịch không ở trạng thái có thể kích hoạt.");
         }
         applyPaid(tx, "ADMIN-MARK-PAID", null);
         return toRow(tx);
@@ -326,22 +385,11 @@ public class PaymentService {
     @Transactional
     public AdminTransactionRow adminCancel(String id, String note) {
         PaymentTransaction tx = requireTx(id);
-        if (tx.getStatus() == PaymentStatus.PAID) {
-            throw ApiException.badRequest("Không thể hủy giao dịch đã thanh toán. Hãy dùng hoàn tiền.");
+        if (tx.getStatus() != PaymentStatus.PENDING) {
+            throw ApiException.badRequest("Chỉ hủy được giao dịch đang chờ thanh toán.");
         }
         tx.setNote(trimToNull(note));
         markStatus(tx, PaymentStatus.CANCELLED);
-        return toRow(tx);
-    }
-
-    @Transactional
-    public AdminTransactionRow adminRefund(String id, String note) {
-        PaymentTransaction tx = requireTx(id);
-        if (tx.getStatus() != PaymentStatus.PAID) {
-            throw ApiException.badRequest("Chỉ hoàn tiền được giao dịch đã thanh toán.");
-        }
-        tx.setNote(trimToNull(note));
-        markStatus(tx, PaymentStatus.REFUNDED);
         return toRow(tx);
     }
 

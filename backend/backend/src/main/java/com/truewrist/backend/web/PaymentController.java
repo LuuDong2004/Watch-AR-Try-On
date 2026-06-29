@@ -51,6 +51,15 @@ public class PaymentController {
         return paymentService.getStatus(actor, orderCode);
     }
 
+    /** Buyer cancels their own pending transaction (from the QR modal). */
+    @PostMapping("/cancel/{orderCode}")
+    @PreAuthorize("isAuthenticated()")
+    public StatusResponse cancel(
+            @PathVariable long orderCode,
+            @AuthenticationPrincipal AppUserPrincipal actor) {
+        return paymentService.cancel(actor, orderCode);
+    }
+
     /** Manual confirm for fallback (no-PayOS) mode — local dev only. */
     @PostMapping("/dev/confirm/{orderCode}")
     @PreAuthorize("isAuthenticated()")
@@ -101,13 +110,5 @@ public class PaymentController {
             @PathVariable String id,
             @RequestBody(required = false) AdminNoteRequest body) {
         return paymentService.adminCancel(id, body == null ? null : body.note());
-    }
-
-    @PostMapping("/admin/transactions/{id}/refund")
-    @PreAuthorize("hasRole('ADMIN')")
-    public AdminTransactionRow adminRefund(
-            @PathVariable String id,
-            @RequestBody(required = false) AdminNoteRequest body) {
-        return paymentService.adminRefund(id, body == null ? null : body.note());
     }
 }

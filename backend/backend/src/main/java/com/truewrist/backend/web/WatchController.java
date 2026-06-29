@@ -42,6 +42,13 @@ public class WatchController {
         return WatchResponse.from(watchService.findById(id));
     }
 
+    /** Record one AR wrist try-on for this watch. Public — anonymous visitors can
+     *  try AR too — so it bumps the counter and returns the updated watch. */
+    @PostMapping("/{id}/try-on")
+    public WatchResponse recordTryOn(@PathVariable String id) {
+        return WatchResponse.from(watchService.recordTryOn(id));
+    }
+
     /** Admin moderation queue: all AR-enabled watches (pending first). */
     @GetMapping("/ar-moderation")
     @PreAuthorize("hasRole('ADMIN')")

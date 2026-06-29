@@ -29,8 +29,10 @@ export default function ShopAnalytics() {
     return () => { cancelled = true; };
   }, [user?.shopId]);
 
-  const totalTryons = leads.filter((l) => l.hasTriedOn).length + 86;
+  const totalTryons = watches.reduce((sum, w) => sum + (w.arTryCount ?? 0), 0);
   const totalLeads = leads.length;
+  // Watches ranked by real AR try-on count (highest interaction first).
+  const topByTryons = [...watches].sort((a, b) => (b.arTryCount ?? 0) - (a.arTryCount ?? 0));
 
   if (loading) {
     return (
@@ -50,11 +52,11 @@ export default function ShopAnalytics() {
       {/* Analytics Summary */}
       <section className="grid sm:grid-cols-3 gap-6 mb-8 text-xs">
         <div className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm">
-          <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-1">Tỉ lệ Thử AR → Đặt Lịch</p>
+          <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-1">Tổng lượt thử AR</p>
           <h3 className="text-xl md:text-2xl font-bold text-[#B8924A] mb-1">
-            {((leads.filter(l => l.type === 'appointment').length / totalTryons) * 100).toFixed(1)}%
+            {totalTryons.toLocaleString('vi-VN')}
           </h3>
-          <p className="text-gray-500">Mức chuyển đổi cao hơn 15% so với ảnh 2D tĩnh</p>
+          <p className="text-gray-500">Số lần khách mở thử AR trên sản phẩm của cửa hàng</p>
         </div>
         <div className="bg-white p-5 rounded-2xl border border-[#e5e0d8] shadow-sm">
           <p className="text-gray-400 font-bold uppercase tracking-wider text-[9px] mb-1">Thời Gian Trải Nghiệm 3D TB</p>
@@ -99,11 +101,14 @@ export default function ShopAnalytics() {
         <div className="bg-white rounded-3xl p-6 border border-[#e5e0d8] shadow-sm text-xs">
           <h3 className="font-display text-sm font-bold mb-4">Danh sách đồng hồ có tương tác cao</h3>
           <div className="space-y-3">
-            {watches.slice(0, 3).map((w, idx) => (
+            {topByTryons.length === 0 && (
+              <p className="py-6 text-center text-gray-400">Chưa có sản phẩm nào.</p>
+            )}
+            {topByTryons.slice(0, 3).map((w) => (
               <div key={w.id} className="flex justify-between items-center bg-[#F6F4EF] p-3 rounded-xl border border-gray-100">
                 <span className="font-bold">{w.name}</span>
                 <span className="bg-[#B8924A] text-white px-2 py-0.5 rounded text-[10px] font-bold">
-                  {(w.reviewCount ?? 0) * 3 + 12} Lượt Thử AR
+                  {(w.arTryCount ?? 0).toLocaleString('vi-VN')} Lượt Thử AR
                 </span>
               </div>
             ))}

@@ -3,12 +3,13 @@ import {
   BadgeCheck,
   BarChart3,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   CreditCard,
   Loader2,
   Mail,
   RefreshCw,
-  RotateCcw,
   TrendingUp,
   User as UserIcon,
   Wallet,
@@ -44,7 +45,9 @@ const initialsOf = (name?: string | null, email?: string | null) =>
 
 type Filter = 'ALL' | PaymentStatus;
 
-/** Admin transactions + revenue dashboard for the PayOS subscription payments. */
+const PAGE_SIZE = 10;
+
+/** Admin transactions + revenue dashboard for the SePay subscription payments. */
 export default function AdminTransactions() {
   const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
   const [revenue, setRevenue] = useState<RevenueStats | null>(null);
@@ -52,7 +55,8 @@ export default function AdminTransactions() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('ALL');
-  const [noteModal, setNoteModal] = useState<{ tx: AdminTransaction; action: 'cancel' | 'refund' } | null>(null);
+  const [page, setPage] = useState(1);
+  const [cancelModal, setCancelModal] = useState<{ tx: AdminTransaction } | null>(null);
   const [note, setNote] = useState('');
 
   const load = async () => {
@@ -73,6 +77,16 @@ export default function AdminTransactions() {
   const filtered = useMemo(
     () => (filter === 'ALL' ? transactions : transactions.filter((t) => t.status === filter)),
     [transactions, filter],
+  );
+
+  // Reset to the first page whenever the filter or the underlying list changes.
+  useEffect(() => { setPage(1); }, [filter, transactions]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const paged = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage],
   );
 
   const maxMonthly = useMemo(
@@ -98,15 +112,14 @@ export default function AdminTransactions() {
     }
   };
 
-  const submitNote = async () => {
-    if (!noteModal) return;
-    const { tx, action } = noteModal;
+  const submitCancel = async () => {
+    if (!cancelModal) return;
+    const { tx } = cancelModal;
     try {
       setBusyId(tx.id);
-      if (action === 'refund') await paymentApi.adminRefund(tx.id, note.trim() || undefined);
-      else await paymentApi.adminCancel(tx.id, note.trim() || undefined);
-      toast.success(action === 'refund' ? 'Đã đánh dấu hoàn tiền.' : 'Đã hủy giao dịch.');
-      setNoteModal(null);
+      await paymentApi.adminCancel(tx.id, note.trim() || undefined);
+      toast.success('Đã hủy giao dịch.');
+      setCancelModal(null);
       setNote('');
       await load();
     } catch (err) {
@@ -128,7 +141,7 @@ export default function AdminTransactions() {
     { id: 'ALL', label: 'Tất cả' },
     { id: 'PAID', label: 'Đã thanh toán' },
     { id: 'PENDING', label: 'Chờ thanh toán' },
-    { id: 'REFUNDED', label: 'Hoàn tiền' },
+    { id: 'EXPIRED', label: 'Hết hạn' },
     { id: 'FAILED', label: 'Thất bại' },
   ];
 
@@ -138,7 +151,7 @@ export default function AdminTransactions() {
         <div>
           <h1 className="font-display text-2xl font-bold md:text-3xl">Giao dịch &amp; Doanh thu</h1>
           <p className="mt-1 text-xs text-gray-500">
-            Theo dõi toàn bộ thanh toán gói dịch vụ qua cổng QR (PayOS) và quản lý doanh thu của sàn.
+            Theo dõi toàn bộ thanh toán gói dịch vụ qua cổng QR (SePay) và quản lý doanh thu của sàn.
           </p>
         </div>
         <button
@@ -226,6 +239,7 @@ export default function AdminTransactions() {
           <span className="ml-auto text-[11px] font-semibold text-gray-400">{filtered.length} giao dịch</span>
         </div>
 
+
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
@@ -247,8 +261,9 @@ export default function AdminTransactions() {
                   Chưa có giao dịch nào.
                 </td></tr>
               )}
-              {!loading && !error && filtered.map((tx) => {
+              {!loading && !error && paged.map((tx) => {
                 const meta = STATUS_META[tx.status];
+                const canActivate = tx.status === 'PENDING' || tx.status === 'FAILED';
                 return (
                   <tr key={tx.id} className="border-b border-gray-50 transition hover:bg-gray-50/50">
                     <td className="px-4 py-3.5">
@@ -279,7 +294,7 @@ export default function AdminTransactions() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex justify-end gap-1.5">
-                        {(tx.status === 'PENDING' || tx.status === 'FAILED' || tx.status === 'EXPIRED') && (
+                        {canActivate && (
                           <button
                             onClick={() => handleMarkPaid(tx)}
                             disabled={busyId === tx.id}
@@ -292,7 +307,7 @@ export default function AdminTransactions() {
                         )}
                         {tx.status === 'PENDING' && (
                           <button
-                            onClick={() => { setNoteModal({ tx, action: 'cancel' }); setNote(''); }}
+                            onClick={() => { setCancelModal({ tx }); setNote(''); }}
                             disabled={busyId === tx.id}
                             title="Hủy giao dịch"
                             className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 font-bold text-gray-500 transition hover:bg-gray-50 disabled:opacity-50"
@@ -300,17 +315,7 @@ export default function AdminTransactions() {
                             <X className="h-3.5 w-3.5" /> Hủy
                           </button>
                         )}
-                        {tx.status === 'PAID' && (
-                          <button
-                            onClick={() => { setNoteModal({ tx, action: 'refund' }); setNote(''); }}
-                            disabled={busyId === tx.id}
-                            title="Hoàn tiền"
-                            className="inline-flex items-center gap-1 rounded-lg border border-violet-200 px-2.5 py-1.5 font-bold text-violet-600 transition hover:bg-violet-50 disabled:opacity-50"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" /> Hoàn tiền
-                          </button>
-                        )}
-                        {(tx.status === 'CANCELLED' || tx.status === 'REFUNDED') && (
+                        {!canActivate && (
                           <span className="text-[10px] text-gray-300">—</span>
                         )}
                       </div>
@@ -321,46 +326,92 @@ export default function AdminTransactions() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {!loading && !error && filtered.length > 0 && (
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
+            <p className="text-[11px] text-gray-400">
+              Hiển thị{' '}
+              <span className="font-bold text-gray-600">
+                {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)}
+              </span>{' '}
+              trên <span className="font-bold text-gray-600">{filtered.length}</span> giao dịch
+            </p>
+            {pageCount > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e0d8] text-gray-500 transition hover:border-[#B8924A] hover:text-[#9A7434] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Trang trước"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: pageCount }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === pageCount || Math.abs(p - safePage) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && (
+                        <span className="px-1 text-[11px] text-gray-300">…</span>
+                      )}
+                      <button
+                        onClick={() => setPage(p)}
+                        className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[11px] font-bold transition ${
+                          p === safePage
+                            ? 'bg-[#17140F] text-white'
+                            : 'border border-[#e5e0d8] text-gray-500 hover:border-[#B8924A] hover:text-[#9A7434]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={safePage === pageCount}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#e5e0d8] text-gray-500 transition hover:border-[#B8924A] hover:text-[#9A7434] disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Trang sau"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      {/* Cancel / refund note modal */}
-      {noteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setNoteModal(null)}>
+      {/* Cancel note modal */}
+      {cancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setCancelModal(null)}>
           <div className="w-full max-w-md rounded-3xl border border-[#e5e0d8] bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2.5">
-              {noteModal.action === 'refund'
-                ? <RotateCcw className="h-5 w-5 text-violet-600" />
-                : <XCircle className="h-5 w-5 text-gray-500" />}
-              <h3 className="font-display text-lg font-bold text-[#17140F]">
-                {noteModal.action === 'refund' ? 'Hoàn tiền giao dịch' : 'Hủy giao dịch'}
-              </h3>
+              <XCircle className="h-5 w-5 text-gray-500" />
+              <h3 className="font-display text-lg font-bold text-[#17140F]">Hủy giao dịch</h3>
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              {noteModal.action === 'refund' ? 'Hoàn tiền' : 'Hủy'} giao dịch{' '}
-              <span className="font-semibold">{formatVND(noteModal.tx.amount)}</span> · gói{' '}
-              <span className="font-semibold">{noteModal.tx.planName}</span> của{' '}
-              {noteModal.tx.userName || noteModal.tx.userEmail}.
+              Hủy giao dịch{' '}
+              <span className="font-semibold">{formatVND(cancelModal.tx.amount)}</span> · gói{' '}
+              <span className="font-semibold">{cancelModal.tx.planName}</span> của{' '}
+              {cancelModal.tx.userName || cancelModal.tx.userEmail}.
             </p>
             <label className="mt-4 block text-[10px] font-bold uppercase tracking-wider text-gray-400">Ghi chú (tuỳ chọn)</label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
-              placeholder="Ví dụ: Khách yêu cầu hoàn tiền do đăng ký nhầm gói…"
+              placeholder="Ví dụ: Khách yêu cầu hủy do đăng ký nhầm gói…"
               className="mt-1.5 w-full rounded-xl border border-[#e5e0d8] bg-[#F6F4EF] p-3 text-xs focus:border-[#B8924A] focus:bg-white focus:outline-none"
             />
             <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setNoteModal(null)} className="rounded-xl border border-[#e5e0d8] px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50">
+              <button onClick={() => setCancelModal(null)} className="rounded-xl border border-[#e5e0d8] px-4 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-50">
                 Đóng
               </button>
               <button
-                onClick={submitNote}
-                disabled={busyId === noteModal.tx.id}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold text-white disabled:opacity-50 ${
-                  noteModal.action === 'refund' ? 'bg-violet-600 hover:bg-violet-700' : 'bg-[#17140F] hover:bg-black'
-                }`}
+                onClick={submitCancel}
+                disabled={busyId === cancelModal.tx.id}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#17140F] px-4 py-2.5 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
               >
-                {busyId === noteModal.tx.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                {busyId === cancelModal.tx.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                 Xác nhận
               </button>
             </div>

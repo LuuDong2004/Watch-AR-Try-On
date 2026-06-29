@@ -97,6 +97,13 @@ public class Watch {
     @Builder.Default
     private int reviewCount = 0;
 
+    /** Number of times the AR wrist try-on was opened for this watch. Incremented
+     *  atomically by the public {@code POST /api/watches/{id}/try-on} endpoint. The
+     *  DDL default lets the column be added to a populated table (existing rows → 0). */
+    @Column(name = "ar_try_count", nullable = false, columnDefinition = "bigint not null default 0")
+    @Builder.Default
+    private long arTryCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 16, nullable = false)
     @Builder.Default

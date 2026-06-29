@@ -15,6 +15,8 @@ interface UserStoresProps {
   onOpenAR: (watchId: string) => void;
   onNavigate: (page: string) => void;
   initialShopId?: string | null;
+  /** Start an in-app chat thread with a shop. */
+  onContactShop?: (shopId: string, shopName?: string | null) => void;
 }
 
 const formatVND = (n: number) =>
@@ -23,7 +25,7 @@ const formatVND = (n: number) =>
 const STORES_PER_PAGE = 6;
 const SHOP_PRODUCTS_PER_PAGE = 6;
 
-export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initialShopId }: UserStoresProps) {
+export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initialShopId, onContactShop }: UserStoresProps) {
   const user = useSession((s) => s.user);
   const [shops, setShops] = useState<Shop[]>([]);
   const [watches, setWatches] = useState<Watch[]>([]);
@@ -215,6 +217,9 @@ export default function UserStores({ onSelectWatch, onOpenAR, onNavigate, initia
                     <a href={selected.zalo} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Zalo</a>
                     <a href={selected.messenger} target="_blank" rel="noreferrer" className="border border-[#B8924A] text-[#B8924A] py-2.5 rounded-xl font-bold text-xs hover:bg-[#B8924A]/5 transition text-center inline-flex items-center justify-center gap-1.5"><Globe className="h-4 w-4" /> Messenger</a>
                   </div>
+                  {onContactShop && (
+                    <button onClick={() => onContactShop(selected.id, selected.name)} className="w-full bg-[#17140F] hover:bg-black text-white py-2.5 rounded-xl font-bold text-xs transition text-center shadow inline-flex items-center justify-center gap-1.5"><MessageCircle className="h-4 w-4" /> Nhắn tin với cửa hàng</button>
+                  )}
                   <button onClick={() => openContact()} className="w-full bg-[#B8924A] hover:bg-[#a6803f] text-white py-2.5 rounded-xl font-bold text-xs transition text-center shadow inline-flex items-center justify-center gap-1.5"><Mail className="h-4 w-4" /> Gửi yêu cầu tư vấn</button>
                   {mapDirectionsUrl(selected.mapUrl) && (
                     <a

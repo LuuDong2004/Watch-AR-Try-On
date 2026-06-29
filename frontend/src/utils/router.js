@@ -8,8 +8,8 @@ const USER_PATH_TO_PAGE = {
   account: 'account',
 };
 
-const SHOP_PAGES = new Set(['dashboard', 'products', 'leads', 'analytics', 'plans', 'settings']);
-const ADMIN_PAGES = new Set(['dashboard', 'shops', 'audit', 'users', 'leads', 'plans', 'settings']);
+const SHOP_PAGES = new Set(['dashboard', 'products', 'leads', 'analytics', 'plans', 'settings', 'inbox']);
+const ADMIN_PAGES = new Set(['dashboard', 'shops', 'audit', 'users', 'leads', 'plans', 'settings', 'inbox']);
 const ERROR_CODES = new Set([404, 500, 503]);
 
 export function parseAppRoute(pathname) {

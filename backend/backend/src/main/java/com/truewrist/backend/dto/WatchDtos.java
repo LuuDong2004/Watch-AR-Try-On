@@ -37,6 +37,7 @@ public final class WatchDtos {
             String accent,
             double rating,
             int reviewCount,
+            long arTryCount,
             ListingStatus status,
             ArReviewStatus arReviewStatus,
             String arReviewNote,
@@ -52,7 +53,8 @@ public final class WatchDtos {
                     w.getDescription(), w.getSpecs(), w.getImage(), w.getGallery(),
                     w.getModelUrl(), w.isHasAR(), w.getArWatchId(), w.getVariant(),
                     w.getMetal(), w.getDial(), w.getAccent(), w.getRating(), w.getReviewCount(),
-                    w.getStatus(), arStatus, w.getArReviewNote(), w.getShopId(), w.getCreatedAt());
+                    w.getArTryCount(), w.getStatus(), arStatus, w.getArReviewNote(),
+                    w.getShopId(), w.getCreatedAt());
         }
     }
 

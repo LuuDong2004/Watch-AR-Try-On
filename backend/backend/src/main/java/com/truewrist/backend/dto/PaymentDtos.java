@@ -32,7 +32,9 @@ public final class PaymentDtos {
             String bankName,
             String accountNumber,
             String accountName,
-            boolean devMode) {}
+            boolean devMode,
+            /** Epoch millis the QR window lapses; drives the client countdown. */
+            Long expiresAt) {}
 
     /** Lightweight status poll for the open QR modal. */
     public record StatusResponse(long orderCode, PaymentStatus status) {}

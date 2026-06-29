@@ -40,7 +40,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
   const totalShops = shopCount;
   const totalUsers = userCount;
   const totalWatches = watches.length;
-  const totalTryons = leads.filter((l) => l.hasTriedOn).length;
+  const totalTryons = watches.reduce((sum, w) => sum + (w.arTryCount ?? 0), 0);
   const totalLeads = leads.length;
 
   if (loading) {
@@ -70,7 +70,7 @@ export default function AdminDashboard({ onNavigateToShops, onNavigateToAudit }:
           { label: 'Tổng số Showrooms', val: totalShops, change: 'Rolex, Omega, Aventus', icon: Store },
           { label: 'Tổng số Người dùng', val: totalUsers, change: '10+ thành viên mới hôm nay', icon: Users },
           { label: 'Số mẫu đồng hồ', val: totalWatches, change: 'Tăng 2 mẫu tuần này', icon: Package },
-          { label: 'Số lượt thử AR', val: totalTryons, change: '+18.5% so với tuần trước', icon: Sparkles },
+          { label: 'Số lượt thử AR', val: totalTryons, change: 'Tổng lượt mở thử AR (toàn sàn)', icon: Sparkles },
           { label: 'Tổng số Leads/Lịch hẹn', val: totalLeads, change: 'Không có GMV giao dịch', icon: Send }
         ].map((card: { label: string; val: number; change: string; icon: LucideIcon }, idx) => (
           <div

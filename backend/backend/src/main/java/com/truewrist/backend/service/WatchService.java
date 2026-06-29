@@ -52,6 +52,17 @@ public class WatchService {
                 .orElseThrow(() -> ApiException.notFound("Không tìm thấy đồng hồ."));
     }
 
+    /** Record one AR try-on (counter bumped atomically) and return the fresh row. */
+    @Transactional
+    public Watch recordTryOn(String id) {
+        if (watchRepository.incrementArTryCount(id) == 0) {
+            throw ApiException.notFound("Không tìm thấy đồng hồ.");
+        }
+        // Re-read so the response reflects the new count (the UPDATE bypassed the
+        // persistence context, so the managed entity would otherwise be stale).
+        return watchRepository.findById(id).orElseThrow();
+    }
+
     /** AR-enabled watches for the admin moderation queue (pending first). */
     public List<Watch> findArModels() {
         List<Watch> watches = new ArrayList<>(watchRepository.findAll().stream()

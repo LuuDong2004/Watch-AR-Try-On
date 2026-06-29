@@ -28,6 +28,7 @@ import type {
   Shop,
   ShopSubscription,
   StartConversationInput,
+  StartShopAdminInput,
   SubscriptionPlan,
   SubscriptionPlanCode,
   User,
@@ -83,6 +84,7 @@ function toWatch(d: any): Watch {
     accent: d.accent,
     rating: d.rating,
     reviewCount: d.reviewCount,
+    arTryCount: d.arTryCount ?? 0,
     status: lower(d.status) as Watch['status'],
     arReviewStatus: lower(d.arReviewStatus) as Watch['arReviewStatus'],
     arReviewNote: d.arReviewNote ?? null,
@@ -294,6 +296,10 @@ export const watchApi = {
   },
   async get(id: string): Promise<Watch> {
     return toWatch(await http.get<any>(`/api/watches/${id}`, { auth: false }));
+  },
+  /** Record one AR try-on (public); returns the watch with the bumped count. */
+  async recordTryOn(id: string): Promise<Watch> {
+    return toWatch(await http.post<any>(`/api/watches/${id}/try-on`, {}, { auth: false }));
   },
   async create(w: Partial<Watch>): Promise<Watch> {
     return toWatch(await http.post<any>('/api/watches', watchPayload(w)));
@@ -587,7 +593,7 @@ export const subscriptionApi = {
   },
 };
 
-// --- Payments (PayOS QR gateway) -------------------------------------------
+// --- Payments (SePay QR gateway) -------------------------------------------
 
 export const paymentApi = {
   /** Start a QR payment for a plan; returns the QR + checkout details. */
@@ -601,7 +607,14 @@ export const paymentApi = {
     );
     return d.status;
   },
-  /** Fallback mode only: manually confirm payment (no PayOS configured). */
+  /** Buyer cancels their own pending transaction. */
+  async cancel(orderCode: number): Promise<PaymentStatus> {
+    const d = await http.post<{ orderCode: number; status: PaymentStatus }>(
+      `/api/payment/cancel/${orderCode}`,
+    );
+    return d.status;
+  },
+  /** Fallback mode only: manually confirm payment (no SePay configured). */
   async devConfirm(orderCode: number): Promise<PaymentStatus> {
     const d = await http.post<{ orderCode: number; status: PaymentStatus }>(
       `/api/payment/dev/confirm/${orderCode}`,
@@ -624,10 +637,6 @@ export const paymentApi = {
   async adminCancel(id: string, note?: string): Promise<AdminTransaction> {
     return http.post<AdminTransaction>(`/api/payment/admin/transactions/${id}/cancel`, { note });
   },
-  /** Admin: refund a paid transaction. */
-  async adminRefund(id: string, note?: string): Promise<AdminTransaction> {
-    return http.post<AdminTransaction>(`/api/payment/admin/transactions/${id}/refund`, { note });
-  },
 };
 
 // --- Messaging (inbox) ------------------------------------------------------
@@ -640,6 +649,10 @@ export const messagingApi = {
   /** Open a new thread to the admins or a shop. */
   async start(input: StartConversationInput): Promise<ConversationThread> {
     return http.post<ConversationThread>('/api/conversations', { ...input });
+  },
+  /** Seller opens a thread to the platform admins (partner support). */
+  async startShopToAdmin(input: StartShopAdminInput): Promise<ConversationThread> {
+    return http.post<ConversationThread>('/api/conversations/shop-to-admin', { ...input });
   },
   /** A thread's full history (marks the viewer's side read). */
   async thread(id: string): Promise<ConversationThread> {

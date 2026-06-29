@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Check, Clock, MapPin, Phone, ShieldCheck, Store, Truck, Lock, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Check, Clock, MapPin, MessageCircle, Phone, ShieldCheck, Store, Truck, Lock, Sparkles, Mail, Heart, type LucideIcon } from 'lucide-react';
 import { formatVND, discountPct, referenceNo } from './format';
 import { canTryAr } from '../../../utils/publicListings';
 
@@ -11,6 +11,8 @@ interface ProductSummaryProps {
   onOpenAR: () => void;
   onOpenContact: () => void;
   onOpenShop?: (shopId: string) => void;
+  /** Start an in-app chat thread with this shop. */
+  onChatShop?: () => void;
 }
 
 const TRUST_BADGES: { icon: LucideIcon; label: string }[] = [
@@ -28,6 +30,7 @@ export default function ProductSummary({
   onOpenAR,
   onOpenContact,
   onOpenShop,
+  onChatShop,
 }: ProductSummaryProps) {
   const off = discountPct(watch);
   const inStock = watch.status !== 'locked';
@@ -176,6 +179,15 @@ export default function ProductSummary({
                 <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-champagne" />
                 <span>{shop.hours}</span>
               </div>
+            )}
+            {onChatShop && (
+              <button
+                type="button"
+                onClick={onChatShop}
+                className="mt-1.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-navy py-2.5 text-xs font-bold text-white transition hover:bg-black"
+              >
+                <MessageCircle className="h-3.5 w-3.5" /> Nhắn tin với cửa hàng
+              </button>
             )}
             {onOpenShop && (
               <button

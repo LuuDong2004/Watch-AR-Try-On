@@ -78,6 +78,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/shops/mine").authenticated()
                         // Public storefront reads
                         .requestMatchers(HttpMethod.GET, "/api/watches/**", "/api/shops/**").permitAll()
+                        // AR try-on counter — public; anonymous visitors can try AR too.
+                        .requestMatchers(HttpMethod.POST, "/api/watches/*/try-on").permitAll()
                         // Public pricing catalogue (the "become a partner" page)
                         .requestMatchers(HttpMethod.GET, "/api/subscription/plans").permitAll()
                         // SePay payment webhook — public; authenticity is enforced by

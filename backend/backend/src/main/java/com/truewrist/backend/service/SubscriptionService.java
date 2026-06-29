@@ -308,7 +308,9 @@ public class SubscriptionService {
                 return; // expired → any paid plan may be bought
             }
             SubscriptionPlan current = planRepository.findById(sub.getPlanCode()).orElse(null);
-            if (current != null && target.getSortOrder() < current.getSortOrder()) {
+            // Same plan or any lower tier is blocked while the current plan is still
+            // active — only a strictly higher tier (upgrade) is allowed until expiry.
+            if (current != null && target.getSortOrder() <= current.getSortOrder()) {
                 throw ApiException.badRequest(
                         "Gói \"" + current.getName() + "\" của bạn vẫn còn hiệu lực. "
                         + "Bạn chỉ có thể nâng lên gói cao hơn cho đến khi gói hiện tại hết hạn.");

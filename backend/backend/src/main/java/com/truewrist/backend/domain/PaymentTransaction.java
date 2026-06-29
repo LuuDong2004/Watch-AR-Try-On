@@ -94,6 +94,11 @@ public class PaymentTransaction {
     @Column(name = "paid_at")
     private Long paidAt;
 
+    /** When the QR/payment window lapses (created + 30 min). A PENDING transaction
+     *  auto-flips to EXPIRED once {@code now > expiresAt}. Null on legacy rows. */
+    @Column(name = "expires_at")
+    private Long expiresAt;
+
     /** Optional admin note (e.g. refund reason). */
     @Column(length = 500)
     private String note;

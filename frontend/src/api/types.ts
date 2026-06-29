@@ -49,6 +49,8 @@ export interface Watch {
   accent?: string;
   rating?: number;
   reviewCount?: number;
+  /** Number of times the AR wrist try-on was opened for this watch. */
+  arTryCount?: number;
   status?: 'active' | 'locked';
   /** AR/3D moderation state (admin-controlled). */
   arReviewStatus?: ArReviewStatus;
@@ -234,7 +236,7 @@ export interface PlanInput {
   features: string[];
 }
 
-// --- Payments (PayOS QR gateway) -------------------------------------------
+// --- Payments (SePay QR gateway) -------------------------------------------
 
 export type PaymentStatus =
   | 'PENDING'
@@ -252,17 +254,19 @@ export interface PaymentCheckout {
   amount: number;
   description: string;
   status: PaymentStatus;
-  /** PayOS hosted checkout page (null in fallback mode). */
+  /** Unused with SePay (no hosted checkout); kept optional for back-compat. */
   checkoutUrl?: string | null;
-  /** Raw EMVCo QR string from PayOS — render as an image client-side. */
+  /** Unused with SePay (we send a ready image URL instead). */
   qrCode?: string | null;
-  /** Ready-to-use VietQR image URL (fallback mode). */
+  /** Ready-to-use SePay VietQR image URL. */
   qrImageUrl?: string | null;
   bankName?: string | null;
   accountNumber?: string | null;
   accountName?: string | null;
-  /** When true, show the manual "I have paid" confirm button (no PayOS). */
+  /** When true, show the manual "I have paid" confirm button (no SePay). */
   devMode: boolean;
+  /** Epoch millis the QR window lapses; drives the client countdown (survives reload). */
+  expiresAt?: number | null;
 }
 
 /** One row in the admin transaction table. */
@@ -328,6 +332,10 @@ export interface ConversationSummary {
   lastSenderRole?: MessageSenderRole | null;
   /** Unread messages for the viewer. */
   unread: number;
+  /** Role the thread initiator plays (CUSTOMER, or SHOP for shop→admin threads). */
+  initiatorRole?: MessageSenderRole;
+  /** True when the viewer is the thread initiator (drives icon/labels). */
+  viewerIsInitiator?: boolean;
   createdAt: number;
   updatedAt: number;
 }
@@ -349,6 +357,13 @@ export interface ConversationThread {
 /** Payload to open a new thread. */
 export interface StartConversationInput {
   target: ConversationTarget;
+  shopId?: string | null;
+  subject: string;
+  body: string;
+}
+
+/** Payload for a seller opening a thread to the platform admins. */
+export interface StartShopAdminInput {
   shopId?: string | null;
   subject: string;
   body: string;

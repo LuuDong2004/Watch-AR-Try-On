@@ -27,8 +27,18 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate, onSelect
     return () => { cancelled = true; };
   }, []);
 
-  const featured = watches.find((w) => canTryAr(w)) || watches[0];
+  // Prefer an AR watch with a real GLB so the hero shows the spinning 3D viewer
+  // (procedural watches have no model and would fall back to a static image).
+  const featured =
+    watches.find((w) => canTryAr(w) && w.model) ||
+    watches.find((w) => canTryAr(w)) ||
+    watches[0];
   const popular = watches.slice(0, 4);
+  // Real AR try-on total across the loaded catalogue (compact for the hero stat).
+  const arTryTotal = watches.reduce((sum, w) => sum + (w.arTryCount ?? 0), 0);
+  const arTryLabel = arTryTotal >= 1000
+    ? (arTryTotal / 1000).toFixed(1).replace(/\.0$/, '') + 'K+'
+    : arTryTotal.toLocaleString('vi-VN');
 
   return (
     <div className="bg-[#F6F4EF] text-[#17140F] font-sans">
@@ -68,7 +78,7 @@ export default function UserHome({ onSelectWatch, onOpenAR, onNavigate, onSelect
             {/* trust stats */}
             <div className="flex gap-8 mt-12">
               {[
-                ['12K+', 'Lượt thử AR'],
+                [arTryLabel, 'Lượt thử AR'],
                 ['50+', 'Mẫu cao cấp'],
                 ['2', 'Shop uy tín'],
               ].map(([n, l]) => (

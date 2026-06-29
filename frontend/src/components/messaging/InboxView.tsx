@@ -14,8 +14,11 @@ import { toast } from '../../store/useToast';
 
 interface InboxViewProps {
   conversations: ConversationSummary[];
-  /** Whose perspective — drives bubble alignment and labels. */
+  /** Whose perspective — fallback for labels when per-thread data is absent. */
   viewerSide: 'customer' | 'staff';
+  /** The signed-in user's id — drives "my message" bubble alignment reliably
+   *  (works even in mixed-perspective inboxes like the seller's). */
+  currentUserId?: string | null;
   loadingList?: boolean;
   error?: string | null;
   emptyText?: string;
@@ -39,6 +42,7 @@ const roleTag = (role: ConversationMessage['senderRole']) =>
 export default function InboxView({
   conversations,
   viewerSide,
+  currentUserId,
   loadingList,
   error,
   emptyText = 'Chưa có hội thoại nào.',
@@ -94,10 +98,23 @@ export default function InboxView({
     }
   };
 
-  const CounterIcon = ({ c }: { c: ConversationSummary }) =>
-    viewerSide === 'customer'
-      ? (c.targetType === 'ADMIN' ? <ShieldCheck className="h-4 w-4" /> : <Store className="h-4 w-4" />)
-      : <UserIcon className="h-4 w-4" />;
+  // The viewer's own role within a given thread (used for labels/prefix).
+  const viewerRoleFor = (c: ConversationSummary): ConversationMessage['senderRole'] | null => {
+    if (c.viewerIsInitiator === undefined) return viewerSide === 'customer' ? 'CUSTOMER' : null;
+    if (c.viewerIsInitiator) return c.initiatorRole ?? 'CUSTOMER';
+    return c.targetType === 'ADMIN' ? 'ADMIN' : 'SHOP';
+  };
+
+  // Icon for the counterpart (the other side of the thread, from the viewer).
+  const CounterIcon = ({ c }: { c: ConversationSummary }) => {
+    // Initiator perspective → counterpart is the target (admin or shop).
+    const asInitiator = c.viewerIsInitiator ?? (viewerSide === 'customer');
+    if (asInitiator) {
+      return c.targetType === 'ADMIN' ? <ShieldCheck className="h-4 w-4" /> : <Store className="h-4 w-4" />;
+    }
+    // Responder perspective → counterpart is the initiator (a shop or a customer).
+    return c.initiatorRole === 'SHOP' ? <Store className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />;
+  };
 
   return (
     <div className="grid h-[calc(100vh-9rem)] min-h-[28rem] grid-cols-1 gap-4 md:grid-cols-[20rem_1fr]">
@@ -139,7 +156,7 @@ export default function InboxView({
                   </div>
                   <p className="truncate text-[11px] font-semibold text-gray-600">{c.subject}</p>
                   <p className="truncate text-[11px] text-gray-400">
-                    {c.lastSenderRole === 'CUSTOMER' && viewerSide === 'customer' ? 'Bạn: ' : ''}
+                    {c.lastSenderRole && c.lastSenderRole === viewerRoleFor(c) ? 'Bạn: ' : ''}
                     {c.lastMessage || '—'}
                   </p>
                 </div>
@@ -176,7 +193,9 @@ export default function InboxView({
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto bg-[#FAF9F7] p-4">
               {thread.messages.map((m) => {
-                const mine = viewerSide === 'customer' ? m.senderRole === 'CUSTOMER' : m.senderRole !== 'CUSTOMER';
+                const mine = currentUserId
+                  ? m.senderId === currentUserId
+                  : (viewerSide === 'customer' ? m.senderRole === 'CUSTOMER' : m.senderRole !== 'CUSTOMER');
                 return (
                   <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-xs shadow-sm ${

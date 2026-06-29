@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Inbox, ShieldCheck } from 'lucide-react';
 import QRTryOnModal from './components/ar/QRTryOnModal.jsx';
 import { detectMobile } from './utils/device.js';
 
@@ -26,6 +26,7 @@ import UserCatalog from './components/user/UserCatalog';
 import UserDetail from './components/user/UserDetail';
 import UserAccount from './components/user/UserAccount';
 import UserInbox from './components/user/UserInbox';
+import ChatBubble from './components/messaging/ChatBubble';
 
 // Shop (Seller) Components
 import ShopSidebar from './components/shop/ShopSidebar';
@@ -122,8 +123,34 @@ export default function App() {
   const [lockedShops, setLockedShops] = useState([]);
   const [pendingUpgradesCount, setPendingUpgradesCount] = useState(0);
   const [inboxUnreadCount, setInboxUnreadCount] = useState(0);
+  const [customerInboxUnread, setCustomerInboxUnread] = useState(0);
   const [inboxConversationId, setInboxConversationId] = useState(null);
+  const [inboxCompose, setInboxCompose] = useState(null);
   const [dbUpdateTrigger, setDbUpdateTrigger] = useState(0);
+
+  // Open the customer inbox, optionally deep-linking a thread or pre-filling a
+  // compose (e.g. "Nhắn cửa hàng" from a shop/watch page, or "contact support").
+  const openUserInbox = ({ conversationId = null, compose = null } = {}) => {
+    setInboxConversationId(conversationId);
+    setInboxCompose(compose);
+    setSelectedShopId(null);
+    setCatalogBrand(null);
+    setStorefront(true);
+    setPage('inbox');
+  };
+
+  // Start an in-app chat with a shop (prompts login first if needed).
+  const handleContactShop = (shopId, shopName) => {
+    if (!user) { showLogin('login'); return; }
+    openUserInbox({
+      compose: {
+        target: 'SHOP',
+        shopId,
+        shopName,
+        subject: shopName ? `Liên hệ ${shopName}` : 'Liên hệ cửa hàng',
+      },
+    });
+  };
 
   // Boot: capture an OAuth callback token, restore the session, handle AR deep link.
   useEffect(() => {
@@ -213,6 +240,12 @@ export default function App() {
           const convs = await messagingApi.adminInbox();
           if (!cancelled) setInboxUnreadCount(convs.reduce((n, c) => n + (c.unread || 0), 0));
         } else if (!cancelled) setInboxUnreadCount(0);
+
+        // Customer chat-bubble unread (their own threads).
+        if (user && role === 'user') {
+          const convs = await messagingApi.myConversations();
+          if (!cancelled) setCustomerInboxUnread(convs.reduce((n, c) => n + (c.unread || 0), 0));
+        } else if (!cancelled) setCustomerInboxUnread(0);
       } catch {
         /* ignore badge fetch errors */
       }
@@ -231,6 +264,8 @@ export default function App() {
   const handleTryOn = (watchId) => {
     setSelectedWatchId(watchId);
     setMode(detectMobile() ? 'ar' : 'qr');
+    // Count this AR try-on (fire-and-forget; never blocks opening the overlay).
+    if (watchId) watchApi.recordTryOn(watchId).catch(() => { /* analytics only */ });
   };
 
   const handleLogout = () => {
@@ -288,6 +323,7 @@ export default function App() {
             onNavigate={(p) => setPage(p)}
             onSelectWatch={(id) => { setSelectedWatchId(id); setPage('detail'); }}
             onOpenAR={handleTryOn}
+            onContactShop={handleContactShop}
           />
         );
       case 'detail':
@@ -298,12 +334,13 @@ export default function App() {
             onBack={() => setPage('catalog')}
             onSelectWatch={(id) => setSelectedWatchId(id)}
             onSelectShop={(shopId) => { setSelectedShopId(shopId); setPage('stores'); }}
+            onContactShop={handleContactShop}
           />
         );
       case 'pricing':
         return <UserPricing onBackToCatalog={() => setPage('catalog')} />;
       case 'inbox':
-        return <UserInbox initialConversationId={inboxConversationId} onBackToCatalog={() => setPage('catalog')} />;
+        return <UserInbox initialConversationId={inboxConversationId} initialCompose={inboxCompose} onBackToCatalog={() => setPage('catalog')} />;
       case 'feedback':
         return <UserFeedback onBackToCatalog={() => setPage('catalog')} />;
       case 'favorites':
@@ -350,7 +387,7 @@ export default function App() {
       case 'plans':
         return <ShopPlanManagement />;
       case 'inbox':
-        return <ShopInbox />;
+        return <ShopInbox initialConversationId={inboxConversationId} />;
       case 'settings':
         return <ShopSettings />;
       default:
@@ -381,7 +418,7 @@ export default function App() {
       case 'transactions':
         return <AdminTransactions />;
       case 'inbox':
-        return <AdminInbox />;
+        return <AdminInbox initialConversationId={inboxConversationId} />;
       case 'feedback':
         return <AdminFeedback />;
       case 'plans':
@@ -432,16 +469,30 @@ export default function App() {
             onLogin={() => showLogin('login')}
             onLogout={handleLogout}
             onGoDashboard={exitStorefront}
-            onOpenInbox={(conversationId) => {
-              setInboxConversationId(conversationId ?? null);
-              setSelectedShopId(null);
-              setCatalogBrand(null);
-              setStorefront(true);
-              setPage('inbox');
-            }}
+            onOpenInbox={(conversationId) => openUserInbox({ conversationId: conversationId ?? null })}
           />
           <main className="flex-1">{renderUserPages()}</main>
           <UserFooter onChangePage={(p) => { setSelectedShopId(null); setCatalogBrand(null); setPage(p); }} />
+          {user && page !== 'inbox' && (
+            <ChatBubble
+              unread={customerInboxUnread}
+              title="Trò chuyện"
+              actions={[
+                {
+                  icon: <Inbox className="h-4 w-4" />,
+                  label: 'Hộp thư của tôi',
+                  sublabel: 'Xem tất cả hội thoại',
+                  onClick: () => openUserInbox(),
+                },
+                {
+                  icon: <ShieldCheck className="h-4 w-4" />,
+                  label: 'Liên hệ hỗ trợ',
+                  sublabel: 'Nhắn quản trị TrueWrist',
+                  onClick: () => openUserInbox({ compose: { target: 'ADMIN', subject: 'Cần hỗ trợ' } }),
+                },
+              ]}
+            />
+          )}
         </div>
       )}
 
@@ -477,6 +528,9 @@ export default function App() {
             )}
             <div className="flex flex-1 min-h-0">{renderShopPages()}</div>
           </main>
+          {page !== 'inbox' && (
+            <ChatBubble unread={inboxUnreadCount} onOpen={() => setPage('inbox')} />
+          )}
         </div>
       )}
 
@@ -493,6 +547,9 @@ export default function App() {
             onGoHome={goStorefront}
           />
           <main className="flex-1 h-screen overflow-y-auto flex">{renderAdminPages()}</main>
+          {page !== 'inbox' && (
+            <ChatBubble unread={inboxUnreadCount} onOpen={() => setPage('inbox')} />
+          )}
         </div>
       )}
 
